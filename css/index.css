@@ -1,0 +1,436 @@
+ * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body.modal-active .login-container {
+            display: none;
+        }
+
+        .login-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: rgba(146, 64, 14, 1);
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #666666;
+            font-size: 14px;
+            font-weight: normal;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333333;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333333;
+            background-color: #ffffff;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: rgba(146, 64, 14, 1);
+        }
+
+        .form-group input::placeholder {
+            color: #999999;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background-color: rgba(217, 119, 6, 1);
+            color: #ffffff;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .login-button:hover {
+            background-color: rgba(217, 119, 6, 1);
+        }
+
+        .login-button:active {
+            transform: scale(0.98);
+        }
+
+        .forgot-password {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .forgot-password a {
+            color: #666666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: rgba(217, 119, 6, 1);
+        }
+
+        .error-message {
+            color: rgba(217, 119, 6, 1);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-icon-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+        }
+
+        .modal-icon-container.orange {
+            background-color: #ffe5d9;
+        }
+
+        .modal-icon-container.green {
+            background-color: #d4edda;
+        }
+
+        .modal-icon-container.purple {
+            background-color: #E0CCFF;
+        }
+
+        .modal-icon-container.purple .key-icon {
+            font-size: 48px;
+            display: inline-block;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+            line-height: 1;
+        }
+
+        .modal-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 12px;
+        }
+
+        .modal-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 20px;
+        }
+
+        .modal-description {
+            text-align: center;
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .info-box.blue {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .info-box.green {
+            background-color: #d4edda;
+            color: #155724;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-box.green::before {
+            content: "✓";
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .verification-input-group {
+            margin-bottom: 24px;
+        }
+
+        .verification-input-group label {
+            display: block;
+            color: #333333;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .verification-input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 8px;
+            font-weight: bold;
+        }
+
+        .verification-input-group input:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+
+        .modal-button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-button.orange {
+            background-color: rgba(217, 119, 6, 1);
+            color: #ffffff;
+        }
+
+        .modal-button.green {
+            background-color: #28a745;
+            color: #ffffff;
+        }
+
+        .modal-button.purple {
+            background-color: #8A2BE2;
+            color: #ffffff;
+        }
+
+        .modal-button:hover {
+            opacity: 0.9;
+        }
+
+        .modal-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Password Modal Styles */
+        .password-input-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+
+        .password-input-wrapper input {
+            width: 100%;
+            padding: 12px 40px 12px 40px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .password-input-wrapper input:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+
+        .password-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #FFD700;
+            font-size: 18px;
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.2));
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: #666666;
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .password-toggle:hover svg {
+            stroke: #333333;
+        }
+
+        .password-toggle svg .eye-slash {
+            stroke: #dc3545;
+            stroke-width: 2.5;
+            display: none;
+        }
+
+        .password-toggle.hidden svg .eye-slash {
+            display: block;
+        }
+
+        .password-strength {
+            margin-bottom: 20px;
+        }
+
+        .password-strength-label {
+            font-size: 14px;
+            color: #666666;
+            margin-bottom: 8px;
+        }
+
+        .password-strength-bar {
+            height: 6px;
+            background-color: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 4px;
+        }
+
+        .password-strength-fill {
+            height: 100%;
+            background-color: #28a745;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .password-strength-text {
+            font-size: 14px;
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .password-requirements {
+            margin-bottom: 24px;
+        }
+
+        .password-requirements-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 12px;
+        }
+
+        .requirement-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666666;
+        }
+
+        .requirement-item::before {
+            content: "✓";
+            color: #28a745;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .requirement-item {
+         font-size: 0.9rem;
+         margin: 5px 0;
+         color: #6c757d;
+        } 
+        .requirement-item.valid {
+        color: #28a745;
+        }
+        .requirement-item.invalid {
+        color: #dc3545;
+        }
+        .modal-button:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        }

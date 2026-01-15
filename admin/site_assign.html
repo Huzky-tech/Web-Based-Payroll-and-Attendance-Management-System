@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Assignments - Philippians CDO</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f6fa;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: #1f2937;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background-color: #8c3f0e;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-menu {
+            padding: 12px 12px 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .nav-item i {
+            width: 18px;
+            font-size: 15px;
+        }
+
+        .nav-item span {
+            margin-left: 12px;
+            font-size: 14px;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-item.active {
+            background-color: #d97706;
+            color: #fff;
+        }
+
+        .sidebar-footer {
+            padding: 16px 20px 20px;
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        /* Top Header */
+        .top-header {
+            background-color: #ffffff;
+            padding: 18px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .date-time {
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        .date-time .date {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .date-time .time {
+            font-size: 15px;
+            color: #d97706;
+            font-weight: 700;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .user-profile:hover {
+            background-color: #f3f4f6;
+        }
+
+        .user-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4b5563;
+            font-size: 16px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .user-profile i {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        /* Content Area */
+        .content-area {
+            padding: 24px 28px 32px;
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 6px;
+        }
+
+        .page-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .summary-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .summary-icon.blue {
+            background-color: #e3f2fd;
+            color: #1d4ed8;
+        }
+
+        .summary-icon.green {
+            background-color: #e8f5e9;
+            color: #22c55e;
+        }
+
+        .summary-icon.purple {
+            background-color: #f3e8ff;
+            color: #9333ea;
+        }
+
+        .summary-content {
+            flex: 1;
+        }
+
+        .summary-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 6px;
+        }
+
+        .summary-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: #1f2937;
+        }
+
+        /* Staff Assignment Management */
+        .assignment-section {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        .assignment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .assignment-title-section h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .assignment-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .btn-audit {
+            background-color: #6b7280;
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-audit:hover {
+            background-color: #4b5563;
+        }
+
+        /* Two Panel Layout */
+        .assignment-panels {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+
+        /* Left Panel - Staff List */
+        .staff-list-panel {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            max-height: 600px;
+        }
+
+        .staff-search {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .staff-search input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .staff-search input:focus {
+            border-color: #d97706;
+        }
+
+        .staff-search i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        .staff-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .staff-item {
+            background-color: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .staff-item:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .staff-item.selected {
+            background-color: #fef3c7;
+            border-color: #d97706;
+        }
+
+        .staff-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .staff-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 15px;
+        }
+
+        .staff-sites-badge {
+            background-color: #22c55e;
+            color: #ffffff;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .staff-email {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* Right Panel - Site Assignments */
+        .sites-panel {
+            background-color: #f9fafb;
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .sites-panel-header {
+            margin-bottom: 20px;
+        }
+
+        .sites-panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .sites-panel-subtitle {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        /* Empty State */
+        .sites-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 80px 20px;
+            text-align: center;
+            flex: 1;
+        }
+
+        .sites-placeholder i {
+            font-size: 72px;
+            color: #d1d5db;
+            margin-bottom: 20px;
+        }
+
+        .sites-placeholder-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .sites-placeholder-text {
+            font-size: 14px;
+            color: #6b7280;
+            max-width: 300px;
+        }
+
+        /* Site Items */
+        .site-item {
+            background-color: #fff;
+            border-left: 4px solid #22c55e;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .site-item.inactive {
+            border-left-color: #d1d5db;
+        }
+
+        .site-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .site-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .site-address {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .site-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .site-status.active {
+            background-color: #e8f5e9;
+            color: #22c55e;
+        }
+
+        .site-status.inactive {
+            background-color: #f3f4f6;
+            color: #9ca3af;
+        }
+
+        .site-details {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .site-action {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            color: #6b7280;
+        }
+
+        .site-action:hover {
+            background-color: #f3f4f6;
+        }
+
+        .site-action.remove {
+            color: #ef4444;
+        }
+
+        .site-action.add {
+            color: #3b82f6;
+        }
+
+        .site-action i {
+            font-size: 14px;
+        }
+
+        /* Scrollbar Styling */
+        .staff-list::-webkit-scrollbar,
+        .sites-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .staff-list::-webkit-scrollbar-track,
+        .sites-panel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .staff-list::-webkit-scrollbar-thumb,
+        .sites-panel::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .staff-list::-webkit-scrollbar-thumb:hover,
+        .sites-panel::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2>Philippians CDO</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="fas fa-gauge"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="employee.html" class="nav-item">
+                <i class="fas fa-users"></i>
+                <span>Employees</span>
+            </a>
+            <a href="site_assign.html" class="nav-item active">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Site Assignments</span>
+            </a>
+            <a href="active_site.html" class="nav-item">
+                <i class="fas fa-building"></i>
+                <span>Active Sites</span>
+            </a>
+            <a href="worker.html" class="nav-item">
+                <i class="fas fa-user-group"></i>
+                <span>Worker Directory</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-calendar-check"></i>
+                <span>Attendance</span>
+            </a>
+            <a href="#" class="nav-item">
+                <i class="fas fa-wallet"></i>
+                <span>Payroll</span>
+            </a>
+            <a href="reports.html" class="nav-item">
+                <i class="fas fa-chart-bar"></i>
+                <span>Reports</span>
+            </a>
+            <a href="audit.html" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Audit Logs</span>
+            </a>
+            <a href="setting.html" class="nav-item">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+            <a href="../login.html" class="nav-item">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            © 2023 Philippians CDO
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Header -->
+        <div class="top-header">
+            <h1 class="page-title">Site Assignments</h1>
+            <div class="header-right">
+                <div class="date-time">
+                    <div class="date" id="currentDate">Wednesday, January 7, 2026</div>
+                    <div class="time" id="currentTime">05:23 PM</div>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar"><i class="fas fa-user"></i></div>
+                    <div class="user-info">
+                        <div class="user-name">Admin User</div>
+                        <div class="user-role">Admin</div>
+                    </div>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Page Header -->
+            <div class="page-header">
+                <h1>Site Assignments</h1>
+                <p class="page-subtitle">Manage payroll staff access to construction sites</p>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-icon blue">
+                        <i class="fas fa-user-group"></i>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-label">Total Payroll Staff</div>
+                        <div class="summary-value">4</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon green">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-label">Active Sites</div>
+                        <div class="summary-value">3</div>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon purple">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="summary-content">
+                        <div class="summary-label">Total Assignments</div>
+                        <div class="summary-value">1</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Staff Assignment Management -->
+            <div class="assignment-section">
+                <div class="assignment-header">
+                    <div class="assignment-title-section">
+                        <h3>Staff Assignment Management</h3>
+                        <p class="assignment-subtitle">Assign payroll staff to specific construction sites</p>
+                    </div>
+                    <button class="btn-audit" onclick="viewAuditLog()">
+                        <i class="fas fa-clipboard-list"></i> View Audit Log
+                    </button>
+                </div>
+
+                <div class="assignment-panels">
+                    <!-- Left Panel - Staff List -->
+                    <div class="staff-list-panel">
+                        <div class="staff-search">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="staffSearch" placeholder="Search payroll staff..." onkeyup="filterStaff()">
+                        </div>
+                        <div class="staff-list" id="staffList">
+                            <div class="staff-item" data-staff="staff-a" onclick="selectStaff('staff-a', 'Payroll Staff A')">
+                                <div class="staff-item-header">
+                                    <div class="staff-name">Payroll Staff A</div>
+                                    <span class="staff-sites-badge">1 Sites</span>
+                                </div>
+                                <div class="staff-email">staff.a@company.com</div>
+                            </div>
+                            <div class="staff-item" data-staff="staff-b" onclick="selectStaff('staff-b', 'Payroll Staff B')">
+                                <div class="staff-item-header">
+                                    <div class="staff-name">Payroll Staff B</div>
+                                </div>
+                                <div class="staff-email">staff.b@company.com</div>
+                            </div>
+                            <div class="staff-item" data-staff="staff-c" onclick="selectStaff('staff-c', 'Payroll Staff C')">
+                                <div class="staff-item-header">
+                                    <div class="staff-name">Payroll Staff C</div>
+                                </div>
+                                <div class="staff-email">staff.c@company.com</div>
+                            </div>
+                            <div class="staff-item" data-staff="staff-d" onclick="selectStaff('staff-d', 'Payroll Staff D')">
+                                <div class="staff-item-header">
+                                    <div class="staff-name">Payroll Staff D</div>
+                                </div>
+                                <div class="staff-email">staff.d@company.com</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel - Site Assignments -->
+                    <div class="sites-panel" id="sitesPanel">
+                        <!-- Empty State (shown by default) -->
+                        <div class="sites-placeholder" id="emptyState">
+                            <i class="fas fa-user-group"></i>
+                            <div class="sites-placeholder-title">Select a Staff Member</div>
+                            <div class="sites-placeholder-text">Select a payroll staff member from the list to view and manage their site assignments.</div>
+                        </div>
+
+                        <!-- Site Assignments Content (hidden by default) -->
+                        <div id="sitesContent" style="display: none;">
+                            <div class="sites-panel-header">
+                                <h4 class="sites-panel-title" id="panelTitle">Assign Sites to Payroll Staff A</h4>
+                                <p class="sites-panel-subtitle" id="panelSubtitle">1 active assignments</p>
+                            </div>
+                            <div id="sitesList">
+                                <!-- Sites will be dynamically loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample site data for each staff member
+        const staffSites = {
+            'staff-a': [
+                { name: 'Road Street Site', address: '123 Road St, Cityville', status: 'active', workers: 45, target: 50 }
+            ],
+            'staff-b': [],
+            'staff-c': [],
+            'staff-d': []
+        };
+
+        // All available sites
+        const allSites = [
+            { name: 'Road Street Site', address: '123 Road St, Cityville', status: 'active', workers: 45, target: 50 },
+            { name: 'Building Construction Site', address: '456 Build Ave, Townsburg', status: 'active', workers: 120, target: 150 },
+            { name: 'Bridge Project Alpha', address: '789 River Rd, Bridgeton', status: 'active', workers: 30, target: 40 },
+            { name: 'Downtown Renovation', address: '101 Main St, Metropolis', status: 'inactive', workers: 15, target: 20 }
+        ];
+
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            const day = days[now.getDay()];
+            const month = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
+            
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+            
+            document.getElementById('currentDate').textContent = `${day}, ${month} ${date}, ${year}`;
+            document.getElementById('currentTime').textContent = `${hours}:${minutesStr} ${ampm}`;
+        }
+
+        // Update time every minute
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
+
+        // Select staff member
+        function selectStaff(staffId, staffName) {
+            // Remove active class from all staff items
+            document.querySelectorAll('.staff-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+
+            // Add active class to selected staff item
+            const selectedItem = document.querySelector(`[data-staff="${staffId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('selected');
+            }
+
+            // Get assigned sites for this staff member
+            const assignedSites = staffSites[staffId] || [];
+            const assignedSiteNames = assignedSites.map(site => site.name);
+
+            // Update panel title
+            document.getElementById('panelTitle').textContent = `Assign Sites to ${staffName}`;
+            document.getElementById('panelSubtitle').textContent = `${assignedSites.length} active assignments`;
+
+            // Hide empty state and show content
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('sitesContent').style.display = 'block';
+
+            // Render sites
+            renderSites(staffId, assignedSiteNames);
+        }
+
+        // Render sites in the right panel
+        function renderSites(staffId, assignedSiteNames) {
+            const sitesList = document.getElementById('sitesList');
+            sitesList.innerHTML = '';
+
+            allSites.forEach(site => {
+                const isAssigned = assignedSiteNames.includes(site.name);
+                const siteItem = document.createElement('div');
+                siteItem.className = `site-item ${site.status === 'inactive' ? 'inactive' : ''}`;
+                
+                siteItem.innerHTML = `
+                    <div class="site-item-header">
+                        <div>
+                            <div class="site-name">${site.name}</div>
+                            <div class="site-address">${site.address}</div>
+                        </div>
+                        <button class="site-action ${isAssigned ? 'remove' : 'add'}" 
+                                onclick="${isAssigned ? `removeSite('${staffId}', '${site.name}')` : `addSite('${staffId}', '${site.name}')`}" 
+                                title="${isAssigned ? 'Remove' : 'Add'}">
+                            <i class="fas ${isAssigned ? 'fa-trash' : 'fa-plus'}"></i>
+                        </button>
+                    </div>
+                    <span class="site-status ${site.status}">${site.status.charAt(0).toUpperCase() + site.status.slice(1)}</span>
+                    <div class="site-details">
+                        <div class="site-detail-item">
+                            <span>${site.workers} Current Workers</span>
+                        </div>
+                        <div class="site-detail-item">
+                            <span>Target: ${site.target}</span>
+                        </div>
+                    </div>
+                `;
+                
+                sitesList.appendChild(siteItem);
+            });
+        }
+
+        // Add site to staff member
+        function addSite(staffId, siteName) {
+            const site = allSites.find(s => s.name === siteName);
+            if (site && !staffSites[staffId]) {
+                staffSites[staffId] = [];
+            }
+            if (site && !staffSites[staffId].find(s => s.name === siteName)) {
+                staffSites[staffId].push(site);
+                updateStaffBadge(staffId);
+                const staffName = document.querySelector(`[data-staff="${staffId}"] .staff-name`).textContent;
+                selectStaff(staffId, staffName);
+            }
+        }
+
+        // Remove site from staff member
+        function removeSite(staffId, siteName) {
+            if (staffSites[staffId]) {
+                staffSites[staffId] = staffSites[staffId].filter(s => s.name !== siteName);
+                updateStaffBadge(staffId);
+                const staffName = document.querySelector(`[data-staff="${staffId}"] .staff-name`).textContent;
+                selectStaff(staffId, staffName);
+            }
+        }
+
+        // Update staff badge with site count
+        function updateStaffBadge(staffId) {
+            const staffItem = document.querySelector(`[data-staff="${staffId}"]`);
+            const assignedSites = staffSites[staffId] || [];
+            const badgeContainer = staffItem.querySelector('.staff-item-header');
+            
+            // Remove existing badge if any
+            const existingBadge = badgeContainer.querySelector('.staff-sites-badge');
+            if (existingBadge) {
+                existingBadge.remove();
+            }
+
+            // Add badge if staff has sites
+            if (assignedSites.length > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'staff-sites-badge';
+                badge.textContent = `${assignedSites.length} ${assignedSites.length === 1 ? 'Site' : 'Sites'}`;
+                badgeContainer.appendChild(badge);
+            }
+        }
+
+        // Filter staff list
+        function filterStaff() {
+            const searchInput = document.getElementById('staffSearch');
+            const filter = searchInput.value.toLowerCase();
+            const staffItems = document.querySelectorAll('.staff-item');
+
+            staffItems.forEach(item => {
+                const name = item.querySelector('.staff-name').textContent.toLowerCase();
+                const email = item.querySelector('.staff-email').textContent.toLowerCase();
+                
+                if (name.includes(filter) || email.includes(filter)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // View audit log
+        function viewAuditLog() {
+            alert('View Audit Log functionality - This would open the audit log page or modal.');
+            // Add your audit log logic here
+        }
+
+        // Initialize badges on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            Object.keys(staffSites).forEach(staffId => {
+                updateStaffBadge(staffId);
+            });
+        });
+    </script>
+</body>
+</html>
