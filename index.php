@@ -1,22 +1,74 @@
+<?php
+session_start();
+
+// Database connection
+$servername = "localhost";
+$username = "root"; // Adjust as needed
+$password = ""; // Adjust as needed
+$dbname = "payroll_db";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Handle login form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    // Prepare and execute query
+    $stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        $stmt->bind_result($id, $hashed_password);
+        $stmt->fetch();
+
+        if (password_verify($password, $hashed_password)) {
+            // Successful login
+            $_SESSION['user_id'] = $id;
+            $_SESSION['email'] = $email;
+            header("Location: admin/dashboard.php");
+            exit();
+        } else {
+            $error = "Invalid password.";
+        }
+    } else {
+        $error = "No account found with that email.";
+    }
+
+    $stmt->close();
+}
+
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Philippians CDO - Payroll Management System</title>
-    <script src="js/index.js"></script>
-  
+    <script src="js/index.js" defer></script>
+
     <link rel="stylesheet" href="css/index.css">
 
 </head>
 <body>
+    <?php if (isset($error)): ?>
+        <div class="error-message" style="color: red; text-align: center; margin-bottom: 10px;"><?php echo $error; ?></div>
+    <?php endif; ?>
     <div class="login-container">
         <div class="header">
             <h1>Philippians CDO</h1>
             <p>Payroll Management System</p>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" method="post">
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input 

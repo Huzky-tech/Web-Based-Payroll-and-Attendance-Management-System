@@ -50,8 +50,8 @@
         }
 
         if (isValid) {
-            document.body.classList.add('modal-active');
-            document.getElementById('verifyEmailModal1').classList.add('active');
+            // Allow form submission for PHP processing
+            loginForm.submit();
         }
     });
 

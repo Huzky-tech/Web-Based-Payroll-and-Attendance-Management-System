@@ -54,7 +54,7 @@
                 <i class="fas fa-cog"></i>
                 <span>Settings</span>
             </a>
-            <a href="../index.html" class="nav-item">
+            <a href="../index.php" class="nav-item">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
             </a>
