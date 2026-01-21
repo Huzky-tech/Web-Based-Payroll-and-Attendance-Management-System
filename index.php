@@ -38,7 +38,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error = "Invalid password.";
         }
     } else {
-        $error = "No account found with that email.";
+        // New user: trigger verification modal
+        $_SESSION['pending_email'] = $email;
+        $new_user = true;
     }
 
     $stmt->close();
@@ -59,6 +61,13 @@ $conn->close();
 
 </head>
 <body>
+    <script>
+        <?php if (isset($new_user) && $new_user): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('verifyEmailModal1').classList.add('active');
+            });
+        <?php endif; ?>
+    </script>
     <?php if (isset($error)): ?>
         <div class="error-message" style="color: red; text-align: center; margin-bottom: 10px;"><?php echo $error; ?></div>
     <?php endif; ?>

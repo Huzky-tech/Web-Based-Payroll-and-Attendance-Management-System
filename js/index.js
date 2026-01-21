@@ -69,18 +69,36 @@
     const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
     const setPasswordBtn = document.getElementById('setPasswordBtn');
 
-    sendVerificationBtn.addEventListener('click', function() {
-        verifyEmailModal1.classList.remove('active');
-        verifyEmailModal2.classList.add('active');
-        verificationCodeInput.focus();
+    sendVerificationBtn.addEventListener('click', async function() {
+        const response = await fetch('api/send_verification.php');
+        const result = await response.json();
+        if (result.success) {
+            alert(result.message); // Show the code in demo
+            verifyEmailModal1.classList.remove('active');
+            verifyEmailModal2.classList.add('active');
+            verificationCodeInput.focus();
+        } else {
+            alert(result.message);
+        }
     });
 
-    verifyEmailBtn.addEventListener('click', function() {
-        if (verificationCodeInput.value.trim().length === 6) {
+    verifyEmailBtn.addEventListener('click', async function() {
+        const code = verificationCodeInput.value.trim();
+        if (code.length !== 6) {
+            alert('Please enter a 6-digit verification code');
+            return;
+        }
+        const response = await fetch('api/verify_code.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        const result = await response.json();
+        if (result.success) {
             verifyEmailModal2.classList.remove('active');
             setPasswordModal.classList.add('active');
         } else {
-            alert('Please enter a 6-digit verification code');
+            alert(result.message);
         }
     });
 
@@ -141,8 +159,19 @@
     setPasswordBtn.disabled = true;
 
     // ---------------- SAFETY CHECK (NO BYPASS) ----------------
-    setPasswordBtn.addEventListener('click', function () {
+    setPasswordBtn.addEventListener('click', async function () {
         if (setPasswordBtn.disabled) return;
 
-        window.location.href = 'admin/dashboard.php';
+        const password = newPasswordInput.value;
+        const response = await fetch('api/set_password.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+        const result = await response.json();
+        if (result.success) {
+            window.location.href = 'admin/dashboard.php';
+        } else {
+            alert(result.message);
+        }
     });
