@@ -15,33 +15,6 @@
             overflow: hidden;
             color: #1f2937;
         }
-        /* Sidebar */
-        .sidebar {
-            width: 240px;
-            background-color: #8c3f0e;
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-        }
-        .sidebar-header {
-            padding: 24px 24px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-        }
-        .sidebar-header h2 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
-        .nav-menu { padding: 12px 12px 0; flex: 1; overflow-y: auto; }
-        .nav-item {
-            display: flex; align-items: center; padding: 12px 14px; margin-bottom: 6px;
-            border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, color 0.2s ease;
-            text-decoration: none; color: rgba(255, 255, 255, 0.85);
-        }
-        .nav-item i { width: 18px; font-size: 15px; }
-        .nav-item span { margin-left: 12px; font-size: 14px; }
-        .nav-item:hover { background-color: rgba(255, 255, 255, 0.08); }
-        .nav-item.active { background-color: #d97706; color: #fff; }
-        .sidebar-footer {
-            padding: 16px 20px 20px; text-align: center; font-size: 12px;
-            color: rgba(255, 255, 255, 0.7); border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
         /* Main */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
         .top-header {
@@ -179,32 +152,11 @@
         @media (max-width: 900px) {
             .form-grid { grid-template-columns: 1fr; }
         }
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; flex-direction: row; overflow-x: auto; }
-            .nav-menu { display: flex; flex-wrap: nowrap; }
-            .nav-item { margin-right: 8px; }
-        }
+
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="sidebar-header"><h2>Philippians CDO</h2></div>
-        <nav class="nav-menu">
-            <a href="dashboard.html" class="nav-item"><i class="fas fa-gauge"></i><span>Dashboard</span></a>
-            <a href="employee.html" class="nav-item"><i class="fas fa-users"></i><span>Employees</span></a>
-            <a href="site_assign.html" class="nav-item"><i class="fas fa-map-marker-alt"></i><span>Site Assignments</span></a>
-            <a href="active_site.html" class="nav-item"><i class="fas fa-building"></i><span>Active Sites</span></a>
-            <a href="worker.html" class="nav-item"><i class="fas fa-user-group"></i><span>Worker Directory</span></a>
-            <a href="#" class="nav-item"><i class="fas fa-calendar-check"></i><span>Attendance</span></a>
-            <a href="#" class="nav-item"><i class="fas fa-wallet"></i><span>Payroll</span></a>
-            <a href="reports.html" class="nav-item"><i class="fas fa-chart-bar"></i><span>Reports</span></a>
-            <a href="audit.html" class="nav-item"><i class="fas fa-clipboard-list"></i><span>Audit Logs</span></a>
-            <a href="setting.html" class="nav-item active"><i class="fas fa-cog"></i><span>Settings</span></a>
-            <a href="../login.html" class="nav-item"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
-        </nav>
-        <div class="sidebar-footer">© 2023 Philippians CDO</div>
-    </div>
+
 
     <div class="main-content">
         <div class="top-header">
@@ -770,4 +722,3 @@
     </script>
 </body>
 </html>
-
