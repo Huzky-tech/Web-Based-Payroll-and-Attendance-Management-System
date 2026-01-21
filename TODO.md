@@ -1,6 +1,0 @@
-- [x] Update navigation links in dashboard.php to use .php extensions instead of .html
-- [x] Change include statements in dashboard.php to use correct .php files
-- [x] Fix dashboard link to point to dashboard.php
-- [x] Remove invalid HTML structure from employee.php, audit.php, and setting.php for proper inclusion
-- [x] Fix CSS link in audit.php from audit.php to audit.css
-- [x] Add conditional CSS loading in dashboard.php for employee, audit, and setting pages
