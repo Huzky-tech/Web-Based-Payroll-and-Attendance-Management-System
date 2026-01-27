@@ -5,7 +5,7 @@
             background-color: #f5f6fa;
             display: flex;
             height: 100vh;
-            overflow: auto;
+            overflow: hidden;
             color: #1f2937;
         }
         /* Main */
