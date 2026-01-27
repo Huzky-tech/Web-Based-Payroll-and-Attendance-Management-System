@@ -117,9 +117,7 @@
 
             <div class="section-header">
                 <div class="section-title">Site Operations Overview</div>
-                <button class="primary-btn"><i class="fas fa-plus"></i> Add New Site</button>
-                </div>
-
+            </div>
             <div class="kpi-strip">
                 <div class="kpi-card">
                     <div class="kpi-label">Active Sites</div>
