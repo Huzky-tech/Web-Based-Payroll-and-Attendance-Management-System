@@ -11,7 +11,7 @@
 - [x] Modify JavaScript to allow form submission on valid input
 - [x] Create setup_db.php script to initialize database and default user
 - [x] Run setup_db.php to ensure database is set up
-- [ ] Test the login functionality to ensure it works correctly
+- [x] Test the login functionality to ensure it works correctly
 
 ## Notes
 - Database already exists with users table in database/payroll_db.sql

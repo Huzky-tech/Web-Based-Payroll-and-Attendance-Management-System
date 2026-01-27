@@ -1,8 +1,7 @@
 -- Database: employee
 -- Tables: employees, payroll_staff, audit_logs
 
-CREATE DATABASE IF NOT EXISTS employee;
-USE employee;
+USE payroll_db;
 
 -- Employees table
 CREATE TABLE employees (
