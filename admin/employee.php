@@ -1,3 +1,6 @@
+<?php
+include '../api/connection/db_config.php';
+?>
 <!-- Modal -->
 <div id="viewModal" class="modal"></div>
 <head>
