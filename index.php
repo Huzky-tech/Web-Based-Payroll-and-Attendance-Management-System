@@ -1,21 +1,84 @@
+<?php
+session_start();
+
+// Database connection
+$servername = "localhost";
+$username = "root"; // Adjust as needed
+$password = ""; // Adjust as needed
+$dbname = "payroll_db";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Handle login form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    // Prepare and execute query
+    $stmt = $conn->prepare("SELECT id, password FROM users WHERE email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
+        $stmt->bind_result($id, $hashed_password);
+        $stmt->fetch();
+
+        if (password_verify($password, $hashed_password)) {
+            // Successful login
+            $_SESSION['user_id'] = $id;
+            $_SESSION['email'] = $email;
+            header("Location: admin/dashboard.php");
+            exit();
+        } else {
+            $error = "Invalid password.";
+        }
+    } else {
+        // New user: trigger verification modal
+        $_SESSION['pending_email'] = $email;
+        $new_user = true;
+    }
+
+    $stmt->close();
+}
+
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Philippians CDO - Payroll Management System</title>
+    <script src="js/index.js" defer></script>
+
 
     <link rel="stylesheet" href="css/index.css">
 
 </head>
 <body>
+    <script>
+        <?php if (isset($new_user) && $new_user): ?>
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('verifyEmailModal1').classList.add('active');
+            });
+        <?php endif; ?>
+    </script>
+    <?php if (isset($error)): ?>
+        <div class="error-message" style="color: red; text-align: center; margin-bottom: 10px;"><?php echo $error; ?></div>
+    <?php endif; ?>
     <div class="login-container">
         <div class="header">
             <h1>Philippians CDO</h1>
             <p>Payroll Management System</p>
         </div>
 
-        <form id="loginForm">
+        <form id="loginForm" method="post">
             <div class="form-group">
                 <label for="email">Email Address</label>
                 <input 
@@ -148,156 +211,5 @@
             <button type="button" class="modal-button purple" id="setPasswordBtn">Set Password & Continue</button>
         </div>
     </div>
-
-   <script>
-    // Form validation and submission
-    const loginForm = document.getElementById('loginForm');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const emailError = document.getElementById('emailError');
-    const passwordError = document.getElementById('passwordError');
-    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-
-    // Email validation
-    function validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    }
-
-    function clearErrors() {
-        emailError.textContent = '';
-        emailError.classList.remove('show');
-        passwordError.textContent = '';
-        passwordError.classList.remove('show');
-    }
-
-    function showError(errorElement, message) {
-        errorElement.textContent = message;
-        errorElement.classList.add('show');
-    }
-
-    loginForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        clearErrors();
-
-        const email = emailInput.value.trim();
-        const password = passwordInput.value;
-        let isValid = true;
-
-        if (!email) {
-            showError(emailError, 'Email address is required');
-            isValid = false;
-        } else if (!validateEmail(email)) {
-            showError(emailError, 'Please enter a valid email address');
-            isValid = false;
-        }
-
-        if (!password) {
-            showError(passwordError, 'Password is required');
-            isValid = false;
-        } else if (password.length < 6) {
-            showError(passwordError, 'Password must be at least 6 characters');
-            isValid = false;
-        }
-
-        if (isValid) {
-            document.body.classList.add('modal-active');
-            document.getElementById('verifyEmailModal1').classList.add('active');
-        }
-    });
-
-    // ---------------- MODALS ----------------
-    const verifyEmailModal1 = document.getElementById('verifyEmailModal1');
-    const verifyEmailModal2 = document.getElementById('verifyEmailModal2');
-    const setPasswordModal = document.getElementById('setPasswordModal');
-    const sendVerificationBtn = document.getElementById('sendVerificationBtn');
-    const verifyEmailBtn = document.getElementById('verifyEmailBtn');
-    const verificationCodeInput = document.getElementById('verificationCode');
-
-    const newPasswordInput = document.getElementById('newPassword');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const toggleNewPassword = document.getElementById('toggleNewPassword');
-    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
-    const setPasswordBtn = document.getElementById('setPasswordBtn');
-
-    sendVerificationBtn.addEventListener('click', function() {
-        verifyEmailModal1.classList.remove('active');
-        verifyEmailModal2.classList.add('active');
-        verificationCodeInput.focus();
-    });
-
-    verifyEmailBtn.addEventListener('click', function() {
-        if (verificationCodeInput.value.trim().length === 6) {
-            verifyEmailModal2.classList.remove('active');
-            setPasswordModal.classList.add('active');
-        } else {
-            alert('Please enter a 6-digit verification code');
-        }
-    });
-
-    verificationCodeInput.addEventListener('input', e => {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '');
-    });
-
-    // ---------------- PASSWORD TOGGLES ----------------
-    toggleNewPassword.addEventListener('click', () => {
-        newPasswordInput.type =
-            newPasswordInput.type === 'password' ? 'text' : 'password';
-    });
-
-    toggleConfirmPassword.addEventListener('click', () => {
-        confirmPasswordInput.type =
-            confirmPasswordInput.type === 'password' ? 'text' : 'password';
-    });
-
-    // ---------------- PASSWORD REQUIREMENTS ----------------
-    const requirementItems = document.querySelectorAll('.requirement-item');
-    const commonPasswords = ['password', '12345678', 'qwerty', 'admin', 'letmein'];
-
-    function validatePasswordRequirements() {
-        const password = newPasswordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
-
-        const rules = {
-            length: password.length >= 8,
-            uppercase: /[A-Z]/.test(password),
-            lowercase: /[a-z]/.test(password),
-            number: /[0-9]/.test(password),
-            special: /[!@#$%^&*]/.test(password),
-            common: !commonPasswords.includes(password.toLowerCase()),
-            match: password && password === confirmPassword
-        };
-
-        let allValid = true;
-
-        requirementItems.forEach(item => {
-            const rule = item.dataset.rule;
-            if (rules[rule]) {
-                item.classList.add('valid');
-                item.classList.remove('invalid');
-            } else {
-                item.classList.add('invalid');
-                item.classList.remove('valid');
-                allValid = false;
-            }
-        });
-
-        setPasswordBtn.disabled = !allValid;
-    }
-
-    newPasswordInput.addEventListener('input', validatePasswordRequirements);
-    confirmPasswordInput.addEventListener('input', validatePasswordRequirements);
-
-    // Disable initially
-    setPasswordBtn.disabled = true;
-
-    // ---------------- SAFETY CHECK (NO BYPASS) ----------------
-    setPasswordBtn.addEventListener('click', function () {
-        if (setPasswordBtn.disabled) return;
-
-        window.location.href = 'admin/dashboard.html';
-    });
-</script>
-
 </body>
 </html>
