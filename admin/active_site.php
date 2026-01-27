@@ -6,7 +6,6 @@
     <title>Active Sites - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/active_site.css">
-    <script src="../js/active_site.js" defer></script>
 </head>
 <body>
     <!-- Main Content -->
