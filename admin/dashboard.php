@@ -42,7 +42,7 @@ include '../api/connection/db_config.php';
                 <i class="fas fa-calendar-check"></i>
                 <span>Attendance</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="dashboard.php?page=payroll" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll') ? 'active' : ''; ?>">
                 <i class="fas fa-wallet"></i>
                 <span>Payroll</span>
             </a>
@@ -269,7 +269,7 @@ include '../api/connection/db_config.php';
 <?php endif; ?>
 
 <?php
-$allowedPages = ['employee','site_assign','active_site','worker','reports','audit','setting'];
+$allowedPages = ['employee','site_assign','active_site','worker','reports','audit','setting','payroll'];
 if (isset($_GET['page']) && in_array($_GET['page'], $allowedPages)) {
     include $_GET['page'] . '.php';
 }

@@ -1,168 +1,151 @@
+/* ===================== DATA ===================== */
+const auditLogs = [];
 
-        function updateDateTime() {
-            const now = new Date();
-            const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            const day = days[now.getDay()];
-            const month = months[now.getMonth()];
-            const date = now.getDate();
-            const year = now.getFullYear();
-            let hours = now.getHours();
-            const minutes = now.getMinutes();
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            hours = hours % 12; hours = hours ? hours : 12;
-            const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-            document.getElementById('currentDate').textContent = `${day}, ${month} ${date}, ${year}`;
-            document.getElementById('currentTime').textContent = `${hours}:${minutesStr} ${ampm}`;
-        }
+const staffSites = {
+    'staff-a': [
+        { name: 'Road Street Site', address: '123 Road St, Cityville', status: 'active', workers: 45, target: 50 }
+    ],
+    'staff-b': [],
+    'staff-c': [],
+    'staff-d': []
+};
 
-        function switchTab(tab) {
-            document.querySelectorAll('.pill-tab').forEach(p => p.classList.remove('active'));
-            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-            document.querySelectorAll('.panel').forEach(panel => {
-                if (panel.id) panel.style.display = panel.id === tab ? 'block' : 'none';
-            });
-        }
+const allSites = [
+    { name: 'Road Street Site', address: '123 Road St, Cityville', status: 'active', workers: 45, target: 50 },
+    { name: 'Building Construction Site', address: '456 Build Ave, Townsburg', status: 'active', workers: 120, target: 150 },
+    { name: 'Bridge Project Alpha', address: '789 River Rd, Bridgeton', status: 'active', workers: 30, target: 40 },
+    { name: 'Downtown Renovation', address: '101 Main St, Metropolis', status: 'inactive', workers: 15, target: 20 }
+];
 
-        function saveAll() {
-            alert('Save Changes placeholder');
-        }
+/* ===================== DATE & TIME ===================== */
+function updateDateTime() {
+    const now = new Date();
+    document.getElementById('currentDate').textContent =
+        now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    document.getElementById('currentTime').textContent =
+        now.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+}
+updateDateTime();
+setInterval(updateDateTime, 60000);
 
-        function openAddUserModal() {
-            document.getElementById('addUserModal').style.display = 'flex';
-        }
+/* ===================== STAFF SELECTION ===================== */
+function selectStaff(staffId, staffName) {
+    document.querySelectorAll('.staff-item').forEach(i => i.classList.remove('selected'));
+    document.querySelector(`[data-staff="${staffId}"]`).classList.add('selected');
 
-        function closeAddUserModal() {
-            document.getElementById('addUserModal').style.display = 'none';
-            // Reset form and validation
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserRole').value = 'Worker';
-            document.getElementById('newUserPassword').value = '';
-            document.getElementById('newUserPasswordConfirm').value = '';
-            document.getElementById('newUserPassword').classList.remove('password-error', 'password-success');
-            document.getElementById('newUserPasswordConfirm').classList.remove('password-error', 'password-success');
-            document.getElementById('passwordError').classList.remove('show');
-            document.getElementById('confirmPasswordError').classList.remove('show');
-        }
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('sitesContent').style.display = 'block';
 
-        function togglePassword(fieldId, button) {
-            const field = document.getElementById(fieldId);
-            const icon = button.querySelector('i');
-            if (field.type === 'password') {
-                field.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                field.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
+    document.getElementById('panelTitle').textContent = `Assign Sites to ${staffName}`;
+    document.getElementById('panelSubtitle').textContent =
+        `${staffSites[staffId].length} active assignments`;
 
-        function validatePasswords() {
-            const password = document.getElementById('newUserPassword').value;
-            const confirmPassword = document.getElementById('newUserPasswordConfirm').value;
-            const passwordField = document.getElementById('newUserPassword');
-            const confirmField = document.getElementById('newUserPasswordConfirm');
-            const passwordError = document.getElementById('passwordError');
-            const confirmError = document.getElementById('confirmPasswordError');
+    renderSites(staffId);
+}
 
-            // Reset styles
-            passwordField.classList.remove('password-error', 'password-success');
-            confirmField.classList.remove('password-error', 'password-success');
-            passwordError.classList.remove('show');
-            confirmError.classList.remove('show');
+/* ===================== RENDER SITES ===================== */
+function renderSites(staffId) {
+    const sitesList = document.getElementById('sitesList');
+    sitesList.innerHTML = '';
 
-            // Validate password field
-            if (password.length > 0) {
-                if (password.length < 8) {
-                    passwordField.classList.add('password-error');
-                    passwordError.textContent = 'Password must be at least 8 characters long.';
-                    passwordError.classList.add('show');
-                } else {
-                    passwordField.classList.add('password-success');
-                }
-            }
+    allSites.forEach(site => {
+        const assigned = staffSites[staffId].some(s => s.name === site.name);
 
-            // Validate confirm password field
-            if (confirmPassword.length > 0) {
-                if (password !== confirmPassword) {
-                    confirmField.classList.add('password-error');
-                    confirmError.textContent = 'Passwords do not match.';
-                    confirmError.classList.add('show');
-                } else if (password.length >= 8) {
-                    confirmField.classList.add('password-success');
-                }
-            }
+        sitesList.innerHTML += `
+            <div class="site-item ${site.status === 'inactive' ? 'inactive' : ''}">
+                <div class="site-item-header">
+                    <div>
+                        <div class="site-name">${site.name}</div>
+                        <div class="site-address">${site.address}</div>
+                    </div>
+                    <button class="site-action ${assigned ? 'remove' : 'add'}"
+                        onclick="${assigned
+                            ? `removeSite('${staffId}','${site.name}')`
+                            : `addSite('${staffId}','${site.name}')`}">
+                        <i class="fas ${assigned ? 'fa-trash' : 'fa-plus'}"></i>
+                    </button>
+                </div>
+                <span class="site-status ${site.status}">${site.status}</span>
+                <div class="site-details">
+                    <div>${site.workers} Current Workers</div>
+                    <div>Target: ${site.target}</div>
+                </div>
+            </div>`;
+    });
+}
 
-            // If both fields have values and match, show success
-            if (password.length > 0 && confirmPassword.length > 0 && password === confirmPassword && password.length >= 8) {
-                passwordField.classList.remove('password-error');
-                passwordField.classList.add('password-success');
-                confirmField.classList.remove('password-error');
-                confirmField.classList.add('password-success');
-            }
-        }
+/* ===================== ADD / REMOVE SITE ===================== */
+function addSite(staffId, siteName) {
+    const site = allSites.find(s => s.name === siteName);
+    staffSites[staffId].push(site);
 
-        function handleAddUser() {
-            const name = document.getElementById('newUserName').value.trim();
-            const email = document.getElementById('newUserEmail').value.trim();
-            const role = document.getElementById('newUserRole').value;
-            const pwd = document.getElementById('newUserPassword').value;
-            const confirm = document.getElementById('newUserPasswordConfirm').value;
+    logAudit(`Assigned ${siteName} to ${staffId}`);
+    updateStaffBadge(staffId);
+    updateTotals();
 
-            if (!name || !email || !role || !pwd || !confirm) {
-                alert('Please fill in all fields.');
-                return;
-            }
+    selectStaff(staffId, document.querySelector(`[data-staff="${staffId}"] .staff-name`).textContent);
+}
 
-            // Validate password length
-            if (pwd.length < 8) {
-                alert('Password must be at least 8 characters long.');
-                document.getElementById('newUserPassword').focus();
-                return;
-            }
+function removeSite(staffId, siteName) {
+    staffSites[staffId] = staffSites[staffId].filter(s => s.name !== siteName);
 
-            // Validate password match
-            if (pwd !== confirm) {
-                alert('Passwords do not match. Please check and try again.');
-                document.getElementById('newUserPasswordConfirm').focus();
-                validatePasswords(); // Show visual feedback
-                return;
-            }
+    logAudit(`Removed ${siteName} from ${staffId}`);
+    updateStaffBadge(staffId);
+    updateTotals();
 
-            const tbody = document.querySelector('#users table tbody');
-            const tr = document.createElement('tr');
-            const roleLabel = role === 'Worker' ? 'Worker' :
-                              role === 'Payroll Staff' ? 'Payroll' :
-                              role === 'Head Manager' ? 'Head' : 'Admin';
+    selectStaff(staffId, document.querySelector(`[data-staff="${staffId}"] .staff-name`).textContent);
+}
 
-            tr.innerHTML = `
-                <td><strong>${name}</strong><div class="muted">${email}</div></td>
-                <td><span class="badge" style="background:#fef3c7;color:#b45309;">${roleLabel}</span></td>
-                <td><span class="badge green">Active</span></td>
-                <td>Just now</td>
-                <td class="actions">
-                    <button class="icon-btn"><i class="fas fa-pen"></i></button>
-                    <button class="icon-btn"><i class="fas fa-copy"></i></button>
-                    <button class="icon-btn delete"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+/* ===================== BADGES & TOTALS ===================== */
+function updateStaffBadge(staffId) {
+    const staff = document.querySelector(`[data-staff="${staffId}"] .staff-item-header`);
+    staff.querySelector('.staff-sites-badge')?.remove();
 
-            // reset fields and close modal
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserRole').value = 'Worker';
-            document.getElementById('newUserPassword').value = '';
-            document.getElementById('newUserPasswordConfirm').value = '';
+    const count = staffSites[staffId].length;
+    if (count > 0) {
+        staff.innerHTML += `<span class="staff-sites-badge">${count} Site${count > 1 ? 's' : ''}</span>`;
+    }
+}
 
-            closeAddUserModal();
-        }
+function updateTotals() {
+    let total = 0;
+    Object.values(staffSites).forEach(s => total += s.length);
+    document.querySelector('.summary-value:last-child').textContent = total;
+}
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateDateTime();
-            setInterval(updateDateTime, 60000);
-        });
-  
+/* ===================== AUDIT LOG ===================== */
+function logAudit(action) {
+    auditLogs.push({
+        time: new Date().toLocaleString(),
+        user: 'Admin User',
+        action
+    });
+}
+
+function viewAuditLog() {
+    if (auditLogs.length === 0) {
+        alert('No audit records yet.');
+        return;
+    }
+
+    const logText = auditLogs
+        .map(l => `[${l.time}] ${l.user}: ${l.action}`)
+        .join('\n');
+
+    alert(logText);
+}
+
+/* ===================== SEARCH ===================== */
+function filterStaff() {
+    const filter = document.getElementById('staffSearch').value.toLowerCase();
+    document.querySelectorAll('.staff-item').forEach(item => {
+        item.style.display =
+            item.innerText.toLowerCase().includes(filter) ? 'block' : 'none';
+    });
+}
+
+/* ===================== INIT ===================== */
+document.addEventListener('DOMContentLoaded', () => {
+    Object.keys(staffSites).forEach(updateStaffBadge);
+    updateTotals();
+});
