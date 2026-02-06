@@ -1,19 +1,22 @@
-# TODO: Implement User Login Functionality
+# JS and PHP/HTML Separation Tasks
 
-## Steps to Complete
-- [x] Modify index.php to include PHP backend for login processing
-- [x] Add database connection code to connect to payroll_db
-- [x] Implement form submission handling (POST request)
-- [x] Add user authentication logic: query users table, verify email and hashed password
-- [x] Start session on successful login and redirect to admin/dashboard.php
-- [x] Handle login errors (invalid credentials) and display appropriate messages
-- [x] Update form to use method="post"
-- [x] Modify JavaScript to allow form submission on valid input
-- [x] Create setup_db.php script to initialize database and default user
-- [x] Run setup_db.php to ensure database is set up
-- [x] Test the login functionality to ensure it works correctly
+## Files to Process
+- [x] index.php - Move inline JS to js/index.js, handle PHP logic
+- [x] admin/dashboard.php - Move inline JS to js/dashboard.js
+- [x] admin/employee.php - Move inline JS to js/employee.js
+- [x] admin/worker.php - Move inline JS to js/worker.js
+- [x] admin/site_assign.php - Move inline JS to js/site_assign.js
+- [x] admin/setting.php - Move inline JS to js/setting.js
+- [x] admin/audit.php - Move inline JS to js/audit.js
+- [x] users/payroll.php - Move inline JS to js/payroll.js
 
-## Notes
-- Database already exists with users table in database/payroll_db.sql
-- Passwords are hashed using password_hash, so use password_verify for checking
-- Ensure session management for logged-in users
+## Steps for Each File
+1. Extract inline JavaScript code
+2. Create corresponding JS file in js/ directory
+3. Move JS code to the new file
+4. Update PHP file to include external JS file
+5. Test functionality
+
+## Special Cases
+- index.php: Handle PHP variable ($new_user) in JS logic
+- Ensure all event listeners and DOM manipulations work after separation

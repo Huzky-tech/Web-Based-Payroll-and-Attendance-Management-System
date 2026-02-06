@@ -1,3 +1,6 @@
+<?php
+include '../api/connection/db_config.php';
+?>s
 <!DOCTYPE html>
 <html lang="en">
 <head>

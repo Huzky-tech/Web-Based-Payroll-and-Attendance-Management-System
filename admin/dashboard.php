@@ -1,3 +1,6 @@
+<?php
+include '../api/connection/db_config.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +9,7 @@
     <title>Dashboard - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/dashboard.css">
+     <script src="../js/dashboard.js" defer></script>
 </head>
 <body>
     <!-- Sidebar -->
@@ -38,7 +42,7 @@
                 <i class="fas fa-calendar-check"></i>
                 <span>Attendance</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="dashboard.php?page=payroll" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll') ? 'active' : ''; ?>">
                 <i class="fas fa-wallet"></i>
                 <span>Payroll</span>
             </a>
@@ -63,6 +67,7 @@
             © 2023 Philippians CDO
         </div>
     </div>
+
 <?php if (!isset($_GET['page'])): ?>
     <div class="main-content">
         <div class="top-header">
@@ -84,6 +89,7 @@
         </div>
 
         <div class="dashboard-content">
+            <!-- SUMMARY GRID -->
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="summary-icon blue"><i class="fas fa-user-group"></i></div>
@@ -91,7 +97,7 @@
                         <span class="summary-label">Total Users</span>
                         <span class="summary-value">52</span>
                     </div>
-                        </div>
+                </div>
                 <div class="summary-card">
                     <div class="summary-icon green"><i class="fas fa-shield-heart"></i></div>
                     <div class="summary-text">
@@ -112,102 +118,101 @@
                         <span class="summary-label">Active Users</span>
                         <span class="summary-value">45</span>
                     </div>
-                        </div>
-                    </div>
+                </div>
+            </div>
 
+            <!-- KPI STRIP -->
             <div class="section-header">
                 <div class="section-title">Site Operations Overview</div>
             </div>
             <div class="kpi-strip">
                 <div class="kpi-card">
                     <div class="kpi-label">Active Sites</div>
-                    <div class="kpi-value">4</div>
-                    </div>
+                    <div class="kpi-value kpi-active-sites">0</div>
+                </div>
                 <div class="kpi-card">
                     <div class="kpi-label">At Capacity</div>
-                    <div class="kpi-value"><i class="fas fa-circle-check" style="color:#16a34a;"></i> 2</div>
-                        </div>
+                    <div class="kpi-value kpi-at-capacity"><i class="fas fa-circle-check" style="color:#16a34a;"></i> 0</div>
+                </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Needs Workers</div>
-                    <div class="kpi-value"><i class="fas fa-circle-exclamation" style="color:#d97706;"></i> 2</div>
-                    </div>
+                    <div class="kpi-value kpi-needs-workers"><i class="fas fa-circle-exclamation" style="color:#d97706;"></i> 0</div>
+                </div>
                 <div class="kpi-card">
                     <div class="kpi-label">Avg Attendance</div>
-                    <div class="kpi-value"><span style="color:#6d28d9;">86%</span></div>
+                    <div class="kpi-value kpi-attendance"><span style="color:#6d28d9;">0%</span></div>
                 </div>
             </div>
 
+            <!-- SITE GRID -->
             <div class="site-grid">
                 <div class="site-card">
                     <div class="site-name">Main Street Project</div>
                     <div class="site-meta"><i class="fas fa-location-dot"></i>123 Main St, Downtown</div>
                     <div class="site-row">
                         <span class="site-label">Workers</span>
-                        <span class="site-value">28 / 30</span>
+                        <span class="site-value">0 / 30</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:93%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:0%;"></div></div>
                     <div class="site-row" style="margin-top:10px;">
                         <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#16a34a;">89%</span>
-                        </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:90%;"></div></div>
+                        <span class="site-value" style="color:#16a34a;">0%</span>
+                    </div>
+                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
                     <div class="site-footer">
                         <div class="manager">John Smith</div>
                         <div class="badge green"><i class="fas fa-check-circle"></i> On Track</div>
                     </div>
                 </div>
-
                 <div class="site-card">
                     <div class="site-name">Downtown Office Complex</div>
                     <div class="site-meta"><i class="fas fa-location-dot"></i>456 Business Ave</div>
                     <div class="site-row">
                         <span class="site-label">Workers</span>
-                        <span class="site-value">12 / 15</span>
+                        <span class="site-value">0 / 15</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:78%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:0%;"></div></div>
                     <div class="site-row" style="margin-top:10px;">
                         <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#d97706;">75%</span>
+                        <span class="site-value" style="color:#d97706;">0%</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:72%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:0%;"></div></div>
                     <div class="site-footer">
                         <div class="manager">Sarah Johnson</div>
                         <div class="badge amber"><i class="fas fa-exclamation-circle"></i> Needs Workers</div>
                     </div>
                 </div>
-
                 <div class="site-card">
                     <div class="site-name">Riverside Apartments</div>
                     <div class="site-meta"><i class="fas fa-location-dot"></i>789 River Rd</div>
                     <div class="site-row">
                         <span class="site-label">Workers</span>
-                        <span class="site-value">15 / 15</span>
+                        <span class="site-value">0 / 15</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:100%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
                     <div class="site-row" style="margin-top:10px;">
                         <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#16a34a;">93%</span>
+                        <span class="site-value" style="color:#16a34a;">0%</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:95%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
                     <div class="site-footer">
                         <div class="manager">Mike Brown</div>
                         <div class="badge blue"><i class="fas fa-users"></i> At Capacity</div>
                     </div>
                 </div>
-
                 <div class="site-card">
                     <div class="site-name">Park Avenue Mall</div>
                     <div class="site-meta"><i class="fas fa-location-dot"></i>101 Park Ave</div>
                     <div class="site-row">
                         <span class="site-label">Workers</span>
-                        <span class="site-value">20 / 20</span>
+                        <span class="site-value">0 / 20</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:100%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
                     <div class="site-row" style="margin-top:10px;">
                         <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#16a34a;">85%</span>
+                        <span class="site-value" style="color:#16a34a;">0%</span>
                     </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:86%;"></div></div>
+                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
                     <div class="site-footer">
                         <div class="manager">Emily Davis</div>
                         <div class="badge blue"><i class="fas fa-users"></i> At Capacity</div>
@@ -215,6 +220,7 @@
                 </div>
             </div>
 
+            <!-- TABLE CARD -->
             <div class="table-card">
                 <div class="section-header">
                     <div class="section-title">Recent Activity</div>
@@ -230,33 +236,13 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>User role updated</td>
-                            <td>admin</td>
-                            <td>John Doe</td>
-                            <td>2 hours ago</td>
-                        </tr>
-                        <tr>
-                            <td>New user created</td>
-                            <td>admin</td>
-                            <td>Sarah Johnson</td>
-                            <td>1 day ago</td>
-                        </tr>
-                        <tr>
-                            <td>System settings changed</td>
-                            <td>admin</td>
-                            <td>Payroll calculation</td>
-                            <td>2 days ago</td>
-                        </tr>
-                        <tr>
-                            <td>Database backup</td>
-                            <td>system</td>
-                            <td>Full backup</td>
-                            <td>3 days ago</td>
+                            <td colspan="4" style="text-align:center;">Loading...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
+            <!-- SYSTEM ACTIONS -->
             <div class="section-header">
                 <div class="section-title">System Management</div>
             </div>
@@ -280,14 +266,14 @@
             </div>
         </div>
     </div>
-   </div>
 <?php endif; ?>
 
 <?php
-$allowedPages = ['employee','site_assign','active_site','worker','reports','audit','setting'];
+$allowedPages = ['employee','site_assign','active_site','worker','reports','audit','setting','payroll'];
 if (isset($_GET['page']) && in_array($_GET['page'], $allowedPages)) {
     include $_GET['page'] . '.php';
 }
 ?>
+
 </body>
 </html>

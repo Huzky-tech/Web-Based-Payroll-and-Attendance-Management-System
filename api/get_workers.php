@@ -14,7 +14,7 @@ if ($result->num_rows > 0) {
             'initials' => $row['initials'],
             'role' => $row['role'],
             'status' => $row['status'],
-            'site' => $row['site_name'] ?: 'Not Assigned',
+            'site_name' => $row['site_name'] ?: 'Not Assigned',
             'email' => $row['email'],
             'phone' => $row['phone'],
             'joined' => $row['joined_date'],
