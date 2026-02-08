@@ -55,7 +55,7 @@ include '../api/connection/db_config.php';
                         <i class="fas fa-building"></i>
                     </div>
                     <div class="summary-card-content">
-                        <div class="summary-card-value">4</div>
+                        <div class="summary-card-value"></div>
                         <div class="summary-card-label">Total Sites</div>
                     </div>
                 </div>
@@ -64,7 +64,7 @@ include '../api/connection/db_config.php';
                         <i class="fas fa-building"></i>
                     </div>
                     <div class="summary-card-content">
-                        <div class="summary-card-value">3</div>
+                        <div class="summary-card-value"></div>
                         <div class="summary-card-label">Active Sites</div>
                     </div>
                 </div>
@@ -73,7 +73,7 @@ include '../api/connection/db_config.php';
                         <i class="fas fa-users"></i>
                     </div>
                     <div class="summary-card-content">
-                        <div class="summary-card-value">210</div>
+                        <div class="summary-card-value"></div>
                         <div class="summary-card-label">Total Workers</div>
                     </div>
                 </div>
@@ -82,7 +82,7 @@ include '../api/connection/db_config.php';
                         <i class="fas fa-chart-line"></i>
                     </div>
                     <div class="summary-card-content">
-                        <div class="summary-card-value">81%</div>
+                        <div class="summary-card-value"></div>
                         <div class="summary-card-label">Utilization</div>
                     </div>
                 </div>
@@ -98,153 +98,6 @@ include '../api/connection/db_config.php';
 
             <!-- Site Cards -->
             <div class="site-cards" id="siteCards">
-                <!-- Site Card 1 -->
-                <div class="site-card">
-                    <div class="site-card-header">
-                        <div>
-                            <div class="site-card-title">Road Street Site</div>
-                            <span class="site-status-badge active">Active</span>
-                        </div>
-                    </div>
-                    <div class="site-location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>123 Road St, Cityville</span>
-                    </div>
-                    <div class="site-info-row">
-                        <span class="site-info-label">Current Workers:</span>
-                        <span class="site-info-value">45</span>
-                    </div>
-                    <div class="site-info-row">
-                        <span class="site-info-label">Target Capacity:</span>
-                        <span class="site-info-value">50</span>
-                    </div>
-                    <div class="capacity-bar-container">
-                        <div class="capacity-bar-label">
-                            <span>Capacity</span>
-                            <span>90%</span>
-                        </div>
-                        <div class="capacity-bar">
-                            <div class="capacity-bar-fill orange" style="width: 90%;"></div>
-                        </div>
-                    </div>
-                    <div class="site-manager">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Site Manager: John Smith</span>
-                    </div>
-                    <div class="site-start-date">
-                        <i class="fas fa-calendar"></i>
-                        <span>Started 2023-01-15</span>
-                    </div>
-                    <div class="site-card-actions">
-                        <button class="btn-view-details">
-                            <i class="fas fa-eye"></i>
-                            <span>View Details</span>
-                        </button>
-                        <button class="btn-manage">
-                            <i class="fas fa-pencil-alt"></i>
-                            <span>Manage</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Site Card 2 -->
-                <div class="site-card">
-                    <div class="site-card-header">
-                        <div>
-                            <div class="site-card-title">Building Construction Site</div>
-                            <span class="site-status-badge active">Active</span>
-                        </div>
-                    </div>
-                    <div class="site-location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>456 Build Ave, Townsburg</span>
-                    </div>
-                    <div class="site-info-row">
-                        <span class="site-info-label">Current Workers:</span>
-                        <span class="site-info-value">120</span>
-                    </div>
-                    <div class="site-info-row">
-                        <span class="site-info-label">Target Capacity:</span>
-                        <span class="site-info-value">150</span>
-                    </div>
-                    <div class="capacity-bar-container">
-                        <div class="capacity-bar-label">
-                            <span>Capacity</span>
-                            <span>80%</span>
-                        </div>
-                        <div class="capacity-bar">
-                            <div class="capacity-bar-fill orange" style="width: 80%;"></div>
-                        </div>
-                    </div>
-                    <div class="site-manager">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Site Manager: Sarah Johnson</span>
-                    </div>
-                    <div class="site-start-date">
-                        <i class="fas fa-calendar"></i>
-                        <span>Started 2023-03-10</span>
-                    </div>
-                    <div class="site-card-actions">
-                        <button class="btn-view-details">
-                            <i class="fas fa-eye"></i>
-                            <span>View Details</span>
-                        </button>
-                        <button class="btn-manage">
-                            <i class="fas fa-pencil-alt"></i>
-                            <span>Manage</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Site Card 3 -->
-                <div class="site-card">
-                    <div class="site-card-header">
-                        <div>
-                            <div class="site-card-title">Bridge Project Alpha</div>
-                            <span class="site-status-badge active">Active</span>
-                        </div>
-                    </div>
-                    <div class="site-location">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>789 River Rd, Bridgeton</span>
-                    </div>
-                    <div class="site-info-row">
-                        <span class="site-info-label">Current Workers:</span>
-                        <span class="site-info-value">30</span>
-                    </div>
-                    <div class="site-info-row">
-                        <span class="site-info-label">Target Capacity:</span>
-                        <span class="site-info-value">40</span>
-                    </div>
-                    <div class="capacity-bar-container">
-                        <div class="capacity-bar-label">
-                            <span>Capacity</span>
-                            <span>75%</span>
-                        </div>
-                        <div class="capacity-bar">
-                            <div class="capacity-bar-fill red" style="width: 75%;"></div>
-                        </div>
-                        <div class="capacity-warning">Needs 10 more workers</div>
-                    </div>
-                    <div class="site-manager">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Site Manager: Mike Brown</span>
-                    </div>
-                    <div class="site-start-date">
-                        <i class="fas fa-calendar"></i>
-                        <span>Started 2023-05-20</span>
-                    </div>
-                    <div class="site-card-actions">
-                        <button class="btn-view-details">
-                            <i class="fas fa-eye"></i>
-                            <span>View Details</span>
-                        </button>
-                        <button class="btn-manage">
-                            <i class="fas fa-pencil-alt"></i>
-                            <span>Manage</span>
-                        </button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
