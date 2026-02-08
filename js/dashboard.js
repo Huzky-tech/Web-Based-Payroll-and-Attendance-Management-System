@@ -2,99 +2,73 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Dashboard script loaded');
 
     /* ===============================
-       ACTIVE SITES & KPIs
+       FETCH DASHBOARD SUMMARY
        =============================== */
-    fetch('../api/get_sites.php')
+    fetch('../api/get_dashboard_summary.php')
         .then(res => res.json())
-        .then(sites => {
-            const activeSites = sites.filter(s => s.status === 'active');
-            const atCapacity = sites.filter(s => s.status === 'at_capacity');
-            const needsWorkers = sites.filter(s => s.status === 'needs_workers');
+        .then(data => {
+            // Populate summary grid
+            document.querySelectorAll('.summary-value')[0].textContent = data.summary.total_users;
+            document.querySelectorAll('.summary-value')[1].textContent = data.summary.system_health;
+            document.querySelectorAll('.summary-value')[2].textContent = data.summary.last_backup;
+            document.querySelectorAll('.summary-value')[3].textContent = data.summary.active_users;
 
-            document.querySelector('.kpi-active-sites').textContent = activeSites.length;
+            // Populate KPIs
+            document.querySelector('.kpi-active-sites').textContent = data.kpis.active_sites;
             document.querySelector('.kpi-at-capacity').innerHTML =
-                `<i class="fas fa-circle-check" style="color:#16a34a;"></i> ${atCapacity.length}`;
+                `<i class="fas fa-circle-check" style="color:#16a34a;"></i> ${data.kpis.at_capacity}`;
             document.querySelector('.kpi-needs-workers').innerHTML =
-                `<i class="fas fa-circle-exclamation" style="color:#d97706;"></i> ${needsWorkers.length}`;
-        })
-        .catch(err => console.error('Sites error:', err));
+                `<i class="fas fa-circle-exclamation" style="color:#d97706;"></i> ${data.kpis.needs_workers}`;
+            document.querySelector('.kpi-attendance').innerHTML =
+                `<span style="color:#6d28d9;">${data.kpis.avg_attendance}%</span>`;
 
-  /* ===============================
-   WORKERS PER SITE & NEEDS WORKERS KPI
-   =============================== */
-fetch('../api/get_workers.php')
-    .then(res => res.json())
-    .then(workers => {
-        const siteCounts = {};
-        let totalWorkersNeeded = 0; // Total for KPI
+            // Populate site grid
+            const siteGrid = document.querySelector('.site-grid');
+            siteGrid.innerHTML = '';
+            data.sites.forEach(site => {
+                const workersNeeded = site.Required_Workers - site.Current_Workers;
+                const badgeClass = workersNeeded > 0 ? 'badge amber' : 'badge blue';
+                const badgeText = workersNeeded > 0
+                    ? `<i class="fas fa-exclamation-circle"></i> Needs ${workersNeeded} Worker${workersNeeded > 1 ? 's' : ''}`
+                    : `<i class="fas fa-users"></i> At Capacity`;
+                const workerPercent = Math.min((site.Current_Workers / site.Required_Workers) * 100, 100);
 
-        // Count workers per site
-        workers.forEach(w => {
-            if (!siteCounts[w.site_name]) {
-                siteCounts[w.site_name] = { count: 0, attendance: 0 };
-            }
-            siteCounts[w.site_name].count++;
-            siteCounts[w.site_name].attendance += Number(w.attendance || 0);
-        });
+                const siteCard = `
+                    <div class="site-card">
+                        <div class="site-name">${site.Site_Name}</div>
+                        <div class="site-meta"><i class="fas fa-location-dot"></i>${site.Location}</div>
+                        <div class="site-row">
+                            <span class="site-label">Workers</span>
+                            <span class="site-value">${site.Current_Workers} / ${site.Required_Workers}</span>
+                        </div>
+                        <div class="bar-track"><div class="bar-fill bar-amber" style="width:${workerPercent}%;"></div></div>
+                        <div class="site-row" style="margin-top:10px;">
+                            <span class="site-label">Attendance Rate</span>
+                            <span class="site-value" style="color:#16a34a;">${site.attendance_rate}%</span>
+                        </div>
+                        <div class="bar-track"><div class="bar-fill bar-green" style="width:${site.attendance_rate}%;"></div></div>
+                        <div class="site-footer">
+                            <div class="manager">${site.Site_Manager}</div>
+                            <div class="${badgeClass}">${badgeText}</div>
+                        </div>
+                    </div>
+                `;
+                siteGrid.innerHTML += siteCard;
+            });
 
-        // Update each site card
-        document.querySelectorAll('.site-card').forEach(card => {
-            const siteName = card.querySelector('.site-name').textContent.trim();
-            const valueEl = card.querySelector('.site-value');
-            const bars = card.querySelectorAll('.bar-fill');
-            const badge = card.querySelector('.badge');
-
-            // Extract capacity from text "0 / 30"
-            const capacity = parseInt(valueEl.textContent.split('/')[1]) || 1;
-
-            const data = siteCounts[siteName] || { count: 0, attendance: 0 };
-            const percent = Math.min((data.count / capacity) * 100, 100);
-            const attendance = data.count
-                ? Math.round((data.attendance / data.count) * 100)
-                : 0;
-
-            // Update worker count and bars
-            valueEl.textContent = `${data.count} / ${capacity}`;
-            bars[0].style.width = percent + '%'; // worker fill
-            bars[1].style.width = attendance + '%'; // attendance fill
-
-            // Calculate workers needed
-            const workersNeeded = capacity - data.count;
-            if (workersNeeded > 0) {
-                badge.className = 'badge amber';
-                badge.innerHTML = `<i class="fas fa-exclamation-circle"></i> Needs ${workersNeeded} Worker${workersNeeded > 1 ? 's' : ''}`;
-                totalWorkersNeeded += workersNeeded;
-            } else {
-                badge.className = 'badge blue';
-                badge.innerHTML = `<i class="fas fa-users"></i> At Capacity`;
-            }
-        });
-
-        // Update top KPI strip
-        document.querySelector('.kpi-needs-workers').innerHTML =
-            `<i class="fas fa-circle-exclamation" style="color:#d97706;"></i> ${totalWorkersNeeded}`;
-    })
-    .catch(err => console.error('Workers error:', err));
-
-    /* ===============================
-       RECENT ACTIVITY (AUDIT LOGS)
-       =============================== */
-    fetch('../api/get_audit_logs.php')
-        .then(res => res.json())
-        .then(logs => {
+            // Populate recent activity
             const tbody = document.querySelector('.table-card tbody');
             tbody.innerHTML = '';
-
-            logs.slice(0, 5).forEach(log => {
+            data.recent_activity.forEach(log => {
                 tbody.innerHTML += `
                     <tr>
-                        <td>${log.action}</td>
-                        <td>${log.user}</td>
-                        <td>${log.target ?? '-'}</td>
-                        <td>${log.time}</td>
+                        <td>${log.Action}</td>
+                        <td>${log.email}</td>
+                        <td>${log.Details ?? '-'}</td>
+                        <td>${log.Date}</td>
                     </tr>
                 `;
             });
         })
-        .catch(err => console.error('Audit logs error:', err));
+        .catch(err => console.error('Dashboard summary error:', err));
 });

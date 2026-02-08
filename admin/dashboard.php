@@ -95,28 +95,28 @@ include '../api/connection/db_config.php';
                     <div class="summary-icon blue"><i class="fas fa-user-group"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">Total Users</span>
-                        <span class="summary-value">52</span>
+                        <span class="summary-value">-</span>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon green"><i class="fas fa-shield-heart"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">System Health</span>
-                        <span class="summary-value">Good</span>
+                        <span class="summary-value">-</span>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon purple"><i class="fas fa-hdd"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">Last Backup</span>
-                        <span class="summary-value">2023-07-05 03:00 AM</span>
+                        <span class="summary-value">-</span>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon orange"><i class="fas fa-chart-line"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">Active Users</span>
-                        <span class="summary-value">45</span>
+                        <span class="summary-value">-</span>
                     </div>
                 </div>
             </div>
@@ -146,78 +146,7 @@ include '../api/connection/db_config.php';
 
             <!-- SITE GRID -->
             <div class="site-grid">
-                <div class="site-card">
-                    <div class="site-name">Main Street Project</div>
-                    <div class="site-meta"><i class="fas fa-location-dot"></i>123 Main St, Downtown</div>
-                    <div class="site-row">
-                        <span class="site-label">Workers</span>
-                        <span class="site-value">0 / 30</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:0%;"></div></div>
-                    <div class="site-row" style="margin-top:10px;">
-                        <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#16a34a;">0%</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
-                    <div class="site-footer">
-                        <div class="manager">John Smith</div>
-                        <div class="badge green"><i class="fas fa-check-circle"></i> On Track</div>
-                    </div>
-                </div>
-                <div class="site-card">
-                    <div class="site-name">Downtown Office Complex</div>
-                    <div class="site-meta"><i class="fas fa-location-dot"></i>456 Business Ave</div>
-                    <div class="site-row">
-                        <span class="site-label">Workers</span>
-                        <span class="site-value">0 / 15</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:0%;"></div></div>
-                    <div class="site-row" style="margin-top:10px;">
-                        <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#d97706;">0%</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width:0%;"></div></div>
-                    <div class="site-footer">
-                        <div class="manager">Sarah Johnson</div>
-                        <div class="badge amber"><i class="fas fa-exclamation-circle"></i> Needs Workers</div>
-                    </div>
-                </div>
-                <div class="site-card">
-                    <div class="site-name">Riverside Apartments</div>
-                    <div class="site-meta"><i class="fas fa-location-dot"></i>789 River Rd</div>
-                    <div class="site-row">
-                        <span class="site-label">Workers</span>
-                        <span class="site-value">0 / 15</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
-                    <div class="site-row" style="margin-top:10px;">
-                        <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#16a34a;">0%</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
-                    <div class="site-footer">
-                        <div class="manager">Mike Brown</div>
-                        <div class="badge blue"><i class="fas fa-users"></i> At Capacity</div>
-                    </div>
-                </div>
-                <div class="site-card">
-                    <div class="site-name">Park Avenue Mall</div>
-                    <div class="site-meta"><i class="fas fa-location-dot"></i>101 Park Ave</div>
-                    <div class="site-row">
-                        <span class="site-label">Workers</span>
-                        <span class="site-value">0 / 20</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
-                    <div class="site-row" style="margin-top:10px;">
-                        <span class="site-label">Attendance Rate</span>
-                        <span class="site-value" style="color:#16a34a;">0%</span>
-                    </div>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width:0%;"></div></div>
-                    <div class="site-footer">
-                        <div class="manager">Emily Davis</div>
-                        <div class="badge blue"><i class="fas fa-users"></i> At Capacity</div>
-                    </div>
-                </div>
+                <!-- Site cards will be populated dynamically by JavaScript -->
             </div>
 
             <!-- TABLE CARD -->

@@ -1,10 +1,7 @@
-# TODO: Fix Issues in js/active_site.js
+# Dashboard Backend Refactor TODO
 
-- [x] Move startDateEl.valueAsDate = new Date() inside btnAddSite click handler
-- [x] Fix closeModalFunc to get startDateEl inside function
-- [x] Add check for siteCards existence in loadSites before clearing innerHTML
-- [x] Wrap fetch in loadSites with try/catch and error handling
-- [x] Replace console.log in View Details button with redirect to site_details.php
-- [x] Replace console.log in Manage button with redirect to site_manage.php
-- [x] Verify form validation trims all inputs (already done, confirm)
-- [x] Fix data name mismatch: change site.currentWorkers to site.Current_Workers
+- [x] Create new API endpoint `api/get_dashboard_summary.php` to aggregate and return JSON summary data
+- [x] Update `js/dashboard.js` to fetch from new API and populate UI without calculations
+- [x] Remove hardcoded values from `admin/dashboard.php` and add placeholders for dynamic data
+- [ ] Test the new API endpoint for correct aggregated data
+- [ ] Verify frontend displays data correctly without errors
