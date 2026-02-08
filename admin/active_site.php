@@ -25,7 +25,7 @@ include '../api/connection/db_config.php';
                 <div class="user-profile">
                     <div class="user-avatar">A</div>
                     <div class="user-info">
-                        <div class="user-name">Assistant Manager</div>
+                        <div class="user-name">admin</div>
                         <div class="user-role">Manager</div>
                     </div>
                     <i class="fas fa-chevron-down"></i>
@@ -37,7 +37,7 @@ include '../api/connection/db_config.php';
         <div class="content-area">
             <!-- Breadcrumbs -->
             <div class="breadcrumbs">
-                <a href="dashboard.html">Assistant Manager</a>
+                <a href="dashboard.php">admin</a>
                 <span>></span>
                 <span>Active Sites Management</span>
             </div>

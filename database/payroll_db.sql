@@ -144,6 +144,9 @@ CREATE TABLE ProjectSite (
     Project_Type VARCHAR(50),
     Start_Date DATE NOT NULL,
     End_Date DATE,
+    Required_Workers INT,
+    Site_Manager VARCHAR(100),
+    Status VARCHAR(50),
     LocationID INT NOT NULL,
 
     FOREIGN KEY (LocationID) REFERENCES LocationStatus(LocationID),
