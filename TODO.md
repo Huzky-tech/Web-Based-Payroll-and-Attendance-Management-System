@@ -1,7 +1,8 @@
-# Dashboard Backend Refactor TODO
+# TODO: Fix Audit.js Bugs
 
-- [x] Create new API endpoint `api/get_dashboard_summary.php` to aggregate and return JSON summary data
-- [x] Update `js/dashboard.js` to fetch from new API and populate UI without calculations
-- [x] Remove hardcoded values from `admin/dashboard.php` and add placeholders for dynamic data
-- [ ] Test the new API endpoint for correct aggregated data
-- [ ] Verify frontend displays data correctly without errors
+- [x] Edit admin/audit.php: Add id="trendBars" to trends bar-list, id="actionBars" to action bar-list, id="topUsersGrid" to top users grid div
+- [x] Edit js/audit.js: Update selectors to use getElementById
+- [x] Edit js/audit.js: Add safe Math.max for trends and actions
+- [x] Edit js/audit.js: Add escapeHTML function and use in renderLogs
+- [x] Edit js/audit.js: Add safe function for filterLogs to handle nulls
+- [x] Test the audit page

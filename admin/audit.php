@@ -7,7 +7,7 @@ include '../api/connection/db_config.php';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Audit Logs - Philippians CDO</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/font-awesome.css">
     <link rel="stylesheet" href="../css/audit.css">
      <script src="../js/audit.js" defer></script>
 </head>
@@ -77,7 +77,7 @@ include '../api/connection/db_config.php';
                 <div style="display:grid; grid-template-columns: 2fr 1fr; gap:18px;">
                     <div class="panel" style="margin:0;">
                         <div class="panel-title" style="margin-bottom:12px;">Activity Trends (Last 7 Days)</div>
-                        <div class="bar-list">
+                        <div class="bar-list" id="trendBars">
                             <div class="bar-item"><span class="bar-label">Day 1</span><div class="bar-track"><div class="bar-fill" style="width:65%; background:#f59e0b;"></div></div></div>
                             <div class="bar-item"><span class="bar-label">Day 2</span><div class="bar-track"><div class="bar-fill" style="width:58%; background:#f59e0b;"></div></div></div>
                             <div class="bar-item"><span class="bar-label">Day 3</span><div class="bar-track"><div class="bar-fill" style="width:72%; background:#f59e0b;"></div></div></div>
@@ -89,7 +89,7 @@ include '../api/connection/db_config.php';
                     </div>
                     <div class="panel" style="margin:0;">
                         <div class="panel-title" style="margin-bottom:12px;">Action Distribution</div>
-                        <div class="bar-list">
+                        <div class="bar-list" id="actionBars">
                             <div class="bar-item"><span class="bar-label">User Management</span><div class="bar-track"><div class="bar-fill" style="width:35%; background:#2563eb;"></div></div></div>
                             <div class="bar-item"><span class="bar-label">System Configuration</span><div class="bar-track"><div class="bar-fill" style="width:25%; background:#a855f7;"></div></div></div>
                             <div class="bar-item"><span class="bar-label">Data Modification</span><div class="bar-track"><div class="bar-fill" style="width:20%; background:#22c55e;"></div></div></div>
@@ -100,7 +100,7 @@ include '../api/connection/db_config.php';
                 </div>
                 <div class="panel" style="margin-top:18px;">
                     <div class="panel-title" style="margin-bottom:12px;">Top Active Users</div>
-                    <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px;">
+                    <div id="topUsersGrid" style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px;">
                         <div class="rule">
                             <div class="rule-info"><span class="user-avatar" style="background:#fef3c7; color:#b45309;">A</span>
                                 <div><div class="rule-title">Admin User</div><div class="rule-meta">145 actions this week</div></div></div>

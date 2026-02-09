@@ -2,9 +2,18 @@
 header('Content-Type: application/json');
 include 'connection/db_config.php';
 
+function logAudit($conn, $userId, $action, $details) {
+    $sql = "INSERT INTO Audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iss", $userId, $action, $details);
+    $stmt->execute();
+    $stmt->close();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = $_POST['id'] ?? '';
     $site = $_POST['site'] ?? '';
+    $userId = $_POST['userId'] ?? 1; // Assume user ID is passed or default to 1
 
     if (empty($id) || empty($site)) {
         echo json_encode(['success' => false, 'message' => 'Employee ID and site are required']);
@@ -12,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // First, find the site_id based on site name
-    $siteQuery = "SELECT id FROM sites WHERE site_name = ?";
+    $siteQuery = "SELECT SiteID FROM ProjectSite WHERE Site_Name = ?";
     $siteStmt = $conn->prepare($siteQuery);
     $siteStmt->bind_param("s", $site);
     $siteStmt->execute();
@@ -24,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $siteRow = $siteResult->fetch_assoc();
-    $siteId = $siteRow['id'];
+    $siteId = $siteRow['SiteID'];
 
     // Update the employee
     $updateQuery = "UPDATE employees SET site_id = ? WHERE id = ?";
@@ -32,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $updateStmt->bind_param("ii", $siteId, $id);
 
     if ($updateStmt->execute()) {
+        logAudit($conn, $userId, 'Employee Updated', "Updated employee: ID $id");
         echo json_encode(['success' => true, 'message' => 'Employee site updated successfully']);
     } else {
         echo json_encode(['success' => false, 'message' => 'Failed to update employee site']);

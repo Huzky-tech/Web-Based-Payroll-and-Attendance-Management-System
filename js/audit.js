@@ -1,15 +1,22 @@
 
 
-        const logs = [
-            { ts: '2023-07-10 14:30:25', user: 'Admin User', role: 'Admin', action: 'User Role Update', resource: 'John Doe (User)', status: 'success', severity: 'Medium', details: 'Changed role to Manager' },
-            { ts: '2023-07-10 14:15:10', user: 'HR Manager', role: 'HR', action: 'New Employee Added', resource: 'Sarah Smith', status: 'success', severity: 'Info', details: 'Employee onboarded' },
-            { ts: '2023-07-10 13:45:00', user: 'System', role: 'System', action: 'Failed Login Attempt', resource: 'Auth Service', status: 'failure', severity: 'High', details: 'IP 10.0.0.24 blocked' },
-            { ts: '2023-07-10 12:30:15', user: 'Payroll Staff A', role: 'Payroll', action: 'Payroll Processed', resource: 'Site A Payroll', status: 'success', severity: 'Medium', details: 'Batch 2023-07-10' },
-            { ts: '2023-07-10 11:20:05', user: 'Foreman Mike', role: 'Foreman', action: 'Attendance Modified', resource: 'Worker #452', status: 'warning', severity: 'Medium', details: 'Adjusted hours' },
-            { ts: '2023-07-10 10:05:30', user: 'Admin User', role: 'Admin', action: 'System Config Change', resource: 'Global Settings', status: 'success', severity: 'High', details: 'Password policy update' },
-            { ts: '2023-07-10 09:15:00', user: 'HR Manager', role: 'HR', action: 'Site Assignment', resource: 'Downtown Project', status: 'success', severity: 'Info', details: 'Reassigned staff' },
-            { ts: '2023-07-10 08:00:00', user: 'System', role: 'System', action: 'Database Backup', resource: 'Main DB', status: 'success', severity: 'Info', details: 'Full backup' }
-        ];
+        let logs = [];
+
+        async function fetchLogs() {
+            try {
+                console.log('Fetching logs...');
+                const response = await fetch('../api/get_audit_logs.php');
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                logs = await response.json();
+                console.log('Logs fetched:', logs.length);
+                renderLogs();
+            } catch (error) {
+                console.error('Error fetching logs:', error);
+            }
+        }
 
         const rules = [
             { title: 'Multiple Failed Logins', meta: 'Failed Login > 5 · Threshold: 5 · Period: 10 mins', active: true },
@@ -46,7 +53,7 @@
                     <td>${log.resource}</td>
                     <td>${pill(log.status)}</td>
                     <td>${pillSeverity(log.severity)}</td>
-                    <td>${log.details}</td>
+                    <td>${escapeHTML(log.details)}</td>
                 `;
                 body.appendChild(row);
             });
@@ -65,13 +72,20 @@
             return `<span class="pill ${cls}">${sev}</span>`;
         }
 
+        function escapeHTML(str = '') {
+            return str.replace(/[&<>"']/g, m => ({
+                '&':'&amp;', '<':'<', '>':'>', '"':'"', "'":'&#039;'
+            })[m]);
+        }
+
         function filterLogs() {
             const term = document.getElementById('searchInput').value.toLowerCase();
+            const safe = v => (v ?? '').toLowerCase();
             const filtered = logs.filter(l =>
-                l.user.toLowerCase().includes(term) ||
-                l.action.toLowerCase().includes(term) ||
-                l.resource.toLowerCase().includes(term) ||
-                l.details.toLowerCase().includes(term)
+                safe(l.user).includes(term) ||
+                safe(l.action).includes(term) ||
+                safe(l.resource).includes(term) ||
+                safe(l.details).includes(term)
             );
             renderLogs(filtered);
         }
@@ -96,12 +110,65 @@
             });
         }
 
+        async function fetchAnalytics() {
+            try {
+                const response = await fetch('../api/get_audit_analytics.php');
+                const data = await response.json();
+                renderAnalytics(data);
+            } catch (error) {
+                console.error('Error fetching analytics:', error);
+            }
+        }
+
+        function renderAnalytics(data) {
+            // Update trends
+            const trendsContainer = document.getElementById('trendBars');
+            trendsContainer.innerHTML = '';
+            const maxCount = data.trends.length ? Math.max(...data.trends.map(t => t.count)) : 0;
+            data.trends.forEach(trend => {
+                const width = maxCount > 0 ? (trend.count / maxCount) * 100 : 0;
+                const item = document.createElement('div');
+                item.className = 'bar-item';
+                item.innerHTML = `<span class="bar-label">${trend.day}</span><div class="bar-track"><div class="bar-fill" style="width:${width}%; background:#f59e0b;"></div></div>`;
+                trendsContainer.appendChild(item);
+            });
+
+            // Update action distribution
+            const actionContainer = document.getElementById('actionBars');
+            actionContainer.innerHTML = '';
+            const maxAction = data.actionDistribution.length ? Math.max(...data.actionDistribution.map(a => a.count)) : 0;
+            data.actionDistribution.slice(0, 5).forEach(action => { // Top 5
+                const width = maxAction > 0 ? (action.count / maxAction) * 100 : 0;
+                const item = document.createElement('div');
+                item.className = 'bar-item';
+                item.innerHTML = `<span class="bar-label">${action.action}</span><div class="bar-track"><div class="bar-fill" style="width:${width}%; background:#2563eb;"></div></div>`;
+                actionContainer.appendChild(item);
+            });
+
+            // Update top users
+            const usersContainer = document.getElementById('topUsersGrid');
+            usersContainer.innerHTML = '';
+            data.topUsers.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'rule';
+                div.innerHTML = `
+                    <div class="rule-info"><span class="user-avatar" style="background:#fef3c7; color:#b45309;">${user.user.charAt(0).toUpperCase()}</span>
+                        <div><div class="rule-title">${user.user}</div><div class="rule-meta">${user.actions} actions this week</div></div></div>
+                    <div class="pill success">+0%</div>
+                `;
+                usersContainer.appendChild(div);
+            });
+        }
+
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
             document.getElementById('activityPanel').style.display = tab === 'activity' ? 'block' : 'none';
             document.getElementById('analyticsPanel').style.display = tab === 'analytics' ? 'block' : 'none';
             document.getElementById('alertsPanel').style.display = tab === 'alerts' ? 'block' : 'none';
+            if (tab === 'analytics') {
+                fetchAnalytics();
+            }
         }
 
         function exportCSV() {
@@ -120,7 +187,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateDateTime();
             setInterval(updateDateTime, 60000);
-            renderLogs();
+            fetchLogs();
             renderRules();
         });
    
