@@ -12,6 +12,12 @@
                 }
                 logs = await response.json();
                 console.log('Logs fetched:', logs.length);
+                const totalLogsEl = document.getElementById("totalLogs");
+                if (totalLogsEl) {
+                    totalLogsEl.textContent = logs.length;
+                } else {
+                    console.error("Element #totalLogs not found");
+                }
                 renderLogs();
             } catch (error) {
                 console.error('Error fetching logs:', error);

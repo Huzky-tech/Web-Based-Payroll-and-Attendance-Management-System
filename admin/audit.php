@@ -17,7 +17,7 @@ include '../api/connection/db_config.php';
     <!-- Main Content -->
     <div class="main-content">
         <div class="top-header">
-            <div class="page-title">Audit Logs</div>
+            <div class="page-title">Audit Logs <span id="totalLogs"></span></div>
             <div class="header-right">
                 <div class="date-time">
                     <div class="date" id="currentDate">Thursday, January 8, 2026</div>

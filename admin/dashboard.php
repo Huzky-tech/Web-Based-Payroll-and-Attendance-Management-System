@@ -95,28 +95,28 @@ include '../api/connection/db_config.php';
                     <div class="summary-icon blue"><i class="fas fa-user-group"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">Total Users</span>
-                        <span class="summary-value">-</span>
+                        <span class="summary-value summary-total-users">-</span>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon green"><i class="fas fa-shield-heart"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">System Health</span>
-                        <span class="summary-value">-</span>
+                        <span class="summary-value summary-system-health">-</span>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon purple"><i class="fas fa-hdd"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">Last Backup</span>
-                        <span class="summary-value">-</span>
+                        <span class="summary-value summary-last-backup">-</span>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon orange"><i class="fas fa-chart-line"></i></div>
                     <div class="summary-text">
                         <span class="summary-label">Active Users</span>
-                        <span class="summary-value">-</span>
+                        <span class="summary-value summary-active-users">-</span>
                     </div>
                 </div>
             </div>

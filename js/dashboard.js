@@ -7,19 +7,28 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('../api/get_dashboard_summary.php')
         .then(res => res.json())
         .then(data => {
-            // Populate summary grid
-            document.querySelectorAll('.summary-value')[0].textContent = data.summary.total_users;
-            document.querySelectorAll('.summary-value')[1].textContent = data.summary.system_health;
-            document.querySelectorAll('.summary-value')[2].textContent = data.summary.last_backup;
-            document.querySelectorAll('.summary-value')[3].textContent = data.summary.active_users;
+            // Check if dashboard elements exist (only on main dashboard page)
+            const totalUsersEl = document.querySelector('.summary-total-users');
+            const systemHealthEl = document.querySelector('.summary-system-health');
+            const lastBackupEl = document.querySelector('.summary-last-backup');
+            const activeUsersEl = document.querySelector('.summary-active-users');
+
+            if (totalUsersEl) totalUsersEl.textContent = data.summary.total_users;
+            if (systemHealthEl) systemHealthEl.textContent = data.summary.system_health;
+            if (lastBackupEl) lastBackupEl.textContent = data.summary.last_backup;
+            if (activeUsersEl) activeUsersEl.textContent = data.summary.active_users;
 
             // Populate KPIs
-            document.querySelector('.kpi-active-sites').textContent = data.kpis.active_sites;
-            document.querySelector('.kpi-at-capacity').innerHTML =
+            const kpiActiveSites = document.querySelector('.kpi-active-sites');
+            if (kpiActiveSites) kpiActiveSites.textContent = data.kpis.active_sites;
+            const kpiAtCapacity = document.querySelector('.kpi-at-capacity');
+            if (kpiAtCapacity) kpiAtCapacity.innerHTML =
                 `<i class="fas fa-circle-check" style="color:#16a34a;"></i> ${data.kpis.at_capacity}`;
-            document.querySelector('.kpi-needs-workers').innerHTML =
+            const kpiNeedsWorkers = document.querySelector('.kpi-needs-workers');
+            if (kpiNeedsWorkers) kpiNeedsWorkers.innerHTML =
                 `<i class="fas fa-circle-exclamation" style="color:#d97706;"></i> ${data.kpis.needs_workers}`;
-            document.querySelector('.kpi-attendance').innerHTML =
+            const kpiAttendance = document.querySelector('.kpi-attendance');
+            if (kpiAttendance) kpiAttendance.innerHTML =
                 `<span style="color:#6d28d9;">${data.kpis.avg_attendance}%</span>`;
 
             // Populate site grid
@@ -58,14 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate recent activity
             const tbody = document.querySelector('.table-card tbody');
+            if (!tbody) return;
             tbody.innerHTML = '';
             data.recent_activity.forEach(log => {
                 tbody.innerHTML += `
                     <tr>
                         <td>${log.Action}</td>
-                        <td>${log.email}</td>
-                        <td>${log.Details ?? '-'}</td>
-                        <td>${log.Date}</td>
+                        <td>${log.user}</td>
+                        <td>${log.target ?? '-'}</td>
+                        <td>${log.time}</td>
                     </tr>
                 `;
             });
