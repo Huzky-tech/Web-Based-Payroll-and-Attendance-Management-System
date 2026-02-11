@@ -1,5 +1,17 @@
 <?php
 include '../api/connection/db_config.php';
+
+// Load initial company settings
+$company_stmt = $conn->prepare("SELECT * FROM company_settings WHERE id = 1");
+$company_stmt->execute();
+$company_result = $company_stmt->get_result();
+$company_data = $company_result->fetch_assoc();
+
+// Load initial users
+$users_stmt = $conn->prepare("SELECT id, full_name, email, role, status, last_login FROM users ORDER BY id");
+$users_stmt->execute();
+$users_result = $users_stmt->get_result();
+$users_data = $users_result->fetch_all(MYSQLI_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="en">

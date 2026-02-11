@@ -25,7 +25,109 @@
         }
 
         function saveAll() {
-            alert('Save Changes placeholder');
+            // Save company settings
+            const companyForm = new FormData();
+            companyForm.append('company_name', document.querySelector('#company input[value*="Philippians"]').value || 'Philippians CDO Construction Company');
+            companyForm.append('tax_id', document.querySelector('#company input[value*="123"]').value || '123-45-6789');
+            companyForm.append('phone', document.querySelector('#company input[value*="555"]').value || '(555) 123-4567');
+            companyForm.append('email', document.querySelector('#company input[type="email"]').value || 'info@philippianscdo.com');
+            companyForm.append('address', document.querySelector('#company textarea').value || '123 Main Street, CDO City');
+
+            fetch('../api/update_company_settings.php', {
+                method: 'POST',
+                body: companyForm
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Company settings error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error saving company settings:', error));
+
+            // Save payroll settings
+            const payrollForm = new FormData();
+            payrollForm.append('pay_periods', document.querySelector('#payroll select').value);
+            payrollForm.append('philhealth_rate', document.querySelector('#payroll input[value*="3"]').value || '3');
+            payrollForm.append('pagibig_rate', document.querySelector('#payroll input[value*="2"]').value || '2');
+            payrollForm.append('tax_table', document.querySelector('#payroll select:last-of-type').value);
+            payrollForm.append('allow_overtime', document.querySelector('#payroll input[type="checkbox"]:checked').length > 0 ? '1' : '0');
+            payrollForm.append('allow_night_diff', document.querySelector('#payroll input[type="checkbox"]:checked').length > 1 ? '1' : '0');
+            payrollForm.append('overtime_rate', document.querySelector('#payroll input[value*="1.25"]').value || '1.25');
+            payrollForm.append('night_diff_rate', document.querySelector('#payroll input[value*="1.1"]').value || '1.1');
+
+            fetch('../api/update_payroll_settings.php', {
+                method: 'POST',
+                body: payrollForm
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Payroll settings error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error saving payroll settings:', error));
+
+            // Save notification settings
+            const notificationForm = new FormData();
+            notificationForm.append('email_notifications', document.querySelector('#notifications input[type="checkbox"]:checked').length > 0 ? '1' : '0');
+            notificationForm.append('in_system_notifications', document.querySelector('#notifications input[type="checkbox"]:checked').length > 1 ? '1' : '0');
+            notificationForm.append('email_digest_frequency', document.querySelector('#notifications select').value);
+
+            fetch('../api/update_notification_settings.php', {
+                method: 'POST',
+                body: notificationForm
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Notification settings error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error saving notification settings:', error));
+
+            // Save security settings
+            const securityForm = new FormData();
+            securityForm.append('password_expiry_days', document.querySelector('#security input[type="number"]:first-of-type').value || '90');
+            securityForm.append('min_password_length', document.querySelector('#security input[type="number"]:nth-of-type(2)').value || '8');
+            securityForm.append('max_login_attempts', document.querySelector('#security input[type="number"]:nth-of-type(3)').value || '5');
+            securityForm.append('session_timeout_minutes', document.querySelector('#security input[type="number"]:nth-of-type(4)').value || '30');
+
+            fetch('../api/update_security_settings.php', {
+                method: 'POST',
+                body: securityForm
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('Security settings error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error saving security settings:', error));
+
+            // Save system settings
+            const systemForm = new FormData();
+            systemForm.append('maintenance_mode', document.querySelector('#system input[type="checkbox"]:checked').length > 0 ? '1' : '0');
+            systemForm.append('debug_mode', document.querySelector('#system input[type="checkbox"]:checked').length > 1 ? '1' : '0');
+            systemForm.append('data_retention_days', document.querySelector('#system input[type="number"]').value || '365');
+            systemForm.append('backup_schedule', document.querySelector('#system select').value);
+            systemForm.append('timezone', document.querySelector('#system select:nth-of-type(2)').value);
+            systemForm.append('date_format', document.querySelector('#system select:nth-of-type(3)').value);
+            systemForm.append('time_format', document.querySelector('#system select:nth-of-type(4)').value);
+
+            fetch('../api/update_system_settings.php', {
+                method: 'POST',
+                body: systemForm
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('System settings error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error saving system settings:', error));
+
+            alert('Settings saved successfully!');
         }
 
         function openAddUserModal() {
@@ -132,37 +234,91 @@
                 return;
             }
 
-            const tbody = document.querySelector('#users table tbody');
-            const tr = document.createElement('tr');
-            const roleLabel = role === 'Worker' ? 'Worker' :
-                              role === 'Payroll Staff' ? 'Payroll' :
-                              role === 'Head Manager' ? 'Head' : 'Admin';
+            const formData = new FormData();
+            formData.append('full_name', name);
+            formData.append('email', email);
+            formData.append('role', role);
+            formData.append('password', pwd);
 
-            tr.innerHTML = `
-                <td><strong>${name}</strong><div class="muted">${email}</div></td>
-                <td><span class="badge" style="background:#fef3c7;color:#b45309;">${roleLabel}</span></td>
-                <td><span class="badge green">Active</span></td>
-                <td>Just now</td>
-                <td class="actions">
-                    <button class="icon-btn"><i class="fas fa-pen"></i></button>
-                    <button class="icon-btn"><i class="fas fa-copy"></i></button>
-                    <button class="icon-btn delete"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+            fetch('../api/add_user.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    loadUsers();
+                    closeAddUserModal();
+                }
+            })
+            .catch(error => console.error('Error adding user:', error));
+        }
 
-            // reset fields and close modal
-            document.getElementById('newUserName').value = '';
-            document.getElementById('newUserEmail').value = '';
-            document.getElementById('newUserRole').value = 'Worker';
-            document.getElementById('newUserPassword').value = '';
-            document.getElementById('newUserPasswordConfirm').value = '';
+        function loadUsers() {
+            fetch('../api/get_users.php')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tbody = document.querySelector('#users table tbody');
+                    tbody.innerHTML = '';
+                    data.data.forEach(user => {
+                        const tr = document.createElement('tr');
+                        const roleLabel = user.role === 'Worker' ? 'Worker' :
+                                          user.role === 'Payroll Staff' ? 'Payroll' :
+                                          user.role === 'Head Manager' ? 'Head' : 'Admin';
+                        const statusClass = user.status === 'Active' ? 'green' : 'red';
+                        const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
 
-            closeAddUserModal();
+                        tr.innerHTML = `
+                            <td><strong>${user.full_name}</strong><div class="muted">${user.email}</div></td>
+                            <td><span class="badge" style="background:#fef3c7;color:#b45309;">${roleLabel}</span></td>
+                            <td><span class="badge ${statusClass}">${user.status}</span></td>
+                            <td>${lastLogin}</td>
+                            <td class="actions">
+                                <button class="icon-btn" onclick="editUser(${user.id})"><i class="fas fa-pen"></i></button>
+                                <button class="icon-btn" onclick="copyUser(${user.id})"><i class="fas fa-copy"></i></button>
+                                <button class="icon-btn delete" onclick="deleteUser(${user.id})"><i class="fas fa-trash"></i></button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading users:', error));
+        }
+
+        function editUser(userId) {
+            alert('Edit user functionality not implemented yet');
+        }
+
+        function copyUser(userId) {
+            alert('Copy user functionality not implemented yet');
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to deactivate this user?')) {
+                const formData = new FormData();
+                formData.append('user_id', userId);
+
+                fetch('../api/delete_user.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    if (data.success) {
+                        loadUsers();
+                    }
+                })
+                .catch(error => console.error('Error deleting user:', error));
+            }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             updateDateTime();
             setInterval(updateDateTime, 60000);
+            loadUsers(); // Load users on page load
         });
  

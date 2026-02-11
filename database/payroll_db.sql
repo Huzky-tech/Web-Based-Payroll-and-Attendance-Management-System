@@ -346,4 +346,89 @@ CREATE TABLE PayrollStaffAssignment (
     FOREIGN KEY (SiteID) REFERENCES ProjectSite(SiteID)
 );
 
+/* =========================
+   SETTINGS TABLES
+========================= */
+
+-- Extend users table
+ALTER TABLE users ADD COLUMN full_name VARCHAR(255);
+ALTER TABLE users ADD COLUMN role ENUM('Worker','Payroll Staff','Head Manager','Admin') DEFAULT 'Worker';
+ALTER TABLE users ADD COLUMN status ENUM('Active','Inactive') DEFAULT 'Active';
+ALTER TABLE users ADD COLUMN last_login DATETIME;
+
+-- Company Settings
+CREATE TABLE company_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_name VARCHAR(255) DEFAULT 'Philippians CDO Construction Company',
+    tax_id VARCHAR(50) DEFAULT '123-45-6789',
+    phone VARCHAR(20) DEFAULT '(555) 123-4567',
+    email VARCHAR(255) DEFAULT 'info@philippianscdo.com',
+    address TEXT DEFAULT '123 Main Street, CDO City',
+    logo_path VARCHAR(255)
+);
+
+-- Payroll Settings
+CREATE TABLE payroll_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    pay_periods VARCHAR(50) DEFAULT 'Semi-monthly (1-15, 16-end)',
+    sss_rate DECIMAL(5,2) DEFAULT 0.00,
+    philhealth_rate DECIMAL(5,2) DEFAULT 3.00,
+    pagibig_rate DECIMAL(5,2) DEFAULT 2.00,
+    tax_table VARCHAR(50) DEFAULT 'Latest BIR Tax Table',
+    allow_overtime BOOLEAN DEFAULT TRUE,
+    allow_night_diff BOOLEAN DEFAULT TRUE,
+    overtime_rate DECIMAL(5,2) DEFAULT 1.25,
+    night_diff_rate DECIMAL(5,2) DEFAULT 1.10
+);
+
+-- Notification Settings
+CREATE TABLE notification_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    in_system_notifications BOOLEAN DEFAULT TRUE,
+    leave_request_updates BOOLEAN DEFAULT TRUE,
+    payroll_processing BOOLEAN DEFAULT TRUE,
+    attendance_issues BOOLEAN DEFAULT FALSE,
+    system_updates BOOLEAN DEFAULT FALSE,
+    daily_reports BOOLEAN DEFAULT FALSE,
+    email_digest_frequency VARCHAR(20) DEFAULT 'Daily'
+);
+
+-- Security Settings
+CREATE TABLE security_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    password_expiry_days INT DEFAULT 90,
+    min_password_length INT DEFAULT 8,
+    require_special_char BOOLEAN DEFAULT TRUE,
+    require_number BOOLEAN DEFAULT TRUE,
+    require_uppercase BOOLEAN DEFAULT TRUE,
+    max_login_attempts INT DEFAULT 5,
+    session_timeout_minutes INT DEFAULT 30,
+    enable_2fa BOOLEAN DEFAULT FALSE,
+    enable_ip_restriction BOOLEAN DEFAULT FALSE
+);
+
+-- System Settings
+CREATE TABLE system_settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    maintenance_mode BOOLEAN DEFAULT FALSE,
+    debug_mode BOOLEAN DEFAULT FALSE,
+    data_retention_days INT DEFAULT 365,
+    backup_schedule VARCHAR(20) DEFAULT 'Daily',
+    timezone VARCHAR(50) DEFAULT 'Asia/Manila (GMT+8)',
+    date_format VARCHAR(20) DEFAULT 'MM/DD/YYYY',
+    time_format VARCHAR(20) DEFAULT '12-hour (AM/PM)',
+    system_version VARCHAR(20) DEFAULT '1.0.5',
+    last_update DATE DEFAULT '2023-07-01',
+    server_environment VARCHAR(50) DEFAULT 'Production',
+    database_size VARCHAR(20) DEFAULT '125 MB'
+);
+
+-- Insert default data
+INSERT INTO company_settings (company_name, tax_id, phone, email, address) VALUES ('Philippians CDO Construction Company', '123-45-6789', '(555) 123-4567', 'info@philippianscdo.com', '123 Main Street, CDO City');
+INSERT INTO payroll_settings (pay_periods, philhealth_rate, pagibig_rate, tax_table, allow_overtime, allow_night_diff, overtime_rate, night_diff_rate) VALUES ('Semi-monthly (1-15, 16-end)', 3.00, 2.00, 'Latest BIR Tax Table', TRUE, TRUE, 1.25, 1.10);
+INSERT INTO notification_settings (email_notifications, in_system_notifications, leave_request_updates, payroll_processing) VALUES (TRUE, TRUE, TRUE, TRUE);
+INSERT INTO security_settings (password_expiry_days, min_password_length, require_special_char, require_number, require_uppercase, max_login_attempts, session_timeout_minutes) VALUES (90, 8, TRUE, TRUE, TRUE, 5, 30);
+INSERT INTO system_settings (maintenance_mode, debug_mode, data_retention_days, backup_schedule, timezone, date_format, time_format, system_version, last_update, server_environment, database_size) VALUES (FALSE, FALSE, 365, 'Daily', 'Asia/Manila (GMT+8)', 'MM/DD/YYYY', '12-hour (AM/PM)', '1.0.5', '2023-07-01', 'Production', '125 MB');
+
 SET FOREIGN_KEY_CHECKS = 1;
