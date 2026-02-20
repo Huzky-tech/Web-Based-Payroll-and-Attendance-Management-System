@@ -1,42 +1,15 @@
-# TODO: Implement Backend for admin/setting.php
+# Tasks Completed
 
-## Database Updates
-- [x] Update database/payroll_db.sql: Extend users table with full_name, role, status, last_login columns.
-- [x] Add company_settings table.
-- [x] Add payroll_settings table.
-- [x] Add notification_settings table.
-- [x] Add security_settings table.
-- [x] Add system_settings table.
-- [x] Insert default data into new tables.
+## Notification Settings Improvements
+- [x] 1. Added "Instant" option to Email Digest Frequency dropdown (admin/setting.php)
+- [x] 2. Added validation for notification settings (js/setting.js)
+- [x] 3. Added success confirmation message handling (js/setting.js)
 
-## API Endpoints Creation
-- [x] Create api/get_company_settings.php
-- [x] Create api/update_company_settings.php (handle logo upload)
-- [x] Create api/get_payroll_settings.php
-- [x] Create api/update_payroll_settings.php
-- [x] Create api/get_users.php
-- [x] Create api/add_user.php
-- [x] Create api/edit_user.php
-- [x] Create api/delete_user.php
-- [x] Create api/get_notification_settings.php
-- [x] Create api/update_notification_settings.php
-- [x] Create api/get_security_settings.php
-- [x] Create api/update_security_settings.php
-- [x] Create api/get_system_settings.php
-- [x] Create api/update_system_settings.php
-- [x] Create api/force_password_reset.php
-- [x] Create api/terminate_sessions.php
-- [x] Create api/backup_system.php
-- [x] Create api/clear_cache.php
-- [x] Create api/reset_settings.php
+## User Role System - Using Role Tables (Not Role Column)
+- [x] 1. Modified api/add_user.php to use role tables (admin, hr, payrollstaff, timekeeper, assistantmanager)
+- [x] 2. Modified api/edit_user.php to update role tables when user role changes
+- [x] 3. Modified api/get_users.php to fetch user roles from role tables
+- [x] 4. Removed role column from users table in database (fix_database.php ran successfully)
+- [x] 5. Updated database/payroll_db.sql schema to remove role column
 
-## Frontend Updates
-- [x] Modify admin/setting.php: Add PHP to load initial company info and users list on page load.
-- [x] Update js/setting.js: Add AJAX calls for loading data on page load and tab switch, handle save operations, logo upload.
-
-## Additional Setup
-- [x] Create uploads/ directory for logo storage.
-- [x] Test database updates.
-- [ ] Test API endpoints individually.
-- [ ] Test frontend-backend integration.
-- [ ] Handle errors and edge cases.
+The system now uses role-specific tables to manage user roles instead of a role column in the users table.

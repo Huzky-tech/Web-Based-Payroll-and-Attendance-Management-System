@@ -8,7 +8,7 @@ $company_result = $company_stmt->get_result();
 $company_data = $company_result->fetch_assoc();
 
 // Load initial users
-$users_stmt = $conn->prepare("SELECT id, full_name, email, role, status, last_login FROM users ORDER BY id");
+$users_stmt = $conn->prepare("SELECT id, full_name, email, status, last_login FROM users ORDER BY id");
 $users_stmt->execute();
 $users_result = $users_stmt->get_result();
 $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
@@ -65,34 +65,35 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="form-grid">
                     <div class="full-row">
                         <label>Company Name</label>
-                        <input type="text" value="Philippians CDO Construction Company">
+                        <input type="text" id="company_name" value="Philippians CDO Construction Company">
                     </div>
                     <div>
                         <label>Tax ID Number</label>
-                        <input type="text" value="123-45-6789">
+                        <input type="text" id="tax_id" value="123-45-6789">
                     </div>
                     <div>
                         <label>Phone Number</label>
-                        <input type="text" value="(555) 123-4567">
+                        <input type="text" id="phone" value="(555) 123-4567">
                     </div>
                     <div class="full-row">
                         <label>Email Address</label>
-                        <input type="email" value="info@philippianscdo.com">
+                        <input type="email" id="email" value="info@philippianscdo.com">
                     </div>
                     <div class="full-row">
                         <label>Address</label>
-                        <textarea>123 Main Street, CDO City</textarea>
+                        <textarea id="address">123 Main Street, CDO City</textarea>
                     </div>
                 </div>
                 <div style="margin-top:18px;">
                     <label>Company Logo</label>
                     <div style="margin-top:8px; display:flex; align-items:center; gap:12px;">
-                        <div style="width:70px; height:70px; border:1px dashed #d1d5db; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#6b7280;">
+                        <div id="logo_preview" style="width:70px; height:70px; border:1px dashed #d1d5db; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#6b7280;">
                             <i class="fas fa-image"></i>
                         </div>
-                        <button class="btn-secondary" onclick="alert('Upload placeholder')"><i class="fas fa-upload"></i>Upload Logo</button>
+                        <input type="file" id="company_logo" accept="image/jpeg,image/png,image/svg+xml" style="display:none" onchange="handleLogoPreview(this)">
+                        <button class="btn-secondary" onclick="document.getElementById('company_logo').click()"><i class="fas fa-upload"></i>Upload Logo</button>
                     </div>
-                    <div class="muted">Recommended: 200x200px, PNG or JPG format</div>
+                    <div class="muted">Recommended: 200x200px, PNG or JPG format (Max 2MB)</div>
                 </div>
             </div>
 
@@ -103,45 +104,47 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="form-grid">
                     <div>
                         <label>Pay Periods</label>
-                        <select>
-                            <option>Semi-monthly (1-15, 16-end)</option>
+                        <select id="pay_periods">
+                            <option value="Semi-monthly (1-15, 16-end)">Semi-monthly (1-15, 16-end)</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Weekly">Weekly</option>
                         </select>
                     </div>
                     <div>
                         <label>SSS Rate</label>
-                        <select>
-                            <option>Standard</option>
+                        <select id="sss_rate">
+                            <option value="Standard">Standard</option>
                         </select>
                     </div>
                     <div>
-                        <label>PhilHealth Rate</label>
-                        <input type="text" value="3%">
+                        <label>PhilHealth Rate (%)</label>
+                        <input type="text" id="philhealth_rate" value="3%">
                     </div>
                     <div>
-                        <label>Pag-IBIG Rate</label>
-                        <input type="text" value="2%">
+                        <label>Pag-IBIG Rate (%)</label>
+                        <input type="text" id="pagibig_rate" value="2%">
                     </div>
                     <div>
                         <label>Tax Table</label>
-                        <select>
-                            <option>Latest BIR Tax Table</option>
+                        <select id="tax_table">
+                            <option value="Latest BIR Tax Table">Latest BIR Tax Table</option>
                         </select>
                     </div>
                 </div>
                 <div style="margin-top:16px;">
                     <div class="section-title" style="font-size:16px; margin-bottom:8px;">Overtime & Special Rates</div>
                     <div class="pill-switch">
-                        <label class="checkbox-row"><input type="checkbox" checked>Allow Overtime</label>
-                        <label class="checkbox-row"><input type="checkbox" checked>Allow Night Differential</label>
+                        <label class="checkbox-row"><input type="checkbox" id="allow_overtime" checked onchange="handleOvertimeToggle()">Allow Overtime</label>
+                        <label class="checkbox-row"><input type="checkbox" id="allow_night_diff" checked onchange="handleNightDiffToggle()">Allow Night Differential</label>
                     </div>
                     <div class="form-grid" style="margin-top:12px;">
                         <div>
-                            <label>Overtime Rate</label>
-                            <input type="text" value="1.25x">
+                            <label>Overtime Rate (multiplier)</label>
+                            <input type="text" id="overtime_rate" value="1.25">
                         </div>
                         <div>
-                            <label>Night Differential Rate</label>
-                            <input type="text" value="1.1x">
+                            <label>Night Differential Rate (multiplier)</label>
+                            <input type="text" id="night_diff_rate" value="1.1">
                         </div>
                     </div>
                 </div>
@@ -162,51 +165,7 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td><strong>Worker User</strong><div class="muted">worker@example.com</div></td>
-                                <td><span class="badge" style="background:#fef3c7;color:#b45309;">Worker</span></td>
-                                <td><span class="badge green">Active</span></td>
-                                <td>2023-07-05 10:30 AM</td>
-                                <td class="actions">
-                                    <button class="icon-btn"><i class="fas fa-pen"></i></button>
-                                    <button class="icon-btn"><i class="fas fa-copy"></i></button>
-                                    <button class="icon-btn delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Payroll Staff</strong><div class="muted">payroll@example.com</div></td>
-                                <td><span class="badge" style="background:#fef3c7;color:#b45309;">Payroll</span></td>
-                                <td><span class="badge green">Active</span></td>
-                                <td>2023-07-04 09:15 AM</td>
-                                <td class="actions">
-                                    <button class="icon-btn"><i class="fas fa-pen"></i></button>
-                                    <button class="icon-btn"><i class="fas fa-copy"></i></button>
-                                    <button class="icon-btn delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Head Manager</strong><div class="muted">head@example.com</div></td>
-                                <td><span class="badge" style="background:#fef3c7;color:#b45309;">Head</span></td>
-                                <td><span class="badge green">Active</span></td>
-                                <td>2023-07-05 08:45 AM</td>
-                                <td class="actions">
-                                    <button class="icon-btn"><i class="fas fa-pen"></i></button>
-                                    <button class="icon-btn"><i class="fas fa-copy"></i></button>
-                                    <button class="icon-btn delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Admin User</strong><div class="muted">admin@example.com</div></td>
-                                <td><span class="badge" style="background:#fef3c7;color:#b45309;">Admin</span></td>
-                                <td><span class="badge green">Active</span></td>
-                                <td>2023-07-05 11:20 AM</td>
-                                <td class="actions">
-                                    <button class="icon-btn"><i class="fas fa-pen"></i></button>
-                                    <button class="icon-btn"><i class="fas fa-copy"></i></button>
-                                    <button class="icon-btn delete"><i class="fas fa-trash"></i></button>
-                                </td>
-                            </tr>
+                        <tbody id="usersTableBody">
                         </tbody>
                     </table>
                 </div>
@@ -221,25 +180,26 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="section-sub">Configure system notifications and alerts.</div>
                 <div class="section-title" style="font-size:16px;">Notification Channels</div>
                 <div class="pill-switch">
-                    <label class="checkbox-row"><input type="checkbox" checked>Email Notifications</label>
-                    <label class="checkbox-row"><input type="checkbox" checked>In-System Notifications</label>
+                    <label class="checkbox-row"><input type="checkbox" id="email_notifications" checked>Email Notifications</label>
+                    <label class="checkbox-row"><input type="checkbox" id="in_system_notifications" checked>In-System Notifications</label>
                 </div>
                 <div style="margin-top:16px;">
                     <div class="section-title" style="font-size:16px;">Notification Types</div>
                     <div class="pill-switch">
-                        <label class="checkbox-row"><input type="checkbox" checked>Leave Request Updates</label>
-                        <label class="checkbox-row"><input type="checkbox" checked>Payroll Processing</label>
-                        <label class="checkbox-row"><input type="checkbox">Attendance Issues</label>
-                        <label class="checkbox-row"><input type="checkbox">System Updates</label>
-                        <label class="checkbox-row"><input type="checkbox">Daily Reports</label>
+                        <label class="checkbox-row"><input type="checkbox" id="leave_request_updates" checked>Leave Request Updates</label>
+                        <label class="checkbox-row"><input type="checkbox" id="payroll_processing" checked>Payroll Processing</label>
+                        <label class="checkbox-row"><input type="checkbox" id="attendance_issues">Attendance Issues</label>
+                        <label class="checkbox-row"><input type="checkbox" id="system_updates">System Updates</label>
+                        <label class="checkbox-row"><input type="checkbox" id="daily_reports">Daily Reports</label>
                     </div>
                 </div>
                 <div style="margin-top:16px;" class="form-grid">
                     <div class="full-row">
-                        <label>Email Digest Frequency</label>
-                        <select>
-                            <option>Daily</option>
-                            <option>Weekly</option>
+<label>Email Digest Frequency</label>
+                        <select id="email_digest_frequency">
+                            <option value="Instant">Instant</option>
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
                         </select>
                     </div>
                 </div>
@@ -252,31 +212,31 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="form-grid">
                     <div>
                         <label>Password Expiry (days)</label>
-                        <input type="number" value="90">
+                        <input type="number" id="password_expiry_days" value="90">
                     </div>
                     <div>
                         <label>Minimum Password Length</label>
-                        <input type="number" value="8">
+                        <input type="number" id="min_password_length" value="8">
                     </div>
                 </div>
                 <div class="pill-switch" style="margin-top:14px;">
-                    <label class="checkbox-row"><input type="checkbox" checked>Require Special Character</label>
-                    <label class="checkbox-row"><input type="checkbox" checked>Require Number</label>
-                    <label class="checkbox-row"><input type="checkbox" checked>Require Uppercase Letter</label>
+                    <label class="checkbox-row"><input type="checkbox" id="require_special_char" checked>Require Special Character</label>
+                    <label class="checkbox-row"><input type="checkbox" id="require_number" checked>Require Number</label>
+                    <label class="checkbox-row"><input type="checkbox" id="require_uppercase" checked>Require Uppercase Letter</label>
                 </div>
                 <div class="form-grid" style="margin-top:16px;">
                     <div>
                         <label>Maximum Login Attempts</label>
-                        <input type="number" value="5">
+                        <input type="number" id="max_login_attempts" value="5">
                     </div>
                     <div>
                         <label>Session Timeout (minutes)</label>
-                        <input type="number" value="30">
+                        <input type="number" id="session_timeout_minutes" value="30">
                     </div>
                 </div>
                 <div class="pill-switch" style="margin-top:14px;">
-                    <label class="checkbox-row"><input type="checkbox">Enable Two-Factor Authentication</label>
-                    <label class="checkbox-row"><input type="checkbox">Enable IP Restriction</label>
+                    <label class="checkbox-row"><input type="checkbox" id="enable_2fa">Enable Two-Factor Authentication</label>
+                    <label class="checkbox-row"><input type="checkbox" id="enable_ip_restriction">Enable IP Restriction</label>
                 </div>
                 <div class="footer-actions">
                     <button class="btn-secondary" onclick="alert('Force Password Reset placeholder')"><i class="fas fa-key"></i>Force Password Reset</button>
@@ -291,18 +251,18 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
 
                 <div class="section-title" style="font-size:16px;">System Status</div>
                 <div class="pill-switch">
-                    <label class="checkbox-row"><input type="checkbox">Maintenance Mode</label>
-                    <label class="checkbox-row"><input type="checkbox">Debug Mode</label>
+                    <label class="checkbox-row"><input type="checkbox" id="maintenance_mode">Maintenance Mode</label>
+                    <label class="checkbox-row"><input type="checkbox" id="debug_mode">Debug Mode</label>
                 </div>
 
                 <div class="form-grid" style="margin-top:16px;">
                     <div>
                         <label>Data Retention Period (days)</label>
-                        <input type="number" value="365">
+                        <input type="number" id="data_retention_days" value="365">
                     </div>
                     <div>
                         <label>Backup Schedule</label>
-                        <select>
+                        <select id="backup_schedule">
                             <option>Daily</option>
                             <option>Weekly</option>
                         </select>
@@ -317,19 +277,19 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="form-grid">
                     <div>
                         <label>Timezone</label>
-                        <select>
+                        <select id="timezone">
                             <option>Asia/Manila (GMT+8)</option>
                         </select>
                     </div>
                     <div>
                         <label>Date Format</label>
-                        <select>
+                        <select id="date_format">
                             <option>MM/DD/YYYY</option>
                         </select>
                     </div>
                     <div class="full-row">
                         <label>Time Format</label>
-                        <select>
+                        <select id="time_format">
                             <option>12-hour (AM/PM)</option>
                             <option>24-hour</option>
                         </select>
@@ -416,6 +376,47 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
             <div class="modal-footer">
                 <button class="btn-light" onclick="closeAddUserModal()">Cancel</button>
                 <button class="btn-action" onclick="handleAddUser()">Add User</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal-overlay" id="editUserModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Edit User</div>
+                <button class="modal-close" onclick="closeEditUserModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+                <div>
+                    <label>Full Name</label>
+                    <input type="text" id="editUserName" placeholder="Enter full name">
+                </div>
+                <div>
+                    <label>Email Address</label>
+                    <input type="email" id="editUserEmail" placeholder="user@example.com">
+                </div>
+                <div>
+                    <label>Role</label>
+                    <select id="editUserRole">
+                        <option value="Worker">Worker</option>
+                        <option value="Payroll Staff">Payroll Staff</option>
+                        <option value="Head Manager">Head Manager</option>
+                        <option value="Admin">Administrator</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Status</label>
+                    <select id="editUserStatus">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-light" onclick="closeEditUserModal()">Cancel</button>
+                <button class="btn-action" onclick="handleEditUser()">Save Changes</button>
             </div>
         </div>
     </div>
