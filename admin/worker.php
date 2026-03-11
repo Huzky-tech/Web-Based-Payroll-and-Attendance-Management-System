@@ -15,34 +15,12 @@ include '../api/connection/db_config.php';
 
 
     <!-- Main Content -->
-    <div class="main-content">
-        <div class="top-header">
-            <div class="page-title">Worker Directory</div>
-            <div class="header-right">
-                <div class="date-time">
-                    <div class="date" id="currentDate">Thursday, January 8, 2026</div>
-                    <div class="time" id="currentTime">02:46 PM</div>
-                </div>
-                <div class="user-profile">
-                    <div class="user-avatar">A</div>
-                    <div class="user-info">
-                        <div class="user-name">admin</div>
-                        <div class="user-role">admin</div>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
-        </div>
-
+    <div class="main-content">  
         <div class="content-area">
-            <div class="breadcrumbs">
-                <a href="dashboard.html">Admin</a><span>></span><span>Worker Directory</span>
-            </div>
-
+           </div>
             <div class="page-header">
                 <div>
                     <h1>Worker Directory</h1>
-                    <p>Manage and monitor all construction workers</p>
                 </div>
                 <button class="btn-primary" id="btnAddWorker"><i class="fas fa-plus"></i><span>Add Worker</span></button>
             </div>

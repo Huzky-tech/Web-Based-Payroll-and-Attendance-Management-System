@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active Sites Management - Philippians CDO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/active_site.css">
+    <style>
+        :root {
+            --brand-slate: #0F172A;
+            --brand-blue: #2563EB;
+            --brand-green: #22C55E;
+            --brand-orange: #E67E22;
+            --bg-body: #F3F4F6;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --card-bg: #FFFFFF;
+        }
+
+        /* Assign Worker Modal Specifics */
+.summary-card-small {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #E5E7EB;
+}
+.summary-card-small small { display: block; color: #6B7280; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.summary-card-small .val { font-size: 20px; font-weight: 700; }
+
+.assign-filter-bar { display: flex; gap: 12px; margin-bottom: 16px; }
+.assign-search { width: 100%; padding: 10px 10px 10px 40px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; }
+.btn-add-temp { background: var(--brand-orange); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+
+.mini-select { padding: 6px 12px; border: 1px solid #D1D5DB; border-radius: 6px; font-size: 13px; background: white; }
+
+.worker-item {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+.worker-item.active-role { border: 1.5px solid #F59E0B; }
+.worker-item .avatar { width: 48px; height: 48px; background: #F3F4F6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #6B7280; }
+.id-tag { background: #F3F4F6; color: #6B7280; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+.status-pill { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.status-pill.available { background: #F3F4F6; color: #6B7280; }
+
+.role-tag.timekeeper { background: #FEF3C7; color: #92400E; font-size: 10px; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
+
+.btn-role-active { background: #F59E0B; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; }
+.btn-save-assignments { background: #10B981; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { display: flex; height: 100vh; background-color: var(--bg-body); color: var(--text-main); overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: var(--brand-slate); color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-brand { padding: 30px 24px; font-size: 20px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-link { display: flex; align-items: center; padding: 12px 24px; color: #94A3B8; text-decoration: none; font-size: 14px; transition: 0.2s; }
+        .nav-link.active { background: #1E293B; color: white; border-left: 4px solid var(--brand-blue); }
+        .nav-link i { margin-right: 12px; width: 20px; }
+
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+        .top-bar { background: white; padding: 16px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; }
+
+        .header-section { padding: 32px 40px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .header-text h1 { font-size: 24px; font-weight: 700; }
+        .header-text p { color: var(--text-muted); margin-top: 4px; }
+        
+        .btn-add { background: var(--brand-orange); color: white; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 0 40px 32px; }
+        .stat-card { background: white; padding: 24px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-info span { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+        .stat-info h2 { font-size: 32px; font-weight: 700; margin-top: 8px; }
+        .stat-icon { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+        /* Filter Bar */
+        .filter-bar { margin: 0 40px 24px; display: flex; gap: 16px; align-items: center; }
+        .search-input { flex: 1; padding: 12px 16px; border: 1px solid #D1D5DB; border-radius: 8px; }
+        .filter-select { padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; min-width: 150px; background: white; }
+
+        /* Sites Grid */
+        .sites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 24px; padding: 0 40px 40px; }
+        .site-card { background: white; border-radius: 12px; padding: 24px; border: 1px solid #E5E7EB; }
+        .site-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .badge-active { background: #DCFCE7; color: #166534; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        
+        .hours-box { background: #FFFBEB; border: 1px solid #FEF3C7; padding: 16px; border-radius: 8px; margin: 16px 0; }
+        .hours-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: #92400E; margin-bottom: 12px; }
+        .time-flex { display: flex; justify-content: space-around; align-items: center; text-align: center; }
+        .time-val { font-size: 18px; font-weight: 700; color: #451A03; }
+
+        .worker-row { display: flex; gap: 12px; margin-bottom: 16px; }
+        .worker-box { background: #F9FAFB; padding: 12px; border-radius: 8px; flex: 1; }
+        .worker-box label { font-size: 11px; color: var(--text-muted); display: block; }
+        .worker-box span { font-size: 18px; font-weight: 700; }
+
+        .capacity-bar { height: 8px; background: #E5E7EB; border-radius: 10px; overflow: hidden; margin: 8px 0 20px; }
+        .capacity-fill { height: 100%; background: var(--brand-green); width: 100%; }
+
+        .card-footer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .btn-outline { border: 1px solid #E5E7EB; background: #F9FAFB; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-primary-blue { background: var(--brand-blue); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-assign { background: var(--brand-green); color: white; width: 100%; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; width: 620px; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .modal-header { padding: 24px; border-bottom: 1px solid #F3F4F6; display: flex; justify-content: space-between; align-items: center; }
+        
+        .stepper { display: flex; align-items: center; justify-content: space-between; padding: 32px 60px; }
+        .step { text-align: center; color: #9CA3AF; flex: 1; position: relative; }
+        .step-circle { width: 36px; height: 36px; border: 2px solid #E5E7EB; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: 700; background: white; z-index: 2; position: relative; }
+        .step.active { color: var(--brand-orange); }
+        .step.active .step-circle { border-color: var(--brand-orange); }
+        .step.completed { color: var(--brand-green); }
+        .step.completed .step-circle { border-color: var(--brand-green); background: #DCFCE7; }
+        .step-line { position: absolute; top: 18px; left: 50%; width: 100%; height: 2px; background: #E5E7EB; z-index: 1; }
+        
+        .form-step { display: none; padding: 0 40px 32px; }
+        .form-step.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 14px; }
+        
+        .modal-footer { padding: 24px 40px; background: #F9FAFB; border-top: 1px solid #F3F4F6; display: flex; justify-content: space-between; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="sidebar-brand">Philippians CDO</div>
+        <a href="#" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+        <a href="#" class="nav-link active"><i class="fa-solid fa-building"></i> Active Sites</a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-users"></i> Employees</a>
+        <a href="#" class="nav-link"><i class="fa-solid fa-calendar-check"></i> Attendance</a>
+    </nav>
+
+    <div id="assignWorkersModal" class="modal-overlay">
+    <div class="modal-content" style="width: 900px; max-width: 95vw;">
+        <div class="modal-header">
+            <div>
+                <h2 style="font-size: 18px; font-weight: 700;">Assign Workers to <span id="assignSiteName" style="color: var(--brand-orange);">Road Street Site</span></h2>
+                <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Manage worker assignments and designate site roles</p>
+            </div>
+            <button class="close-modal" onclick="closeAssignModal()">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 24px; background: #F9FAFB;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px;">
+                <div class="summary-card-small">
+                    <small>Assigned Workers</small>
+                    <div class="val">10 <span style="font-weight: 400; color: #9CA3AF; font-size: 14px;">/ 10</span></div>
+                </div>
+                <div class="summary-card-small" style="border-left: 4px solid #FEF3C7;">
+                    <small><i class="fa-regular fa-clock" style="color: #D97706;"></i> Site Timekeeper</small>
+                    <div class="val" style="font-size: 16px;">Jane Smith</div>
+                </div>
+                <div class="summary-card-small" style="border-left: 4px solid #F3E8FF;">
+                    <small><i class="fa-regular fa-star" style="color: #7C3AED;"></i> Site Foreman</small>
+                    <div class="val" style="font-size: 16px;">Sarah Williams</div>
+                </div>
+                <div class="summary-card-small" style="border-left: 4px solid #DBEAFE;">
+                    <small><i class="fa-solid fa-location-dot" style="color: #2563EB;"></i> Site Location</small>
+                    <div class="val" style="font-size: 14px;">123 Road St, Cityville</div>
+                </div>
+            </div>
+
+            <div class="assign-filter-bar">
+                <div style="position: relative; flex: 1;">
+                    <i class="fa-solid fa-search" style="position: absolute; left: 12px; top: 12px; color: #9CA3AF;"></i>
+                    <input type="text" class="assign-search" placeholder="Search by name, ID, position, or address...">
+                </div>
+                <button class="btn-add-temp"><i class="fa-solid fa-user-plus"></i> Add Temporary Worker</button>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; align-items: center;">
+                <i class="fa-solid fa-filter" style="color: #6B7280; font-size: 14px;"></i>
+                <select class="mini-select"><option>All Positions</option></select>
+                <select class="mini-select"><option>All Status</option></select>
+                <select class="mini-select"><option>All Locations</option></select>
+                <label style="font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                    <input type="checkbox"> Near Site (< 10km)
+                </label>
+            </div>
+
+            <div class="worker-assign-list" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+                <div class="worker-item">
+                    <div class="avatar">J</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong>John Doe</strong>
+                            <span class="id-tag">001</span>
+                        </div>
+                        <div style="font-size: 12px; color: #6B7280;">Construction Worker</div>
+                        <div style="font-size: 11px; margin-top: 4px;">
+                            <i class="fa-solid fa-house" style="color: #9CA3AF;"></i> Cagayan de Oro City 
+                            <span style="color: #22C55E; margin-left: 8px;"><i class="fa-solid fa-location-dot"></i> 5.2km away</span>
+                        </div>
+                    </div>
+                    <span class="status-pill available">Available</span>
+                </div>
+                
+
+                <div class="worker-item active-role">
+                    <div class="avatar" style="background: #FEF3C7; color: #D97706;">J</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong>Jane Smith</strong>
+                            <span class="id-tag">002</span>
+                            <span class="role-tag timekeeper"><i class="fa-regular fa-clock"></i> Timekeeper</span>
+                        </div>
+                        <div style="font-size: 12px; color: #6B7280;">Electrician</div>
+                        <div style="font-size: 11px; margin-top: 4px;">
+                            <i class="fa-solid fa-house" style="color: #9CA3AF;"></i> Cagayan de Oro City 
+                            <span style="color: #22C55E; margin-left: 8px;"><i class="fa-solid fa-location-dot"></i> 3.1km away</span>
+                        </div>
+                    </div>
+                    <button class="btn-role-active"><i class="fa-solid fa-clock"></i> Site Timekeeper</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="padding: 16px 24px;">
+            <button class="btn-outline" onclick="closeAssignModal()">Cancel</button>
+            <button class="btn-save-assignments"><i class="fa-solid fa-floppy-disk"></i> Save Assignments</button>
+        </div>
+    </div>
+</div>
+
+    <div id="editSiteModal" class="modal-overlay">
+    <div class="modal-content" style="width: 700px;">
+        <div class="modal-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <strong>Edit Site - <span id="editSiteTitleDisplay">Road Street Site</span></strong>
+            </div>
+            <button onclick="closeEditModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#9CA3AF;">&times;</button>
+        </div>
+
+        <div class="modal-body" style="padding: 24px 40px; max-height: 70vh; overflow-y: auto;">
+            <form id="editSiteForm">
+                <div class="form-group">
+                    <label>Site Name</label>
+                    <input type="text" id="editSiteName" value="Road Street Site">
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <div style="background:#EFF6FF; padding:12px; border-radius:8px; display:flex; gap:10px; margin-bottom:12px; color:#1E40AF; font-size:13px;">
+                        <i class="fa-solid fa-circle-info"></i> Click on the map to update the pin location, or edit the address below.
+                    </div>
+                    <input type="text" id="editAddress" value="123 Road St, Cityville" style="margin-bottom: 12px;">
+                    <div class="map-container" style="height:200px; background:#f0f0f0; border-radius:8px; display:flex; align-items:center; justify-content:center; border: 1px solid #E5E7EB; color:#9CA3AF;">
+                        <i class="fa-solid fa-map-marked-alt" style="font-size: 24px; margin-right: 10px;"></i>
+                        <span>Interactive Map View (Leaflet Integration)</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="editDescription" rows="3" placeholder="Enter site description..."></textarea>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    <div class="form-group">
+                        <label>Required Workers</label>
+                        <input type="number" id="editWorkers" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Site Manager</label>
+                        <input type="text" id="editManager" value="John Smith">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="time" id="editStartTime" value="07:00">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="time" id="editEndTime" value="17:00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="date" id="editStartDate" value="2023-01-15">
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <select class="filter-select" style="width: 100%;" id="editStatus">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+
+                <div style="background: #FFFBEB; border: 1px solid #FEF3C7; padding: 20px; border-radius: 12px; margin-top: 24px;">
+                    <div style="display:flex; gap:12px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #D97706; margin-top: 4px;"></i>
+                        <div>
+                            <strong style="color: #92400E; font-size: 14px;">Mark Site as Complete</strong>
+                            <p style="color: #B45309; font-size: 12px; margin: 4px 0 16px;">Marking this site as complete will archive all related records (payroll, attendance, worker assignments) and move them to project history.</p>
+                            <button type="button" style="background: var(--brand-orange); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-circle-check"></i> Mark as Complete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button onclick="closeEditModal()" class="btn-outline">Cancel</button>
+            <button onclick="saveChanges()" class="btn-primary-blue" style="background: var(--brand-orange); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-floppy-disk"></i> Save Changes
+            </button>
+        </div>
+    </div>
+</div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <span style="font-weight: 600;">Active Sites</span>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <i class="fa-regular fa-bell"></i>
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #E5E7EB; display: flex; align-items: center; justify-content: center; font-weight: 700;">AU</div>
+                <span style="font-size: 14px; font-weight: 500;">Admin User</span>
+            </div>
+        </div>
+
+        <section class="header-section">
+            <div class="header-text">
+                <h1>Active Sites Management</h1>
+                <p>Monitor and manage all construction sites</p>
+            </div>
+            <button class="btn-add" onclick="openModal()"><i class="fa-solid fa-plus"></i> Add New Site</button>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-info"><span>Total Sites</span><h2>10</h2></div>
+                <div class="stat-icon" style="background: #DBEAFE; color: #2563EB;"><i class="fa-solid fa-building"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info"><span>Active Sites</span><h2 style="color: #059669;">9</h2></div>
+                <div class="stat-icon" style="background: #D1FAE5; color: #059669;"><i class="fa-solid fa-city"></i></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-info"><span>Total Workers</span><h2 style="color: #7C3AED;">665</h2></div>
+                <div class="stat-icon" style="background: #EDE9FE; color: #7C3AED;"><i class="fa-solid fa-users"></i></div>
+            </div>
+        </section>
+
+        <div class="filter-bar">
+            <input type="text" class="search-input" placeholder="Search sites by name, location, or manager...">
+            <span style="color: var(--text-muted); font-size: 14px;">Filters:</span>
+            <select class="filter-select"><option>All Status</option></select>
+            <select class="filter-select"><option>All Locations</option></select>
+        </div>
+
+<div id="siteCards" class="sites-grid">
+            <div class="site-card">
+                <div class="site-header">
+                    <strong style="font-size: 18px;">Road Street Site</strong>
+                    <span class="badge-active">active</span>
+                </div>
+                <p style="font-size: 14px; color: var(--text-muted);"><i class="fa-solid fa-location-dot"></i> 123 Road St, Cityville</p>
+                
+                <div class="hours-box">
+                    <div class="hours-header"><span><i class="fa-regular fa-clock"></i> Working Hours</span><span style="background:#FEF3C7; padding:2px 8px; border-radius:4px;">10h</span></div>
+                    <div class="time-flex">
+                        <div><div style="font-size:10px; color:#B45309;">START</div><div class="time-val">7:00 AM</div></div>
+                        <i class="fa-solid fa-arrow-right" style="color:#F59E0B;"></i>
+                        <div><div style="font-size:10px; color:#B45309;">END</div><div class="time-val">5:00 PM</div></div>
+                    </div>
+                </div>
+
+                <div class="worker-row">
+                    <div class="worker-box"><label>Assigned Workers</label><span>10</span></div>
+                    <div class="worker-box"><label>Target Capacity</label><span>10</span></div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:600;"><span>Capacity</span><span style="color:var(--brand-green);">100 %</span></div>
+                <div class="capacity-bar"><div class="capacity-fill"></div></div>
+
+                <div style="font-size:14px; border-top:1px solid #F3F4F6; padding-top:16px;">
+                    <div style="margin-bottom:8px;"><span style="color:var(--text-muted); font-size:12px;">Site Manager</span><br><strong>John Smith</strong></div>
+                    <div><span style="color:var(--text-muted); font-size:12px;">Timekeeper</span><br><strong>Alice Rivera</strong></div>
+                </div>
+
+                <div class="card-footer-btns">
+                    <button class="btn-outline"><i class="fa-regular fa-eye"></i> Details</button>
+                    <button class="btn-primary-blue"><i class="fa-regular fa-pen-to-square"></i> Edit</button>
+                </div>
+                <button class="btn-assign"><i class="fa-solid fa-user-plus"></i> Assign Workers</button>
+            </div>
+        </div>
+    </div>
+
+    
+    <div id="addSiteModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-building" style="color:var(--brand-orange);"></i> <strong>Add New Construction Site</strong></div>
+                <button onclick="closeModal()" style="border:none; background:none; font-size:20px; cursor:pointer; color:#9CA3AF;">&times;</button>
+            </div>
+
+            <div class="stepper">
+                <div class="step active" id="s1"><div class="step-circle">1</div><span>Details</span><div class="step-line"></div></div>
+                <div class="step" id="s2"><div class="step-circle">2</div><span>Location</span><div class="step-line"></div></div>
+                <div class="step" id="s3"><div class="step-circle">3</div><span>Operations</span><div class="step-line"></div></div>
+                <div class="step" id="s4"><div class="step-circle">4</div><span>Confirm</span></div>
+            </div>
+
+            <form id="siteForm">
+                <div class="form-step active" id="f1">
+                    <div class="form-group"><label>Site Name *</label><input type="text" placeholder="e.g. Downtown Office Complex"></div>
+                    <div class="form-group"><label>Site Manager *</label><input type="text"></div>
+                    <div class="form-group"><label>Description</label><textarea rows="3"></textarea></div>
+                </div>
+
+                <div class="form-step" id="f2">
+                    <div style="background:#EFF6FF; padding:12px; border-radius:8px; display:flex; gap:10px; margin-bottom:20px; color:#1E40AF; font-size:13px;">
+                        <i class="fa-solid fa-circle-info"></i> Pin the exact site location on the map.
+                    </div>
+                    <div class="form-group"><label>Address *</label><input type="text" value="Rodelsa Circle, CDO"></div>
+                    <div style="height:200px; background:#eee; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#999;">Map View Placeholder</div>
+                </div>
+
+                <div class="form-step" id="f3">
+                    <div class="form-group"><label>Required Workers *</label><input type="number" value="50"></div>
+                    <div class="form-group"><label>Start Date *</label><input type="date"></div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                        <div class="form-group"><label>Start Time</label><input type="time" value="07:00"></div>
+                        <div class="form-group"><label>End Time</label><input type="time" value="17:00"></div>
+                    </div>
+                </div>
+
+                <div class="form-step" id="f4" style="text-align:center;">
+                    <div style="width:60px; height:60px; background:#DCFCE7; color:#22C55E; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; font-size:24px;"><i class="fa-solid fa-check"></i></div>
+                    <h3>Review & Confirm</h3>
+                    <p style="color:var(--text-muted); margin-bottom:20px;">Review the site details before creating.</p>
+                    <div style="background:#F9FAFB; padding:20px; border-radius:12px; text-align:left;">
+                        <small style="color:var(--text-muted);">SITE NAME</small><div><strong>Downtown Project</strong></div>
+                    </div>
+                </div>
+            </form>
+
+            <div class="modal-footer">
+                <button onclick="prevStep()" id="backBtn" class="btn-outline">Cancel</button>
+                <button onclick="nextStep()" id="nextBtn" class="btn-primary-blue" style="background:var(--brand-orange);">Next <i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/active_site.js"></script>
+</body>
+</html>

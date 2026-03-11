@@ -1,6 +1,6 @@
 <?php
 include '../api/connection/db_config.php';
-?>s
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,41 +16,9 @@ include '../api/connection/db_config.php';
 
     <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Header -->
-        <div class="top-header">
-            <div class="page-title">Reports</div>
-            <div class="header-right">
-                <div class="date-time">
-                    <div class="date" id="currentDate">Thursday, January 8, 2026</div>
-                    <div class="time" id="currentTime">02:00 PM</div>
-                </div>
-                <button class="btn-action" onclick="exportReport()">
-                    <i class="fas fa-download"></i>
-                    Export Report
-                </button>
-                <button class="btn-action" onclick="printReport()">
-                    <i class="fas fa-print"></i>
-                    Print
-                </button>
-                <div class="user-profile">
-                    <div class="user-avatar"><i class="fas fa-user"></i></div>
-                    <div class="user-info">
-                        <div class="user-name">Admin User</div>
-                        <div class="user-role">Admin</div>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
-        </div>
-
         <!-- Content Area -->
         <div class="content-area">
             <h1 class="page-title">Reports</h1>
-
-            <!-- Report Selection Section -->
-            <div class="report-selection">
-                <h2 class="section-title">Reports</h2>
-                
                 <div class="report-type-label">Report Type</div>
                 <div class="report-type-cards">
                     <div class="report-type-card active" data-report="payroll" onclick="selectReportType('payroll')">

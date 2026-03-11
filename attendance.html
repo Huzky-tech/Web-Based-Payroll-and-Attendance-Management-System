@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philippians CDO - Attendance Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --sidebar-brown: #7B3F11;
+            --sidebar-hover: #63320D;
+            --accent-orange: #D35400;
+            --bg-light: #F4F7F6;
+            --text-dark: #333333;
+            --text-muted: #888888;
+            --white: #ffffff;
+            --border-color: #E0E0E0;
+            
+            /* Status Colors */
+            --status-present: #27AE60;
+            --status-present-bg: #E9F7EF;
+            --status-late: #F1C40F;
+            --status-late-bg: #FEF9E7;
+            --status-absent: #E74C3C;
+            --status-absent-bg: #FDEDEC;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-brown);
+            color: var(--white);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            padding: 0 25px 30px 25px;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-group {
+            margin-bottom: 25px;
+        }
+
+        .nav-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 0 25px 10px 25px;
+            text-transform: uppercase;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 25px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .nav-item i {
+            width: 25px;
+            font-size: 16px;
+        }
+
+        .nav-item:hover {
+            background-color: var(--sidebar-hover);
+        }
+
+        .nav-item.active {
+            background-color: var(--accent-orange);
+            color: var(--white);
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 25px 40px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .user-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .notification-icon {
+            position: relative;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .notif-dot {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--accent-orange);
+            color: white;
+            font-size: 10px;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* --- ATTENDANCE HEADER & FILTERS --- */
+        .page-title-box {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-row input, .filter-row select {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .export-btn {
+            margin-left: auto;
+            background: var(--white);
+            border: 1px solid var(--accent-orange);
+            color: var(--accent-orange);
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        /* --- CARDS GRID --- */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .project-card {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .project-card.active {
+            border: 2px solid var(--accent-orange);
+        }
+
+        .project-card h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .project-card .total-count {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .status-mini-row {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        .status-bar {
+            flex: 1;
+            height: 6px;
+            background: #eee;
+            margin: 0 10px;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .fill-bar { height: 100%; border-radius: 3px; }
+
+        /* --- TABLE --- */
+        .table-section {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th {
+            text-align: left;
+            font-size: 12px;
+            color: var(--text-muted);
+            padding: 15px 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 15px 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #f9f9f9;
+        }
+
+        .emp-info strong { display: block; color: var(--text-dark); }
+        .emp-info small { color: var(--text-muted); }
+
+        .status-pill {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-pill.present { background: var(--status-present-bg); color: var(--status-present); }
+        .status-pill.late { background: var(--status-late-bg); color: var(--status-late); }
+        .status-pill.absent { background: var(--status-absent-bg); color: var(--status-absent); }
+
+        .action-btns i {
+            margin-left: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">Philippians CDO</div>
+        
+        <div class="nav-group">
+            <div class="nav-label">OVERVIEW</div>
+            <a href="#" class="nav-item"><i class="fa-solid fa-gauge"></i> Dashboard</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">MANAGEMENT</div>
+            <a href="#" class="nav-item"><i class="fa-solid fa-users"></i> Employees</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Site Assignments</a>
+            <a href="#" class="nav-item active"><i class="fa-solid fa-calendar-check"></i> Attendance</a>
+        </div>
+
+        <div class="nav-group">
+            <div class="nav-label">OPERATIONS</div>
+            <a href="#" class="nav-item"><i class="fa-solid fa-circle-check"></i> Payroll Status</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-calculator"></i> Payroll Processing</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-building"></i> Active Sites</a>
+        </div>
+
+        <div class="nav-group" style="margin-top: auto;">
+            <a href="#" class="nav-item"><i class="fa-solid fa-gear"></i> Settings</a>
+            <a href="#" class="nav-item"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header>
+            <h1>Attendance Tracking</h1>
+            <div class="user-controls">
+                <div class="notification-icon">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notif-dot">2</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fa-solid fa-circle-user" style="font-size: 30px; color: #ccc;"></i>
+                    <span style="font-weight: 500; font-size: 14px;">Admin User</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="page-title-box">
+            <h2 style="font-size: 18px;">Attendance Tracking</h2>
+            <p style="font-size: 13px; color: #666; margin-top: 5px;">Payroll staff can access all worker attendance records, edit records, and generate reports.</p>
+            
+            <div class="filter-row">
+                <input type="date" value="2023-07-05">
+                <input type="text" placeholder="Search by name or ID..." style="width: 250px;">
+                <select><option>All Sites</option></select>
+                <select><option>All Departments</option></select>
+                <select><option>All Supervisors</option></select>
+                <button class="export-btn"><i class="fa-solid fa-file-export"></i> Export</button>
+            </div>
+        </section>
+
+        <div class="cards-grid">
+            <div class="project-card active">
+                <h3><i class="fa-solid fa-city" style="color: #f39c12;"></i> Main Street Project</h3>
+                <div class="total-count">6</div>
+                <div class="status-mini-row">
+                    <span>Present</span>
+                    <div class="status-bar"><div class="fill-bar" style="width: 50%; background: var(--status-present);"></div></div>
+                    <span>3</span>
+                </div>
+                <div class="status-mini-row">
+                    <span>Late</span>
+                    <div class="status-bar"><div class="fill-bar" style="width: 50%; background: var(--status-late);"></div></div>
+                    <span>3</span>
+                </div>
+            </div>
+
+            <div class="project-card">
+                <h3><i class="fa-solid fa-building" style="color: #f39c12;"></i> Downtown Office</h3>
+                <div class="total-count">4</div>
+                <div class="status-mini-row">
+                    <span>Present</span>
+                    <div class="status-bar"><div class="fill-bar" style="width: 100%; background: var(--status-present);"></div></div>
+                    <span>4</span>
+                </div>
+            </div>
+
+            <div class="project-card">
+                <h3><i class="fa-solid fa-house" style="color: #f39c12;"></i> Riverside Apts</h3>
+                <div class="total-count">7</div>
+                <div class="status-mini-row">
+                    <span>Present</span>
+                    <div class="status-bar"><div class="fill-bar" style="width: 70%; background: var(--status-present);"></div></div>
+                    <span>5</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="font-size: 14px;"><i class="fa-solid fa-city" style="color: #f39c12;"></i> Main Street Project</h3>
+                <span style="font-size: 11px; background: #eee; padding: 4px 8px; border-radius: 4px;">6 records</span>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Status</th>
+                        <th>Department</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="attendance-body">
+                    <tr>
+                        <td class="emp-info"><strong>John Doe</strong><small>ID: 001</small></td>
+                        <td>2023-07-05</td>
+                        <td>07:55 AM</td>
+                        <td>05:05 PM</td>
+                        <td><span class="status-pill present">Present</span></td>
+                        <td>Construction</td>
+                        <td class="action-btns"><i class="fa-regular fa-eye"></i> <i class="fa-solid fa-pencil"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="emp-info"><strong>Jane Smith</strong><small>ID: 002</small></td>
+                        <td>2023-07-05</td>
+                        <td>08:02 AM</td>
+                        <td>05:00 PM</td>
+                        <td><span class="status-pill late">Late</span></td>
+                        <td>Electrical</td>
+                        <td class="action-btns"><i class="fa-regular fa-eye"></i> <i class="fa-solid fa-pencil"></i></td>
+                    </tr>
+                    <tr>
+                        <td class="emp-info"><strong>Robert Brown</strong><small>ID: 005</small></td>
+                        <td>2023-07-05</td>
+                        <td>08:15 AM</td>
+                        <td>05:00 PM</td>
+                        <td><span class="status-pill late">Late</span></td>
+                        <td>Construction</td>
+                        <td class="action-btns"><i class="fa-regular fa-eye"></i> <i class="fa-solid fa-pencil"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        // Tab switching logic for cards
+        const cards = document.querySelectorAll('.project-card');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                cards.forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                
+                // You could dynamically update the table content here based on the site clicked
+                console.log("Viewing records for:", card.querySelector('h3').innerText);
+            });
+        });
+
+        // Simple Search Filter Simulation
+        const searchInput = document.querySelector('input[placeholder="Search by name or ID..."]');
+        searchInput.addEventListener('keyup', (e) => {
+            const term = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#attendance-body tr');
+            
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(term) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

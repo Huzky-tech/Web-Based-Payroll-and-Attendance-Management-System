@@ -13,3 +13,13 @@
 - [x] 5. Updated database/payroll_db.sql schema to remove role column
 
 The system now uses role-specific tables to manage user roles instead of a role column in the users table.
+
+# Active Site Fixes
+
+## In Progress
+- [ ] 1. Fix admin/active_site.php - Add sidebar, proper IDs and structure
+- [ ] 2. Fix js/active_site.js - Update to work with existing CSS classes
+- [ ] 3. Fix css/active_site.css - Add missing CSS classes if needed
+
+## Completed
+

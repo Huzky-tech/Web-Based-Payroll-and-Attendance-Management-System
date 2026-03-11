@@ -10,30 +10,11 @@
 <body>
     <!-- Main Content -->
     <div class="main-content">
-        <div class="top-header">
-            <h1 class="page-title">Payroll</h1>
-            <div class="header-right">
-                <div class="date-time">
-                    <div class="date" id="currentDate">Thursday, January 8, 2026</div>
-                    <div class="time" id="currentTime">02:46 PM</div>
-                </div>
-                <div class="user-profile">
-                    <div class="user-avatar"><i class="fas fa-user"></i></div>
-                    <div class="user-info">
-                        <div class="user-name">Admin User</div>
-                        <div class="user-role">Admin</div>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
-        </div>
-
         <div class="content-area">
             <!-- Site List Page -->
             <div class="page-view active" id="sitesPage">
                 <div class="page-header">
                     <h1>Construction Sites Assigned</h1>
-                    <p>Select a site to view and process payroll</p>
                 </div>
 
                 <div class="sites-container">

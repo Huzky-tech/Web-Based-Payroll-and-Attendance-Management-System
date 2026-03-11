@@ -13,65 +13,38 @@ include '../api/connection/db_config.php';
 </head>
 <body>
     <!-- Sidebar -->
-    <div class="sidebar">
+  <div class="sidebar">
         <div class="sidebar-header">
             <h2>Philippians CDO</h2>
         </div>
         <nav class="nav-menu">
-            <a href="dashboard.php" class="nav-item active">
-                <i class="fas fa-gauge"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="dashboard.php?page=employee" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'employee') ? 'active' : ''; ?>">
-                <i class="fas fa-users"></i>
-                <span>Employees</span>
-            </a>
-            <a href="dashboard.php?page=site_assign" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'site_assign') ? 'active' : ''; ?>">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Site Assignments</span>
-            </a>
-            <a href="dashboard.php?page=active_site" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'active_site') ? 'active' : ''; ?>">
-                <i class="fas fa-building"></i>
-                <span>Active Sites</span>
-            </a>
-            <a href="dashboard.php?page=worker" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'worker') ? 'active' : ''; ?>">
-                <i class="fas fa-user-group"></i>
-                <span>Worker Directory</span>
-            </a>
-            <a href="#" class="nav-item">
-                <i class="fas fa-calendar-check"></i>
-                <span>Attendance</span>
-            </a>
-            <a href="dashboard.php?page=payroll" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll') ? 'active' : ''; ?>">
-                <i class="fas fa-wallet"></i>
-                <span>Payroll</span>
-            </a>
-            <a href="dashboard.php?page=reports" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'reports') ? 'active' : ''; ?>">
-                <i class="fas fa-chart-bar"></i>
-                <span>Reports</span>
-            </a>
-            <a href="dashboard.php?page=audit" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'audit') ? 'active' : ''; ?>" >
-                <i class="fas fa-clipboard-list"></i>
-                <span>Audit Logs</span>
-            </a>
-            <a href="dashboard.php?page=setting" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'setting') ? 'active' : ''; ?>">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-            </a>
-            <a href="../index.php" class="nav-item">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
+            <div class="nav-section">OVERVIEW</div>
+            <a href="dashboard.php"class="nav-item <?php echo !isset($_GET['page']) ? 'active' : ''; ?>"><i class="fas fa-border-all"></i><span>Dashboard</span></a>
+            
+            <div class="nav-section">MANAGEMENT</div>
+            <a href="dashboard.php?page=employee"  class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'employee') ? 'active' : ''; ?>"><i class="far fa-user"></i><span>Employees</span></a>
+            <a href="dashboard.php?page=site_assign" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'site_assign') ? 'active' : ''; ?>"><i class="fas fa-map-marker-alt"></i><span>Site Assignments</span></a>
+            <a href="dashboard.php?page=attendance" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'attendance') ? 'active' : ''; ?>"><i class="far fa-calendar-check"></i><span>Attendance</span></a>
+            
+            <div class="nav-section">OPERATIONS</div>
+            <a href="dashboard.php?page=payroll_status" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll_status') ? 'active' : ''; ?>"><i class="fas fa-check-circle"></i><span>Payroll Status</span></a>
+            <a href="dashboard.php?page=payroll" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll') ? 'active' : ''; ?>"><i class="fas fa-file-invoice-dollar"></i><span>Payroll Processing</span></a>
+            <a href="dashboard.php?page=active_site" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'active_site') ? 'active' : ''; ?>"><i class="far fa-building"></i><span>Active Sites</span></a>
+            
+            <div class="nav-section">REPORTS & SETTINGS</div>
+            <a href="dashboard.php?page=reports" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'reports') ? 'active' : ''; ?>"><i class="far fa-chart-bar"></i><span>Reports</span></a>
+            <a href="dashboard.php?page=history" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'history') ? 'active' : ''; ?>"><i class="fas fa-history"></i><span>History</span></a>
+            <a href="dashboard.php?page=archive" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'archive') ? 'active' : ''; ?>"><i class="fas fa-archive"></i><span>Archive</span></a>
+            <a href="dashboard.php?page=audit" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'audit') ? 'active' : ''; ?>"><i class="fas fa-search"></i><span>Audit Logs</span></a>
+            <a href="dashboard.php?page=setting" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'setting') ? 'active' : ''; ?>"><i class="fas fa-cog"></i><span>Settings</span></a>
+            <a href="../index.php" class="nav-item"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
         </nav>
-        <div class="sidebar-footer">
-            © 2023 Philippians CDO
-        </div>
     </div>
 
-<?php if (!isset($_GET['page'])): ?>
+
     <div class="main-content">
         <div class="top-header">
-            <h1 class="page-title">Dashboard</h1>
+            <h1 class="page-title"></h1>
             <div class="header-right">
                 <div class="date-time">
                     <div class="date" id="currentDate">Sunday, January 4, 2026</div>
@@ -88,8 +61,10 @@ include '../api/connection/db_config.php';
             </div>
         </div>
 
+       
         <div class="dashboard-content">
-            <!-- SUMMARY GRID -->
+            <?php if (!isset($_GET['page'])): ?>  
+        <!-- SUMMARY GRID -->
             <div class="summary-grid">
                 <div class="summary-card">
                     <div class="summary-icon blue"><i class="fas fa-user-group"></i></div>
@@ -101,7 +76,7 @@ include '../api/connection/db_config.php';
                 <div class="summary-card">
                     <div class="summary-icon green"><i class="fas fa-shield-heart"></i></div>
                     <div class="summary-text">
-                        <span class="summary-label">System Health</span>
+                       <span class="summary-label">System Health</span>
                         <span class="summary-value summary-system-health">-</span>
                     </div>
                 </div>
@@ -198,7 +173,7 @@ include '../api/connection/db_config.php';
 <?php endif; ?>
 
 <?php
-$allowedPages = ['employee','site_assign','active_site','worker','reports','audit','setting','payroll'];
+$allowedPages = ['employee','site_assign','active_site','worker','reports','audit','setting','payroll','attendance'];
 if (isset($_GET['page']) && in_array($_GET['page'], $allowedPages)) {
     include $_GET['page'] . '.php';
 }

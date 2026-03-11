@@ -17,29 +17,11 @@ include '../api/connection/db_config.php';
     <!-- Main Content -->
     <div class="main-content">
         <div class="top-header">
-            <div class="page-title">Audit Logs <span id="totalLogs"></span></div>
-            <div class="header-right">
-                <div class="date-time">
-                    <div class="date" id="currentDate">Thursday, January 8, 2026</div>
-                    <div class="time" id="currentTime">02:05 PM</div>
-                </div>
-                <button class="btn-light" onclick="exportCSV()"><i class="fas fa-file-export"></i>Export CSV</button>
-                <button class="btn-action" onclick="createAlert()"><i class="fas fa-bell"></i>Create Alert</button>
-                <div class="user-profile">
-                    <div class="user-avatar"><i class="fas fa-user"></i></div>
-                    <div class="user-info">
-                        <div class="user-name">Admin User</div>
-                        <div class="user-role">Admin</div>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
+            <div class="page-title">Audit Logs </div>
         </div>
-
+</div>
         <div class="content-area">
-            <div class="section-sub">Monitor system usage, security events, and administrative actions.</div>
-
-            <div class="tabs">
+           <div class="tabs">
                 <button class="tab active" data-tab="activity" onclick="switchTab('activity')"><i class="fas fa-list"></i>Activity Logs</button>
                 <button class="tab" data-tab="analytics" onclick="switchTab('analytics')"><i class="fas fa-chart-line"></i>Analytics & Trends</button>
                 <button class="tab" data-tab="alerts" onclick="switchTab('alerts')"><i class="fas fa-bell"></i>Alert Rules</button>

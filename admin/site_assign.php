@@ -14,34 +14,12 @@ include '../api/connection/db_config.php';
 <body>
   <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Header -->
-        <div class="top-header">
-            <h1 class="page-title">Site Assignments</h1>
-            <div class="header-right">
-                <div class="date-time">
-                    <div class="date" id="currentDate">Wednesday, January 7, 2026</div>
-                    <div class="time" id="currentTime">05:23 PM</div>
-                </div>
-                <div>
-                <div class="user-profile">
-                    <div class="user-avatar"><i class="fas fa-user"></i></div>
-                    <div class="user-info">
-                        <div class="user-name">Admin User</div>
-                        <div class="user-role">Admin</div>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </div>
-        </div>
-        </div>
-
         <!-- Content Area -->
         <div class="content-area">
             <!-- Page Header -->
             <div class="page-header">
                 <h1>Site Assignments</h1>
-                <p class="page-subtitle">Manage payroll staff access to construction sites</p>
-            </div>
+                 </div>
 
             <!-- Summary Cards -->
             <div class="summary-cards">

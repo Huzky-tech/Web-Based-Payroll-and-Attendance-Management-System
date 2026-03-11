@@ -15,21 +15,6 @@ include '../api/connection/db_config.php';
     <!-- Main Content -->
     <div class="main-content">
         <!-- Top Header -->
-        <div class="top-header">
-            <h1 class="page-title">Active Sites</h1>
-            <div class="header-right">
-                <div class="date-time">
-                    <div class="date" id="currentDate">Thursday, January 8, 2026</div>
-                    <div class="time" id="currentTime">02:46 PM</div>
-                </div>
-                <div class="user-profile">
-                    <div class="user-avatar">A</div>
-                    <div class="user-info">
-                        <div class="user-name">admin</div>
-                        <div class="user-role">Manager</div>
-                    </div>
-                    <i class="fas fa-chevron-down"></i>
-                </div>
             </div>
         </div>
 
@@ -37,9 +22,6 @@ include '../api/connection/db_config.php';
         <div class="content-area">
             <!-- Breadcrumbs -->
             <div class="breadcrumbs">
-                <a href="dashboard.php">admin</a>
-                <span>></span>
-                <span>Active Sites Management</span>
             </div>
 
             <!-- Page Header -->
