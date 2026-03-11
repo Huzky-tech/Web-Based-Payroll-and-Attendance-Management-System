@@ -1,93 +1,96 @@
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // -- View Profile Modal Logic --
-            const viewModal = document.getElementById('employeeModal');
-            const viewBtns = document.querySelectorAll('.btn-view-employee');
-            const closeViewBtn = document.getElementById('closeViewModalBtn');
-
-            viewBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    viewModal.classList.add('show');
-                });
-            });
-
-            closeViewBtn.addEventListener('click', () => {
-                viewModal.classList.remove('show');
-            });
-
-            // -- Add New Employee Modal Logic --
-            const addModal = document.getElementById('addEmployeeModal');
-            const openAddBtn = document.getElementById('openAddModalBtn');
-            const closeAddBtn = document.getElementById('closeAddModalBtn');
-            const cancelAddBtn = document.getElementById('cancelAddBtn');
-
-            openAddBtn.addEventListener('click', () => {
-                addModal.classList.add('show');
-            });
-
-            const closeAddModal = () => {
-                addModal.classList.remove('show');
-            };
-
-            closeAddBtn.addEventListener('click', closeAddModal);
-            cancelAddBtn.addEventListener('click', closeAddModal);
-
-            // -- NEW: Edit Profile Modal Logic --
-            const editModal = document.getElementById('editProfileModal');
-            const closeEditBtn = document.getElementById('closeEditModalBtn');
-            const cancelEditBtn = document.getElementById('cancelEditBtn');
-            const saveEditBtn = document.getElementById('saveEditBtn');
+        // Update date and time
+        function updateDateTime() {
+            const now = new Date();
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
             
-            // This selects all the little orange pencil buttons AND the "Edit Profile" button at the top
-            const allEditButtons = document.querySelectorAll('.btn-action.edit, .header-actions .btn-secondary');
-
-            allEditButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Open the edit modal over the profile modal
-                    editModal.classList.add('show'); 
-                });
-            });
-
-            const closeEditModal = () => {
-                editModal.classList.remove('show');
-            };
-
-            closeEditBtn.addEventListener('click', closeEditModal);
-            cancelEditBtn.addEventListener('click', closeEditModal);
+            const day = days[now.getDay()];
+            const month = months[now.getMonth()];
+            const date = now.getDate();
+            const year = now.getFullYear();
             
-            saveEditBtn.addEventListener('click', () => {
-                // Here is where you would normally save to a database.
-                alert('Changes saved successfully!');
-                closeEditModal();
-            });
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+            
+            document.getElementById('currentDate').textContent = `${day}, ${month} ${date}, ${year}`;
+            document.getElementById('currentTime').textContent = `${hours}:${minutesStr} ${ampm}`;
+        }
 
-            // -- Global Click to Close Modals --
-            window.addEventListener('click', (e) => {
-                if (e.target === viewModal) {
-                    viewModal.classList.remove('show');
-                }
-                if (e.target === addModal) {
-                    addModal.classList.remove('show');
-                }
-                if (e.target === editModal) {
-                    editModal.classList.remove('show');
-                }
-            });
+        // Update time every minute
+        updateDateTime();
+        setInterval(updateDateTime, 60000);
 
-            // -- Tabs Logic Inside View Modal --
-            const tabItems = document.querySelectorAll('.modal-nav-item');
-            const tabContents = document.querySelectorAll('.modal-tab-content');
-
-            tabItems.forEach(item => {
-                item.addEventListener('click', () => {
-                    tabItems.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(c => c.classList.remove('active'));
-
-                    item.classList.add('active');
-
-                    const targetId = item.getAttribute('data-target');
-                    document.getElementById(targetId).classList.add('active');
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // Update tab active state
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show/hide tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
                 });
+                
+                if (tabName === 'employees') {
+                    document.getElementById('employeesTab').classList.add('active');
+                    document.getElementById('btnAddEmployee').style.display = 'flex';
+                } else if (tabName === 'assignments') {
+                    document.getElementById('assignmentsTab').classList.add('active');
+                    document.getElementById('btnAddEmployee').style.display = 'none';
+                }
+            });
+        });
+
+        // Add New Employee button
+        document.querySelector('.btn-add').addEventListener('click', function() {
+            console.log('Add New Employee clicked');
+            // Add your modal or navigation logic here
+        });
+
+        // Staff selection
+        document.querySelectorAll('.staff-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.staff-item').forEach(i => i.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                const staffName = this.querySelector('.staff-name').textContent;
+                const staffEmail = this.querySelector('.staff-email').textContent;
+                
+                // Update right panel header
+                document.querySelector('.sites-panel-title').textContent = `Assign Sites to ${staffName}`;
+                
+                // You can update the sites list here based on selected staff
+                console.log(`Selected: ${staffName} (${staffEmail})`);
+            });
+        });
+
+        // Site action buttons
+        document.querySelectorAll('.site-action').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.classList.contains('remove') ? 'Remove' : 'Add';
+                const siteName = this.closest('.site-item').querySelector('.site-name').textContent;
+                console.log(`${action} clicked for ${siteName}`);
+                // Add your action logic here
+            });
+        });
+
+        // Action buttons
+        document.querySelectorAll('.btn-action').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const action = this.classList.contains('view') ? 'View' : 'Delete';
+                const row = this.closest('tr');
+                const employeeName = row.querySelector('.employee-name').textContent;
+                console.log(`${action} clicked for ${employeeName}`);
+                // Add your action logic here
             });
         });
   
