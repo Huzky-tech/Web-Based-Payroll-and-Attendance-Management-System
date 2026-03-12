@@ -164,17 +164,27 @@ async function selectStaff(el, id) {
 
 // Assign site
 async function assignSiteToStaff(siteId) {
-    if (!selectedStaffId) { alert('Select a staff member first'); return; }
+    if (!selectedStaffId) { 
+        alert('Please select a worker first!');
+        return; 
+    }
     try {
-        const res = await fetch(API_BASE + 'assign_site_to_staff.php',{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({payroll_staff_id:selectedStaffId, site_id:siteId, user_id:currentUserId})
+        const res = await fetch(API_BASE + 'assign_worker.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ workerId: selectedStaffId, siteId: siteId })
         });
         const data = await res.json();
-        if (data.success) { alert('Site assigned'); loadDashboardStats(); } 
-        else alert('Failed: ' + data.message);
-    } catch(err){ console.error(err); }
+        if (data.success) {
+            alert('Worker assigned successfully!');
+            location.reload();  // Refresh to update counts
+        } else {
+            alert('Error: ' + data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Network error. Try again.');
+    }
 }
 
 // Modal functions
@@ -216,32 +226,36 @@ async function handleAddEmployeeSubmit(e) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM ready - handlers attached');
 
+    // Expose functions globally for onclick handlers
+    window.selectStaff = selectStaff;
+    window.assignSiteToStaff = assignSiteToStaff;
+
     const btnAddEmployee = document.getElementById('btnAddEmployee');
-const addEmployeeModal = document.getElementById('addEmployeeModal');
-const closeModalBtn = document.querySelector('.close-modal');
+    const addEmployeeModal = document.getElementById('addEmployeeModal');
+    const closeModalBtn = document.querySelector('.close-modal');
 
-if (btnAddEmployee && addEmployeeModal) {
-    btnAddEmployee.addEventListener('click', () => {
-        addEmployeeModal.classList.add('active');
-        const form = document.getElementById('addEmployeeForm');
-        if (form) form.reset();
-    });
-}
+    if (btnAddEmployee && addEmployeeModal) {
+        btnAddEmployee.addEventListener('click', () => {
+            addEmployeeModal.classList.add('active');
+            const form = document.getElementById('addEmployeeForm');
+            if (form) form.reset();
+        });
+    }
 
-if (closeModalBtn && addEmployeeModal) {
-    closeModalBtn.addEventListener('click', () => {
-        addEmployeeModal.classList.remove('active');
-    });
-}
-
-// Close modal when clicking outside content
-if (addEmployeeModal) {
-    addEmployeeModal.addEventListener('click', e => {
-        if (e.target === addEmployeeModal) {
+    if (closeModalBtn && addEmployeeModal) {
+        closeModalBtn.addEventListener('click', () => {
             addEmployeeModal.classList.remove('active');
-        }
-    });
-}
+        });
+    }
+
+    // Close modal when clicking outside content
+    if (addEmployeeModal) {
+        addEmployeeModal.addEventListener('click', e => {
+            if (e.target === addEmployeeModal) {
+                addEmployeeModal.classList.remove('active');
+            }
+        });
+    }
 
     updateDateTime();
     setInterval(updateDateTime, 60000);
@@ -271,7 +285,7 @@ if (addEmployeeModal) {
 
     // Modal close
     document.querySelector('.close-modal')?.addEventListener('click', closeModal);
-document.getElementById('addEmployeeModal')?.addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+    document.getElementById('addEmployeeModal')?.addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
 
     // Form submission
     const addEmployeeForm = document.getElementById('addEmployeeForm');
@@ -279,7 +293,7 @@ document.getElementById('addEmployeeModal')?.addEventListener('click', e => { if
         addEmployeeForm.addEventListener('submit', handleAddEmployeeSubmit);
     }
 
-    // Staff selection
+    // Staff selection listeners
     document.querySelectorAll('.staff-item').forEach(item => {
         item.addEventListener('click', function() {
             const staffId = parseInt(this.dataset.staff);
@@ -287,13 +301,13 @@ document.getElementById('addEmployeeModal')?.addEventListener('click', e => { if
         });
     });
 
-    // Site buttons (example: assign/remove)
+    // Site buttons listeners
     document.querySelectorAll('.site-action').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             const siteItem = this.closest('.site-item');
-            const siteId = siteItem?.dataset.siteId;
-            if(siteId) assignSiteToStaff(parseInt(siteId));
+            const siteId = siteItem?.dataset.siteId || parseInt(this.dataset.siteId);
+            if(siteId) assignSiteToStaff(siteId);
         });
     });
 
