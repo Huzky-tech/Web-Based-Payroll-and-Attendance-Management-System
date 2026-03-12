@@ -1,5 +1,182 @@
 <?php
 include '../api/connection/db_config.php';
+
+/* ============================
+   GET TOTAL PAYROLL STAFF
+============================ */
+function getTotalPayrollStaff($conn){
+$sql = "SELECT COUNT(*) as total FROM payrollstaff";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+    return $row['total'];
+}
+
+
+/* ============================
+   GET TOTAL ACTIVE SITES
+============================ */
+function getActiveSites($conn){
+$sql = "SELECT COUNT(*) as total FROM projectsite WHERE Status='active'";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+    return $row['total'];
+}
+
+
+/* ============================
+   GET TOTAL ASSIGNMENTS
+============================ */
+function getTotalAssignments($conn){
+$sql = "SELECT COUNT(*) as total FROM payrollstaffassignment";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+    return $row['total'];
+}
+
+
+/* ============================
+   GET ALL PAYROLL STAFF
+============================ */
+function getPayrollStaff($conn){
+
+$sql = "SELECT u.id as user_id, u.full_name as name, u.email,
+            COUNT(psa.SiteID) as total_sites
+            FROM users u 
+            INNER JOIN payrollstaff ps ON u.id = ps.UserID
+            LEFT JOIN payrollstaffassignment psa ON ps.PayrollStaff_ID = psa.PayrollStaff_ID
+            GROUP BY u.id";
+
+    $result = mysqli_query($conn,$sql);
+
+    $staff = [];
+
+    while($row = mysqli_fetch_assoc($result)){
+        $staff[] = $row;
+    }
+
+    return $staff;
+}
+
+
+/* ============================
+   GET STAFF SITE ASSIGNMENTS
+============================ */
+function getStaffAssignments($conn,$staff_id){
+
+$sql = "SELECT p.SiteID as id, p.Site_Name as site_name
+            FROM payrollstaffassignment psa
+            JOIN projectsite p ON psa.SiteID = p.SiteID
+            WHERE psa.PayrollStaff_ID IN (SELECT PayrollStaff_ID FROM payrollstaff WHERE UserID='$staff_id')";
+
+
+
+    $result = mysqli_query($conn,$sql);
+
+    $sites = [];
+
+    while($row = mysqli_fetch_assoc($result)){
+        $sites[] = $row;
+    }
+
+    return $sites;
+}
+
+
+/* ============================
+   ASSIGN SITE TO STAFF
+============================ */
+function assignSiteToStaff($conn,$staff_id,$site_id){
+
+// Get PayrollStaff_ID from user_id
+    $staff_query = "SELECT PayrollStaff_ID FROM payrollstaff WHERE UserID='$staff_id'";
+    $staff_result = mysqli_query($conn, $staff_query);
+    if(mysqli_num_rows($staff_result) == 0){
+        return "no_staff";
+    }
+    $staff_row = mysqli_fetch_assoc($staff_result);
+    $payroll_staff_id = $staff_row['PayrollStaff_ID'];
+
+    $check = "SELECT * FROM payrollstaffassignment 
+              WHERE PayrollStaff_ID='$payroll_staff_id' 
+              AND SiteID='$site_id'";
+    $result = mysqli_query($conn,$check);
+
+    if(mysqli_num_rows($result) > 0){
+        return "already_assigned";
+    }
+
+    $sql = "INSERT INTO payrollstaffassignment (PayrollStaff_ID, SiteID)
+            VALUES('$payroll_staff_id','$site_id')";
+
+
+
+    if(mysqli_query($conn,$sql)){
+        return "success";
+    }else{
+        return "error";
+    }
+
+}
+
+
+/* ============================
+   REMOVE SITE ASSIGNMENT
+============================ */
+function removeSiteAssignment($conn,$staff_id,$site_id){
+
+// Get PayrollStaff_ID from user_id
+    $staff_query = "SELECT PayrollStaff_ID FROM payrollstaff WHERE UserID='$staff_id'";
+    $staff_result = mysqli_query($conn, $staff_query);
+    if(mysqli_num_rows($staff_result) == 0){
+        return "no_staff";
+    }
+    $staff_row = mysqli_fetch_assoc($staff_result);
+    $payroll_staff_id = $staff_row['PayrollStaff_ID'];
+
+    $sql = "DELETE FROM payrollstaffassignment
+            WHERE PayrollStaff_ID='$payroll_staff_id'
+            AND SiteID='$site_id'";
+
+
+
+    if(mysqli_query($conn,$sql)){
+        return "removed";
+    }else{
+        return "error";
+    }
+
+}
+
+
+/* ============================
+   GET AUDIT LOG
+============================ */
+function getAssignmentAuditLog($conn){
+
+$sql = "SELECT u.full_name as name, p.Site_Name as site_name, al.Action, al.Date as created_at
+            FROM audit_logs al
+            LEFT JOIN users u ON al.UserID = u.id
+            LEFT JOIN payrollstaffassignment psa ON al.Details LIKE CONCAT('%', psa.staffAssignID, '%')
+            LEFT JOIN projectsite p ON psa.SiteID = p.SiteID
+            WHERE al.Action LIKE '%assign%' OR al.Action LIKE '%site%'
+            ORDER BY al.Date DESC
+            LIMIT 50";
+
+
+
+    $result = mysqli_query($conn,$sql);
+
+    $logs = [];
+
+    while($row = mysqli_fetch_assoc($result)){
+        $logs[] = $row;
+    }
+
+    return $logs;
+}
+
+
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -32,7 +209,9 @@ include '../api/connection/db_config.php';
                     </div>
                     <div class="summary-content">
                         <div class="summary-label">Total Payroll Staff</div>
-                        <div class="summary-value">4</div>
+                       <div class="summary-value">
+<?php echo getTotalPayrollStaff($conn); ?>
+</div>
                     </div>
                 </div>
                 <div class="summary-card">
@@ -41,7 +220,9 @@ include '../api/connection/db_config.php';
                     </div>
                     <div class="summary-content">
                         <div class="summary-label">Active Sites</div>
-                        <div class="summary-value">3</div>
+                        <div class="summary-value">
+<?php echo getActiveSites($conn); ?>
+</div>
                     </div>
                 </div>
                 <div class="summary-card">
@@ -50,7 +231,9 @@ include '../api/connection/db_config.php';
                     </div>
                     <div class="summary-content">
                         <div class="summary-label">Total Assignments</div>
-                        <div class="summary-value">1</div>
+                        <div class="summary-value">
+<?php echo getTotalAssignments($conn); ?>
+</div>
                     </div>
                 </div>
             </div>
