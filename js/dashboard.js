@@ -33,6 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate site grid
             const siteGrid = document.querySelector('.site-grid');
+            if (!siteGrid) {
+                console.warn('Site grid container not found on page');
+                return;
+            }
             siteGrid.innerHTML = '';
             data.sites.forEach(site => {
                 const workersNeeded = site.Required_Workers - site.Current_Workers;
@@ -62,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 `;
-                siteGrid.innerHTML += siteCard;
+                siteGrid.insertAdjacentHTML('beforeend', siteCard);
             });
 
             // Populate recent activity

@@ -20,6 +20,7 @@ $sql = "SELECT
         LEFT JOIN workerstatus ws ON w.WorkerStatusID = ws.WorkerStatusID
         LEFT JOIN workerassignment wa ON w.WorkerID = wa.WorkerID
         LEFT JOIN projectsite ps ON wa.SiteID = ps.SiteID
+        WHERE w.RateType = 'Worker'     -- Add this line to filter only workers
         ORDER BY w.Last_Name, w.First_Name";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
@@ -43,7 +44,7 @@ $staffCount = 0;
 $activeSitesCount = 0;
 $assignmentsCount = 0;
 
-$staffSql = "SELECT COUNT(*) as cnt FROM payrollstaff";
+$staffSql = "SELECT COUNT(*) as cnt FROM worker WHERE RateType = 'Worker'";
 $staffResult = $conn->query($staffSql);
 if ($staffResult) $staffCount = $staffResult->fetch_assoc()['cnt'] ?? 0;
 
@@ -51,20 +52,23 @@ $activeSql = "SELECT COUNT(*) as cnt FROM projectsite WHERE LOWER(Status) = 'act
 $activeResult = $conn->query($activeSql);
 if ($activeResult) $activeSitesCount = $activeResult->fetch_assoc()['cnt'] ?? 0;
 
-$assignSql = "SELECT COUNT(*) as cnt FROM payrollstaffassignment";
+$assignSql = "SELECT COUNT(*) as cnt FROM workerassignment";
 $assignResult = $conn->query($assignSql);
 if ($assignResult) $assignmentsCount = $assignResult->fetch_assoc()['cnt'] ?? 0;
 
-// Get payroll staff
-$payrollStaff = [];
-$psSql = "SELECT ps.PayrollStaff_ID, u.full_name, u.email 
-          FROM payrollstaff ps 
-          JOIN users u ON ps.UserID = u.id 
-          ORDER BY u.full_name";
+// Get only workers for assignment panel (exclude payroll/admin users)
+$workers = [];
+$psSql = "SELECT 
+            WorkerID,
+            CONCAT(First_Name, ' ', Last_Name) AS full_name,
+            Phone AS email
+          FROM worker
+          WHERE RateType = 'Worker'  -- only workers
+          ORDER BY First_Name";
 $psResult = $conn->query($psSql);
 if ($psResult->num_rows > 0) {
     while ($row = $psResult->fetch_assoc()) {
-        $payrollStaff[] = $row;
+        $workers[] = $row;
     }
 }
 
@@ -237,7 +241,7 @@ if ($allSitesResult->num_rows > 0) {
                         </div>
                         <div class="overview-card-content">
                             <div class="overview-card-value" id="staffCount"><?php echo $staffCount; ?></div>
-                            <div class="overview-card-label">Total Payroll Staff</div>
+                            <div class="overview-card-label">Total Workers</div>
                         </div>
                     </div>
                     <div class="overview-card">
@@ -265,7 +269,7 @@ if ($allSitesResult->num_rows > 0) {
                     <div class="assignment-header">
                         <div>
                             <h3 class="assignment-title">Staff Assignment Management</h3>
-                            <p class="assignment-subtitle">Assign payroll staff to specific construction sites</p>
+<p class="assignment-subtitle">Assign workers to specific construction sites</p>
                         </div>
                         <button class="btn-audit">View Audit Log</button>
                     </div>
@@ -275,27 +279,29 @@ if ($allSitesResult->num_rows > 0) {
                         <div class="staff-list-panel">
                             <div class="staff-search">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search payroll staff...">
+                                <input type="text" placeholder="Search workers...">
                             </div>
-                            <div class="staff-list" id="staffList">
-                                <?php if (count($payrollStaff) > 0): ?>
-                                    <?php foreach ($payrollStaff as $index => $staff): ?>
-                                    <div class="staff-item <?php echo $index === 0 ? 'selected' : ''; ?>" data-staff="<?php echo $staff['PayrollStaff_ID']; ?>" onclick="selectStaff(this, <?php echo $staff['PayrollStaff_ID']; ?>)">
-                                        <div class="staff-item-header">
-                                            <div class="staff-name"><?php echo htmlspecialchars($staff['full_name'] ?? 'Staff Member'); ?></div>
-                                        </div>
-                                        <div class="staff-email"><?php echo htmlspecialchars($staff['email'] ?? ''); ?></div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                <div class="staff-item">
-                                    <div class="staff-item-header">
-                                        <div class="staff-name">No Payroll Staff</div>
-                                    </div>
-                                    <div class="staff-email">Add payroll staff to assign sites</div>
-                                </div>
-                                <?php endif; ?>
-                            </div>
+                       <div class="staff-list" id="staffList">
+    <?php if (count($workers) > 0): ?>
+        <?php foreach ($workers as $index => $worker): ?>
+        <div class="staff-item <?php echo $index === 0 ? 'selected' : ''; ?>"
+             data-staff="<?php echo $worker['WorkerID']; ?>"
+             onclick="selectStaff(this, <?php echo $worker['WorkerID']; ?>)">
+            <div class="staff-item-header">
+                <div class="staff-name"><?php echo htmlspecialchars($worker['full_name']); ?></div>
+            </div>
+            <div class="staff-email"><?php echo htmlspecialchars($worker['email']); ?></div>
+        </div>
+        <?php endforeach; ?>
+    <?php else: ?>
+        <div class="staff-item">
+            <div class="staff-item-header">
+                <div class="staff-name">No Workers</div>
+            </div>
+            <div class="staff-email">Add workers to assign sites</div>
+        </div>
+    <?php endif; ?>
+</div>
                         </div>
 
                         <!-- Right Panel - Site Assignments -->
@@ -393,4 +399,3 @@ if ($allSitesResult->num_rows > 0) {
 <?php
 $conn->close();
 ?>
-

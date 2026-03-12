@@ -327,7 +327,6 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div>
                     <label>Role</label>
                     <select id="newUserRole">
-                        <option value="Worker">Worker</option>
                         <option value="Payroll Staff">Payroll Staff</option>
                         <option value="Head Manager">Head Manager</option>
                         <option value="Admin">Administrator</option>
@@ -381,7 +380,7 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div>
                     <label>Role</label>
                     <select id="editUserRole">
-                        <option value="Worker">Worker</option>
+                        <option value="Timekeeper">Timekeeper</option>
                         <option value="Payroll Staff">Payroll Staff</option>
                         <option value="Head Manager">Head Manager</option>
                         <option value="Admin">Administrator</option>

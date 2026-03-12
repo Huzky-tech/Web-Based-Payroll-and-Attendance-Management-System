@@ -478,4 +478,3 @@ function debounce(func, wait) {
 // Initialize - the data is already rendered by PHP
 // Only add JavaScript interactivity
 console.log('Employee Management initialized');
-
