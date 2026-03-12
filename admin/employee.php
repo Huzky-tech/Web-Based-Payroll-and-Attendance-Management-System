@@ -98,7 +98,7 @@ if ($allSitesResult->num_rows > 0) {
     <title>Employees - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/employee.css">
-    <script src="../js/employee.js" defer></script>
+<script src="../js/employee.js" defer></script>
 </head>
 <body>
 
@@ -123,9 +123,8 @@ if ($allSitesResult->num_rows > 0) {
                     </button>
                 </div>
                 <button class="btn-add" id="btnAddEmployee">
-                    <i class="fas fa-plus"></i>
-                    <span>Add New Employee</span>
-                </button>
+    <i class="fas fa-plus"></i> Add New Employee
+</button>
             </div>
 
             <!-- All Employees Tab Content -->
@@ -351,48 +350,48 @@ if ($allSitesResult->num_rows > 0) {
         </div>
     </div>
 
-    <!-- Add Employee Modal -->
-    <div id="addEmployeeModal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Add New Employee</h2>
-                <button class="close-modal" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="addEmployeeForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>First Name</label>
-                            <input type="text" name="first_name" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Last Name</label>
-                            <input type="text" name="last_name" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Position</label>
-                            <input type="text" name="position">
-                        </div>
-                        <div class="form-group">
-                            <label>Salary</label>
-                            <input type="number" name="salary" step="0.01">
-                        </div>
+  <!-- Add Employee Modal -->
+<div id="addEmployeeModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add New Employee</h2>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addEmployeeForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" name="first_name" required>
                     </div>
                     <div class="form-group">
-                        <label>Phone</label>
-                        <input type="text" name="phone">
+                        <label>Last Name</label>
+                        <input type="text" name="last_name" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Position</label>
+                        <input type="text" name="position">
                     </div>
                     <div class="form-group">
-                        <label>Join Date</label>
-                        <input type="date" name="join_date" value="<?php echo date('Y-m-d'); ?>">
+                        <label>Salary</label>
+                        <input type="number" name="salary" step="0.01">
                     </div>
-                    <button type="submit" class="btn-submit">Add Employee</button>
-                </form>
-            </div>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" name="phone">
+                </div>
+                <div class="form-group">
+                    <label>Join Date</label>
+                    <input type="date" name="join_date" value="<?php echo date('Y-m-d'); ?>">
+                </div>
+                <button type="submit" class="btn-submit">Add Employee</button>
+            </form>
         </div>
     </div>
+</div>
 </body>
 </html>
 
