@@ -1,7 +1,7 @@
 <?php
 /**
- * Get All Employees API
- * Retrieve all employees from the database and return them as JSON
+ * Filter Employees by Site API
+ * Returns employees assigned to a specific construction site
  */
 
 header('Content-Type: application/json');
@@ -10,6 +10,13 @@ include 'connection/db_config.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    $siteId = $_GET['site_id'] ?? 0;
+    
+    if (empty($siteId)) {
+        echo json_encode(['success' => false, 'message' => 'Site ID is required']);
+        exit;
+    }
+    
     $sql = "SELECT 
                 w.WorkerID,
                 w.First_Name,
@@ -17,7 +24,6 @@ if ($method === 'GET') {
                 CONCAT(w.First_Name, ' ', w.Last_Name) AS full_name,
                 w.RateType,
                 w.RateAmount AS salary,
-                w.Phone,
                 w.DateHired AS join_date,
                 ws.Status AS worker_status,
                 wa.SiteID,
@@ -25,12 +31,16 @@ if ($method === 'GET') {
                 wa.Role_On_Site AS position,
                 wa.Assigned_Date
             FROM worker w
+            INNER JOIN workerassignment wa ON w.WorkerID = wa.WorkerID
             LEFT JOIN workerstatus ws ON w.WorkerStatusID = ws.WorkerStatusID
-            LEFT JOIN workerassignment wa ON w.WorkerID = wa.WorkerID
             LEFT JOIN projectsite ps ON wa.SiteID = ps.SiteID
+            WHERE wa.SiteID = ?
             ORDER BY w.Last_Name, w.First_Name";
     
-    $result = $conn->query($sql);
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("i", $siteId);
+    $stmt->execute();
+    $result = $stmt->get_result();
     
     $employees = [];
     while ($row = $result->fetch_assoc()) {
@@ -38,10 +48,13 @@ if ($method === 'GET') {
     }
     
     echo json_encode([
-        'success' => true,
+        'success' => true, 
         'employees' => $employees,
-        'count' => count($employees)
+        'count' => count($employees),
+        'site_id' => $siteId
     ]);
+    
+    $stmt->close();
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }

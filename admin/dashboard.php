@@ -9,7 +9,11 @@ include '../api/connection/db_config.php';
     <title>Dashboard - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/dashboard.css">
-     <script src="../js/dashboard.js" defer></script>
+    <?php if (isset($_GET['page']) && $_GET['page'] == 'site_assign'): ?>
+    <link rel="stylesheet" href="../css/site_assign.css">
+    <script src="../js/site_assign.js" defer></script>
+    <?php endif; ?>
+    <script src="../js/dashboard.js" defer></script>
 </head>
 <body>
     <!-- Sidebar -->

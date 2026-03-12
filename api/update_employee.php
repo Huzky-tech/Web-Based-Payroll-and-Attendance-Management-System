@@ -1,57 +1,149 @@
 <?php
+/**
+ * Update Employee API
+ * Update employee information such as position, salary, site, or status
+ */
+
 header('Content-Type: application/json');
 include 'connection/db_config.php';
 
+// Helper function for audit logging
 function logAudit($conn, $userId, $action, $details) {
-    $sql = "INSERT INTO Audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
-    $stmt = $conn->prepare($sql);
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
     $stmt->close();
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id = $_POST['id'] ?? '';
-    $site = $_POST['site'] ?? '';
-    $userId = $_POST['userId'] ?? 1; // Assume user ID is passed or default to 1
+$method = $_SERVER['REQUEST_METHOD'];
 
-    if (empty($id) || empty($site)) {
-        echo json_encode(['success' => false, 'message' => 'Employee ID and site are required']);
+if ($method === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    $employeeId = $data['employee_id'] ?? 0;
+    $firstName = $data['first_name'] ?? '';
+    $lastName = $data['last_name'] ?? '';
+    $position = $data['position'] ?? '';
+    $siteId = $data['site_id'] ?? null;
+    $salary = $data['salary'] ?? null;
+    $salaryType = $data['salary_type'] ?? null;
+    $phone = $data['phone'] ?? '';
+    $userId = $data['user_id'] ?? 1;
+    
+    // Validation
+    if (empty($employeeId)) {
+        echo json_encode(['success' => false, 'message' => 'Employee ID is required']);
         exit;
     }
-
-    // First, find the site_id based on site name
-    $siteQuery = "SELECT SiteID FROM ProjectSite WHERE Site_Name = ?";
-    $siteStmt = $conn->prepare($siteQuery);
-    $siteStmt->bind_param("s", $site);
-    $siteStmt->execute();
-    $siteResult = $siteStmt->get_result();
-
-    if ($siteResult->num_rows === 0) {
-        echo json_encode(['success' => false, 'message' => 'Site not found']);
+    
+    // Check if employee exists
+    $checkSql = "SELECT CONCAT(First_Name, ' ', Last_Name) AS full_name FROM worker WHERE WorkerID = ?";
+    $checkStmt = $conn->prepare($checkSql);
+    $checkStmt->bind_param("i", $employeeId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+    
+    if ($checkResult->num_rows === 0) {
+        echo json_encode(['success' => false, 'message' => 'Employee not found']);
+        $checkStmt->close();
         exit;
     }
-
-    $siteRow = $siteResult->fetch_assoc();
-    $siteId = $siteRow['SiteID'];
-
-    // Update the employee
-    $updateQuery = "UPDATE employees SET site_id = ? WHERE id = ?";
-    $updateStmt = $conn->prepare($updateQuery);
-    $updateStmt->bind_param("ii", $siteId, $id);
-
-    if ($updateStmt->execute()) {
-        logAudit($conn, $userId, 'Employee Updated', "Updated employee: ID $id");
-        echo json_encode(['success' => true, 'message' => 'Employee site updated successfully']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to update employee site']);
+    
+    $employeeName = $checkResult->fetch_assoc()['full_name'];
+    $checkStmt->close();
+    
+    // Build update query dynamically for worker table
+    $updates = [];
+    $params = [];
+    $types = "";
+    
+    if (!empty($firstName)) {
+        $updates[] = "First_Name = ?";
+        $params[] = $firstName;
+        $types .= "s";
     }
-
-    $siteStmt->close();
-    $updateStmt->close();
+    if (!empty($lastName)) {
+        $updates[] = "Last_Name = ?";
+        $params[] = $lastName;
+        $types .= "s";
+    }
+    if ($salary !== null) {
+        $updates[] = "RateAmount = ?";
+        $params[] = $salary;
+        $types .= "d";
+    }
+    if (!empty($salaryType)) {
+        $updates[] = "RateType = ?";
+        $params[] = $salaryType;
+        $types .= "s";
+    }
+    if (!empty($phone)) {
+        $updates[] = "Phone = ?";
+        $params[] = $phone;
+        $types .= "s";
+    }
+    
+    // Update worker table
+    if (!empty($updates)) {
+        $params[] = $employeeId;
+        $types .= "i";
+        
+        $sql = "UPDATE worker SET " . implode(", ", $updates) . " WHERE WorkerID = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $stmt->close();
+    }
+    
+    // Update position in workerassignment
+    if (!empty($position) && $siteId) {
+        $posSql = "UPDATE workerassignment SET Role_On_Site = ? WHERE WorkerID = ? AND SiteID = ?";
+        $posStmt = $conn->prepare($posSql);
+        $posStmt->bind_param("sii", $position, $employeeId, $siteId);
+        $posStmt->execute();
+        $posStmt->close();
+    }
+    
+    // Handle site assignment
+    if ($siteId !== null) {
+        // Check if assignment exists
+        $assignCheckSql = "SELECT AssignmentID FROM workerassignment WHERE WorkerID = ?";
+        $assignCheckStmt = $conn->prepare($assignCheckSql);
+        $assignCheckStmt->bind_param("i", $employeeId);
+        $assignCheckStmt->execute();
+        $assignCheckResult = $assignCheckStmt->get_result();
+        
+        if ($assignCheckResult->num_rows > 0) {
+            // Update existing assignment
+            $updateAssignSql = "UPDATE workerassignment SET SiteID = ? WHERE WorkerID = ?";
+            $updateAssignStmt = $conn->prepare($updateAssignSql);
+            $updateAssignStmt->bind_param("ii", $siteId, $employeeId);
+            $updateAssignStmt->execute();
+            $updateAssignStmt->close();
+        } else if ($siteId > 0) {
+            // Create new assignment
+            $insertAssignSql = "INSERT INTO workerassignment (WorkerID, SiteID, Assigned_Date) VALUES (?, ?, NOW())";
+            $insertAssignStmt = $conn->prepare($insertAssignSql);
+            $insertAssignStmt->bind_param("ii", $employeeId, $siteId);
+            $insertAssignStmt->execute();
+            $insertAssignStmt->close();
+        }
+        $assignCheckStmt->close();
+    }
+    
+    // Log the action
+    logAudit($conn, $userId, 'Employee Updated', "Updated employee: $employeeName (ID: $employeeId)");
+    
+    echo json_encode([
+        'success' => true, 
+        'message' => 'Employee updated successfully',
+        'employee_id' => $employeeId
+    ]);
+    
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }
 
 $conn->close();
 ?>
+

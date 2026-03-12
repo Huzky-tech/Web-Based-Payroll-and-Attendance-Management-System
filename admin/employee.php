@@ -1,5 +1,90 @@
 <?php
 include '../api/connection/db_config.php';
+
+// Get all employees from database
+$employees = [];
+$sql = "SELECT 
+            w.WorkerID,
+            w.First_Name,
+            w.Last_Name,
+            CONCAT(w.First_Name, ' ', w.Last_Name) AS full_name,
+            w.RateType,
+            w.RateAmount AS salary,
+            w.Phone,
+            w.DateHired AS join_date,
+            ws.Status AS worker_status,
+            wa.SiteID,
+            ps.Site_Name,
+            wa.Role_On_Site AS position
+        FROM worker w
+        LEFT JOIN workerstatus ws ON w.WorkerStatusID = ws.WorkerStatusID
+        LEFT JOIN workerassignment wa ON w.WorkerID = wa.WorkerID
+        LEFT JOIN projectsite ps ON wa.SiteID = ps.SiteID
+        ORDER BY w.Last_Name, w.First_Name";
+$result = $conn->query($sql);
+if ($result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $employees[] = $row;
+    }
+}
+
+// Get all sites for filter dropdown
+$sites = [];
+$siteSql = "SELECT SiteID, Site_Name FROM projectsite WHERE Status = 'active' OR Status = 'Active' ORDER BY Site_Name";
+$siteResult = $conn->query($siteSql);
+if ($siteResult->num_rows > 0) {
+    while ($row = $siteResult->fetch_assoc()) {
+        $sites[] = $row;
+    }
+}
+
+// Get dashboard statistics
+$staffCount = 0;
+$activeSitesCount = 0;
+$assignmentsCount = 0;
+
+$staffSql = "SELECT COUNT(*) as cnt FROM payrollstaff";
+$staffResult = $conn->query($staffSql);
+if ($staffResult) $staffCount = $staffResult->fetch_assoc()['cnt'] ?? 0;
+
+$activeSql = "SELECT COUNT(*) as cnt FROM projectsite WHERE LOWER(Status) = 'active'";
+$activeResult = $conn->query($activeSql);
+if ($activeResult) $activeSitesCount = $activeResult->fetch_assoc()['cnt'] ?? 0;
+
+$assignSql = "SELECT COUNT(*) as cnt FROM payrollstaffassignment";
+$assignResult = $conn->query($assignSql);
+if ($assignResult) $assignmentsCount = $assignResult->fetch_assoc()['cnt'] ?? 0;
+
+// Get payroll staff
+$payrollStaff = [];
+$psSql = "SELECT ps.PayrollStaff_ID, u.full_name, u.email 
+          FROM payrollstaff ps 
+          JOIN users u ON ps.UserID = u.id 
+          ORDER BY u.full_name";
+$psResult = $conn->query($psSql);
+if ($psResult->num_rows > 0) {
+    while ($row = $psResult->fetch_assoc()) {
+        $payrollStaff[] = $row;
+    }
+}
+
+// Get all sites for assignment panel
+$allSites = [];
+$allSitesSql = "SELECT 
+                    ps.SiteID,
+                    ps.Site_Name,
+                    ps.Location,
+                    ps.Status,
+                    ps.Required_Workers,
+                    (SELECT COUNT(*) FROM WorkerAssignment wa WHERE wa.SiteID = ps.SiteID) AS current_workers
+                FROM projectsite ps
+                ORDER BY ps.Site_Name";
+$allSitesResult = $conn->query($allSitesSql);
+if ($allSitesResult->num_rows > 0) {
+    while ($row = $allSitesResult->fetch_assoc()) {
+        $allSites[] = $row;
+    }
+}
 ?>
 <!-- Modal -->
 <div id="viewModal" class="modal"></div>
@@ -34,7 +119,7 @@ include '../api/connection/db_config.php';
                     </button>
                 </div>
                 <button class="btn-add" id="btnAddEmployee">
-                    <i class="fas fa-check"></i>
+                    <i class="fas fa-plus"></i>
                     <span>Add New Employee</span>
                 </button>
             </div>
@@ -59,18 +144,24 @@ include '../api/connection/db_config.php';
                 <div class="search-filters">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search employees...">
+                        <input type="text" id="searchInput" placeholder="Search employees..." onkeyup="searchEmployees(this.value)">
                     </div>
                     <div class="filter-dropdown">
                         <i class="fas fa-building"></i>
-                        <select>
-                            <option>All Sites</option>
+                        <select id="siteFilter" onchange="filterBySite(this.value)">
+                            <option value="">All Sites</option>
+                            <?php foreach ($sites as $site): ?>
+                            <option value="<?php echo $site['SiteID']; ?>"><?php echo htmlspecialchars($site['Site_Name']); ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="filter-dropdown">
                         <i class="fas fa-filter"></i>
-                        <select>
-                            <option>All Status</option>
+                        <select id="statusFilter" onchange="filterByStatus(this.value)">
+                            <option value="">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                            <option value="OnLeave">On Leave</option>
                         </select>
                     </div>
                 </div>
@@ -90,199 +181,47 @@ include '../api/connection/db_config.php';
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div class="employee-info">
-                                    <div class="employee-avatar">J</div>
-                                    <div class="employee-details">
-                                        <div class="employee-name">John Doe</div>
-                                        <div class="employee-id">ID: 1</div>
+                    <tbody id="employeeTableBody">
+                        <?php if (count($employees) > 0): ?>
+                            <?php foreach ($employees as $employee): ?>
+                            <tr>
+                                <td>
+                                    <div class="employee-info">
+                                        <div class="employee-avatar"><?php echo strtoupper(substr($employee['First_Name'], 0, 1)); ?></div>
+                                        <div class="employee-details">
+                                            <div class="employee-name"><?php echo htmlspecialchars($employee['full_name']); ?></div>
+                                            <div class="employee-id">ID: <?php echo $employee['WorkerID']; ?></div>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>Construction Worker</td>
-                            <td>Main Street Project</td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td class="salary">₱15,000</td>
-                            <td>2022-05-15</td>
-                            <td>
-                                <div class="approval-info">
-                                    <span class="approval-badge">Approved</span>
-                                    <span class="approval-by">By: HR Manager</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action view" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action delete" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="employee-info">
-                                    <div class="employee-avatar">J</div>
-                                    <div class="employee-details">
-                                        <div class="employee-name">Jane Smith</div>
-                                        <div class="employee-id">ID: 2</div>
+                                </td>
+                                <td><?php echo htmlspecialchars($employee['position'] ?? 'Not Assigned'); ?></td>
+                                <td><?php echo htmlspecialchars($employee['Site_Name'] ?? 'Not Assigned'); ?></td>
+                                <td><span class="status-badge <?php echo strtolower($employee['worker_status'] ?? 'active'); ?>"><?php echo $employee['worker_status'] ?? 'Active'; ?></span></td>
+                                <td class="salary">₱<?php echo number_format($employee['salary'] ?? 0, 2); ?></td>
+                                <td><?php echo $employee['join_date'] ?? 'N/A'; ?></td>
+                                <td>
+                                    <div class="approval-info">
+                                        <span class="approval-badge">Pending</span>
+                                        <span class="approval-by">Not approved</span>
                                     </div>
-                                </div>
-                            </td>
-                            <td>Electrician</td>
-                            <td>Downtown Office Complex</td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td class="salary">₱18,000</td>
-                            <td>2021-11-03</td>
-                            <td>
-                                <div class="approval-info">
-                                    <span class="approval-badge">Approved</span>
-                                    <span class="approval-by">By: HR Manager</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action view" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action delete" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="employee-info">
-                                    <div class="employee-avatar">M</div>
-                                    <div class="employee-details">
-                                        <div class="employee-name">Michael Johnson</div>
-                                        <div class="employee-id">ID: 3</div>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn-action view" title="View" onclick="viewEmployee(<?php echo $employee['WorkerID']; ?>)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn-action delete" title="Delete" onclick="deleteEmployee(<?php echo $employee['WorkerID']; ?>)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </div>
-                                </div>
-                            </td>
-                            <td>Plumber</td>
-                            <td>Riverside Apartments</td>
-                            <td><span class="status-badge inactive">Inactive</span></td>
-                            <td class="salary">₱16,500</td>
-                            <td>2022-02-28</td>
-                            <td>
-                                <div class="approval-info">
-                                    <span class="approval-badge">Approved</span>
-                                    <span class="approval-by">By: Admin User</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action view" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action delete" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
                         <tr>
-                            <td>
-                                <div class="employee-info">
-                                    <div class="employee-avatar">S</div>
-                                    <div class="employee-details">
-                                        <div class="employee-name">Sarah Williams</div>
-                                        <div class="employee-id">ID: 4</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>Carpenter</td>
-                            <td>Park Avenue Mall</td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td class="salary">₱15,500</td>
-                            <td>2023-01-10</td>
-                            <td>
-                                <div class="approval-info">
-                                    <span class="approval-badge">Approved</span>
-                                    <span class="approval-by">By: HR Manager</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action view" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action delete" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
+                            <td colspan="8" style="text-align: center; padding: 20px;">No employees found. Click "Add New Employee" to create one.</td>
                         </tr>
-                        <tr>
-                            <td>
-                                <div class="employee-info">
-                                    <div class="employee-avatar">R</div>
-                                    <div class="employee-details">
-                                        <div class="employee-name">Robert Brown</div>
-                                        <div class="employee-id">ID: 5</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>Construction Worker</td>
-                            <td>Main Street Project</td>
-                            <td><span class="status-badge on-leave">On-leave</span></td>
-                            <td class="salary">₱14,000</td>
-                            <td>2022-07-22</td>
-                            <td>
-                                <div class="approval-info">
-                                    <span class="approval-badge">Approved</span>
-                                    <span class="approval-by">By: HR Manager</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action view" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action delete" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="employee-info">
-                                    <div class="employee-avatar">E</div>
-                                    <div class="employee-details">
-                                        <div class="employee-name">Emily Davis</div>
-                                        <div class="employee-id">ID: 6</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>Site Manager</td>
-                            <td>Downtown Office Complex</td>
-                            <td><span class="status-badge active">Active</span></td>
-                            <td class="salary">₱25,000</td>
-                            <td>2021-09-15</td>
-                            <td>
-                                <div class="approval-info">
-                                    <span class="approval-badge">Approved</span>
-                                    <span class="approval-by">By: HR Manager</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn-action view" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-action delete" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
                 </div>
@@ -297,7 +236,7 @@ include '../api/connection/db_config.php';
                             <i class="fas fa-users"></i>
                         </div>
                         <div class="overview-card-content">
-                            <div class="overview-card-value">4</div>
+                            <div class="overview-card-value" id="staffCount"><?php echo $staffCount; ?></div>
                             <div class="overview-card-label">Total Payroll Staff</div>
                         </div>
                     </div>
@@ -306,7 +245,7 @@ include '../api/connection/db_config.php';
                             <i class="fas fa-map-marker-alt"></i>
                         </div>
                         <div class="overview-card-content">
-                            <div class="overview-card-value">3</div>
+                            <div class="overview-card-value" id="activeSitesCount"><?php echo $activeSitesCount; ?></div>
                             <div class="overview-card-label">Active Sites</div>
                         </div>
                     </div>
@@ -315,7 +254,7 @@ include '../api/connection/db_config.php';
                             <i class="fas fa-check-circle"></i>
                         </div>
                         <div class="overview-card-content">
-                            <div class="overview-card-value">1</div>
+                            <div class="overview-card-value" id="assignmentsCount"><?php echo $assignmentsCount; ?></div>
                             <div class="overview-card-label">Total Assignments</div>
                         </div>
                     </div>
@@ -338,130 +277,120 @@ include '../api/connection/db_config.php';
                                 <i class="fas fa-search"></i>
                                 <input type="text" placeholder="Search payroll staff...">
                             </div>
-                            <div class="staff-list">
-                                <div class="staff-item selected" data-staff="staff-a">
-                                    <div class="staff-item-header">
-                                        <div class="staff-name">Payroll Staff A</div>
-                                        <span class="staff-sites-badge">1 Sites</span>
+                            <div class="staff-list" id="staffList">
+                                <?php if (count($payrollStaff) > 0): ?>
+                                    <?php foreach ($payrollStaff as $index => $staff): ?>
+                                    <div class="staff-item <?php echo $index === 0 ? 'selected' : ''; ?>" data-staff="<?php echo $staff['PayrollStaff_ID']; ?>" onclick="selectStaff(this, <?php echo $staff['PayrollStaff_ID']; ?>)">
+                                        <div class="staff-item-header">
+                                            <div class="staff-name"><?php echo htmlspecialchars($staff['full_name'] ?? 'Staff Member'); ?></div>
+                                        </div>
+                                        <div class="staff-email"><?php echo htmlspecialchars($staff['email'] ?? ''); ?></div>
                                     </div>
-                                    <div class="staff-email">staff.a@company.com</div>
-                                </div>
-                                <div class="staff-item" data-staff="staff-b">
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                <div class="staff-item">
                                     <div class="staff-item-header">
-                                        <div class="staff-name">Payroll Staff B</div>
+                                        <div class="staff-name">No Payroll Staff</div>
                                     </div>
-                                    <div class="staff-email">staff.b@company.com</div>
+                                    <div class="staff-email">Add payroll staff to assign sites</div>
                                 </div>
-                                <div class="staff-item" data-staff="staff-c">
-                                    <div class="staff-item-header">
-                                        <div class="staff-name">Payroll Staff C</div>
-                                    </div>
-                                    <div class="staff-email">staff.c@company.com</div>
-                                </div>
-                                <div class="staff-item" data-staff="staff-d">
-                                    <div class="staff-item-header">
-                                        <div class="staff-name">Payroll Staff D</div>
-                                    </div>
-                                    <div class="staff-email">staff.d@company.com</div>
-                                </div>
+                                <?php endif; ?>
                             </div>
                         </div>
 
                         <!-- Right Panel - Site Assignments -->
                         <div class="sites-panel">
                             <div class="sites-panel-header">
-                                <h4 class="sites-panel-title">Assign Sites to Payroll Staff A</h4>
-                                <p class="sites-panel-subtitle">1 active assignments</p>
+                                <h4 class="sites-panel-title">Assign Sites to Staff</h4>
+                                <p class="sites-panel-subtitle"><?php echo count($allSites); ?> sites available</p>
                             </div>
 
+                            <?php if (count($allSites) > 0): ?>
+                                <?php foreach ($allSites as $site): ?>
+                                <div class="site-item <?php echo strtolower($site['Status']) === 'inactive' ? 'inactive' : ''; ?>">
+                                    <div class="site-item-header">
+                                        <div>
+                                            <div class="site-name"><?php echo htmlspecialchars($site['Site_Name']); ?></div>
+                                            <div class="site-address"><?php echo htmlspecialchars($site['Location'] ?? 'No location'); ?></div>
+                                        </div>
+                                        <button class="site-action <?php echo strtolower($site['Status']) === 'inactive' ? 'add' : 'add'; ?>" title="Add" onclick="assignSiteToStaff(<?php echo $site['SiteID']; ?>)">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <span class="site-status <?php echo strtolower($site['Status']); ?>"><?php echo $site['Status']; ?></span>
+                                    <div class="site-details">
+                                        <div class="site-detail-item">
+                                            <span><?php echo $site['current_workers']; ?> Current Workers</span>
+                                        </div>
+                                        <div class="site-detail-item">
+                                            <span>Target: <?php echo $site['Required_Workers'] ?? 0; ?></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
                             <div class="site-item">
                                 <div class="site-item-header">
                                     <div>
-                                        <div class="site-name">Road Street Site</div>
-                                        <div class="site-address">123 Road St, Cityville</div>
-                                    </div>
-                                    <button class="site-action remove" title="Remove">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                                <span class="site-status active">Active</span>
-                                <div class="site-details">
-                                    <div class="site-detail-item">
-                                        <span>45 Current Workers</span>
-                                    </div>
-                                    <div class="site-detail-item">
-                                        <span>Target: 50</span>
+                                        <div class="site-name">No Sites Available</div>
+                                        <div class="site-address">Create a site to assign staff</div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="site-item">
-                                <div class="site-item-header">
-                                    <div>
-                                        <div class="site-name">Building Construction Site</div>
-                                        <div class="site-address">456 Build Ave, Townsburg</div>
-                                    </div>
-                                    <button class="site-action add" title="Add">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                                <span class="site-status active">Active</span>
-                                <div class="site-details">
-                                    <div class="site-detail-item">
-                                        <span>120 Current Workers</span>
-                                    </div>
-                                    <div class="site-detail-item">
-                                        <span>Target: 150</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="site-item">
-                                <div class="site-item-header">
-                                    <div>
-                                        <div class="site-name">Bridge Project Alpha</div>
-                                        <div class="site-address">789 River Rd, Bridgeton</div>
-                                    </div>
-                                    <button class="site-action add" title="Add">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                                <span class="site-status active">Active</span>
-                                <div class="site-details">
-                                    <div class="site-detail-item">
-                                        <span>30 Current Workers</span>
-                                    </div>
-                                    <div class="site-detail-item">
-                                        <span>Target: 40</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="site-item inactive">
-                                <div class="site-item-header">
-                                    <div>
-                                        <div class="site-name">Downtown Renovation</div>
-                                        <div class="site-address">101 Main St, Metropolis</div>
-                                    </div>
-                                    <button class="site-action add" title="Add">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                                <span class="site-status inactive">Inactive</span>
-                                <div class="site-details">
-                                    <div class="site-detail-item">
-                                        <span>15 Current Workers</span>
-                                    </div>
-                                    <div class="site-detail-item">
-                                        <span>Target: 20</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Add Employee Modal -->
+    <div id="addEmployeeModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Employee</h2>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="addEmployeeForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="first_name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Position</label>
+                            <input type="text" name="position">
+                        </div>
+                        <div class="form-group">
+                            <label>Salary</label>
+                            <input type="number" name="salary" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="text" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label>Join Date</label>
+                        <input type="date" name="join_date" value="<?php echo date('Y-m-d'); ?>">
+                    </div>
+                    <button type="submit" class="btn-submit">Add Employee</button>
+                </form>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
+
+<?php
+$conn->close();
+?>
+
