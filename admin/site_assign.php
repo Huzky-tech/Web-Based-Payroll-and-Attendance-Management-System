@@ -18,8 +18,7 @@ $user_id = $_SESSION['user_id'] ?? 1;
         <div class="content-area">
             <!-- Page Header -->
             <div class="page-header">
-                <h1><i class="fas fa-sitemap"></i> Site Assignments</h1>
-                <p class="page-subtitle">Manage payroll staff assignments to construction sites</p>
+                <h1>Site Assignments</h1>
             </div>
 
             <!-- Summary Cards -->
@@ -30,7 +29,7 @@ $user_id = $_SESSION['user_id'] ?? 1;
                     </div>
                     <div class="summary-content">
                         <div class="summary-label">Total Payroll Staff</div>
-                        <div class="summary-value" id="staffCount" data-api="../api/count_payroll_staff.php">Loading...</div>
+                        <div class="summary-value" id="staffCount" data-api="../api/count_payroll_staff.php">0</div>
                     </div>
                 </div>
                 <div class="summary-card">
@@ -39,16 +38,16 @@ $user_id = $_SESSION['user_id'] ?? 1;
                     </div>
                     <div class="summary-content">
                         <div class="summary-label">Active Sites</div>
-                        <div class="summary-value" id="siteCount" data-api="../api/count_active_sites.php">Loading...</div>
+                        <div class="summary-value" id="siteCount" data-api="../api/count_active_sites.php">0</div>
                     </div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-icon purple">
-                        <i class="fas fa-tasks"></i>
+                        <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="summary-content">
                         <div class="summary-label">Total Assignments</div>
-                        <div class="summary-value" id="assignmentCount" data-api="../api/count_assignments.php">Loading...</div>
+                        <div class="summary-value" id="assignmentCount" data-api="../api/count_assignments.php">0</div>
                     </div>
                 </div>
             </div>
@@ -74,28 +73,29 @@ $user_id = $_SESSION['user_id'] ?? 1;
                         </div>
                         <div class="staff-list" id="staffList">
                             <input type="hidden" id="currentUserId" value="<?php echo $user_id; ?>">
-                            <!-- Staff list loaded dynamically -->
+                            <!-- Staff list loaded dynamically via AJAX -->
                         </div>
                     </div>
 
                     <!-- Right Panel - Site Assignments -->
                     <div class="sites-panel" id="sitesPanel">
-                        <!-- Empty State (shown by default) -->
+                        <!-- Empty State -->
                         <div class="sites-placeholder" id="emptyState">
-                            <i class="fas fa-user-group"></i>
+                            <i class="fas fa-users-cog"></i>
                             <div class="sites-placeholder-title">Select a Staff Member</div>
-                            <div class="sites-placeholder-text">Select a payroll staff member from the left panel to view and manage their site assignments.</div>
-                            <div class="sites-placeholder-hint">💡 Import database/sample_staff_assign.sql for test data</div>
+                            <div class="sites-placeholder-text">Choose a payroll staff member from the list to manage their site assignments.</div>
+                            <div style="font-size: 12px; color: #6b7280; margin-top: 16px;">
+                                 </div>
                         </div>
 
-                        <!-- Site Assignments Content (hidden by default) -->
+                        <!-- Content Panel -->
                         <div id="sitesContent" style="display: none;">
                             <div class="sites-panel-header">
-                                <h4 class="sites-panel-title" id="panelTitle">Select a staff member</h4>
-                                <p class="sites-panel-subtitle" id="panelSubtitle">0 active assignments</p>
+                                <h4 class="sites-panel-title" id="panelTitle">Manage Assignments</h4>
+                                <p class="sites-panel-subtitle" id="panelSubtitle">0 sites assigned</p>
                             </div>
                             <div id="sitesList">
-                                <!-- Sites will be dynamically loaded here -->
+                                <!-- Dynamic content -->
                             </div>
                         </div>
                     </div>

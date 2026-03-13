@@ -245,7 +245,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderStaffList(e.target.value);
     });
     
-    showToast('Site Assignment Dashboard loaded successfully!');
+// Toast removed as requested
+
 });
 
 /* ===================== GLOBAL FUNCTIONS ===================== */
