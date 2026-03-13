@@ -1,15 +1,32 @@
-# Site Assignment Error Fix Task
+# Payroll Staff Site Assignment Management Module - Implementation Plan
 
-## Plan Summary
-Fix missing `payroll_staff` table error by updating admin/site_assign.php to use correct schema tables: `payrollstaff`, `payrollstaffassignment`, `projectsite`, `users`.
+## Current Status: ✅ Plan Approved - Implementation Started
 
-## Steps to Complete
-- [ ] Step 1: Read api/connection/db_config.php to confirm connection
-- [x] Step 2: Edit admin/site_assign.php to fix all functions with correct table names and JOINs
-- [ ] Step 3: Test the page loads without error
-- [ ] Step 4: Check API endpoints like api/count_payroll_staff.php work
-- [ ] Step 5: Add sample payroll staff data if needed
-- [ ] Step 6: Complete task
+## Step-by-Step Implementation
 
-**Current Progress:** Starting Step 1
+### 1. Backend API Enhancements [PENDING]
+- [✅] Create `api/count_assignments.php` - Total assignments count API
+- [✅] Update `api/get_audit_logs.php` - Add assignment filter + LIMIT 50
+
+### 2. Frontend Refactoring [PENDING]  
+- [✅] Refactor `admin/site_assign.php` - Remove PHP functions, AJAX stats/staff loading
+- [✅] Overhaul `js/site_assign.js` - Replace demo data with real AJAX/fetch calls
+- [✅] Enhance `css/site_assign.css` - Add toast notifications, audit modal styles
+
+### 3. Data & Testing [PENDING]
+- [ ] Verify/add sample payrollstaff + assignments data
+- [ ] Test all APIs (Postman/Console)
+- [ ] Full UI integration test (assign/remove/audit)
+- [ ] Responsive testing (mobile/tablet)
+- [ ] Security validation (prepared statements, input sanitization)
+
+### 4. Final Polish & Completion [PENDING]
+- [ ] Add loading spinners, error handling
+- [ ] Success/error toast notifications
+- [ ] Real-time updates (WebSocket optional)
+- [ ] Documentation updates
+- [ ] ✅ attempt_completion
+
+**Completed Steps: 0/15**  
+**Next Step: Create missing APIs**
 

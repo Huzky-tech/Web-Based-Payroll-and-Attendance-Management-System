@@ -77,7 +77,13 @@ if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
 }
 
-$sql .= " ORDER BY a.Date DESC LIMIT 100";
+$sql .= " ORDER BY a.Date DESC";
+if (isset($_GET['type']) && $_GET['type'] === 'assignment') {
+    $where[] = "(a.Action LIKE '%assign%' OR a.Action LIKE '%remove%' OR a.Action LIKE '%site%')";
+    $sql .= " LIMIT 50";
+} else {
+    $sql .= " LIMIT 100";
+}
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {

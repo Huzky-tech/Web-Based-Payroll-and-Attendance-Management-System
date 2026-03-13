@@ -1,229 +1,268 @@
-/* ===================== DATA ===================== */
-const auditLogs = [];
+/* ===================== APP CONFIG ===================== */
+const API_BASE = '../api';
 
-const staffSites = {
-    'staff-a': [
-        { name: 'Road Street Site', address: '123 Road St, Cityville', status: 'active', workers: 45, target: 50 }
-    ],
-    'staff-b': [],
-    'staff-c': [],
-    'staff-d': []
-};
+/* ===================== APP STATE ===================== */
+let currentStaffId = null;
+let staffList = [];
+let allSites = [];
+let assignedSites = [];
+let auditLogs = [];
+let currentUserId = 1;
 
-const allSites = [
-    { name: 'Road Street Site', address: '123 Road St, Cityville', status: 'active', workers: 45, target: 50 },
-    { name: 'Building Construction Site', address: '456 Build Ave, Townsburg', status: 'active', workers: 120, target: 150 },
-    { name: 'Bridge Project Alpha', address: '789 River Rd, Bridgeton', status: 'active', workers: 30, target: 40 },
-    { name: 'Downtown Renovation', address: '101 Main St, Metropolis', status: 'inactive', workers: 15, target: 20 }
-];
+/* ===================== UTILS ===================== */
+function showToast(message, type = 'success') {
+    // Remove existing toasts
+    document.querySelectorAll('.toast').forEach(toast => toast.remove());
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast--${type}`;
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 4000);
+}
 
-/* ===================== DATE & TIME ===================== */
-function updateDateTime() {
-    const now = new Date();
+function showLoading(element) {
+    element.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+}
 
-    const date = document.getElementById('currentDate');
-    const time = document.getElementById('currentTime');
+function getApiUrl(endpoint) {
+    return `${API_BASE}/${endpoint}`;
+}
 
-    if (date) {
-        date.textContent = now.toLocaleDateString('en-US', {
-            weekday:'long',
-            year:'numeric',
-            month:'long',
-            day:'numeric'
+/* ===================== API CALLS ===================== */
+async function fetchApi(endpoint, options = {}) {
+    try {
+        const response = await fetch(getApiUrl(endpoint), {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            }
         });
-    }
-
-    if (time) {
-        time.textContent = now.toLocaleTimeString('en-US', {
-            hour:'2-digit',
-            minute:'2-digit'
-        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message || 'API error');
+        }
+        
+        return data;
+    } catch (error) {
+        showToast(error.message || 'Network error', 'error');
+        throw error;
     }
 }
 
-updateDateTime();
-setInterval(updateDateTime, 60000);
+async function loadStats() {
+    const stats = await Promise.all([
+        fetchApi('count_payroll_staff.php'),
+        fetchApi('count_active_sites.php'),
+        fetchApi('count_assignments.php')
+    ]);
+    
+    document.getElementById('staffCount').textContent = stats[0].count;
+    document.getElementById('siteCount').textContent = stats[1].count;
+    document.getElementById('assignmentCount').textContent = stats[2].count;
+}
 
-/* ===================== STAFF SELECTION ===================== */
-function selectStaff(staffId, staffName) {
+async function loadStaff() {
+    const data = await fetchApi('get_payroll_staff.php');
+    staffList = data.staff;
+    
+    renderStaffList();
+}
 
-    document.querySelectorAll('.staff-item').forEach(i =>
-        i.classList.remove('selected')
+function renderStaffList(searchTerm = '') {
+    const container = document.getElementById('staffList');
+    const filteredStaff = staffList.filter(staff => 
+        staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        staff.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    document.querySelector(`[data-staff="${staffId}"]`).classList.add('selected');
-
-    document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('sitesContent').style.display = 'block';
-
-    document.getElementById('panelTitle').textContent =
-        `Assign Sites to ${staffName}`;
-
-    document.getElementById('panelSubtitle').textContent =
-        `${staffSites[staffId].length} active assignments`;
-
-    logAudit(`Viewed assignments of ${staffName}`);
-
-    renderSites(staffId);
+    
+    container.innerHTML = filteredStaff.map(staff => `
+        <div class="staff-item" data-staff="${staff.id}" onclick="selectStaff(${staff.id}, '${staff.name.replace(/'/g, "\\'")}')">
+            <div class="staff-item-header">
+                <div class="staff-name">${staff.name}</div>
+                ${staff.assigned_sites_count > 0 ? `<span class="staff-sites-badge">${staff.assigned_sites_count} Site${staff.assigned_sites_count > 1 ? 's' : ''}</span>` : ''}
+            </div>
+            <div class="staff-email">${staff.email}</div>
+            ${staff.user_status === 'Inactive' ? '<span class="status-badge inactive">Inactive</span>' : ''}
+        </div>
+    `).join('');
 }
 
-/* ===================== RENDER SITES ===================== */
-function renderSites(staffId) {
+async function loadAllSites() {
+    const data = await fetchApi('get_active_sites.php'); // or get_sites.php with active filter
+    allSites = data.sites || data;
+}
 
-    const sitesList = document.getElementById('sitesList');
-    sitesList.innerHTML = '';
+async function loadAssignedSites(staffId) {
+    try {
+        const data = await fetchApi(`get_staff_sites.php?staff_id=${staffId}`);
+        assignedSites = data.sites;
+        renderSites();
+    } catch (error) {
+        console.error('Failed to load assigned sites');
+    }
+}
 
+function renderSites() {
+    const container = document.getElementById('sitesList');
+    container.innerHTML = '';
+    
     allSites.forEach(site => {
-
-        const assigned = staffSites[staffId].some(s => s.name === site.name);
-
-        sitesList.innerHTML += `
-            <div class="site-item ${site.status === 'inactive' ? 'inactive' : ''}">
+        const isAssigned = assignedSites.some(as => as.SiteID == site.SiteID);
+        
+        container.innerHTML += `
+            <div class="site-item ${site.Status?.toLowerCase() === 'inactive' ? 'inactive' : ''}" data-site="${site.SiteID}">
                 <div class="site-item-header">
                     <div>
-                        <div class="site-name">${site.name}</div>
-                        <div class="site-address">${site.address}</div>
+                        <div class="site-name">${site.Site_Name}</div>
+                        <div class="site-address">${site.Location || ''}</div>
                     </div>
-
-                    <button class="site-action ${assigned ? 'remove' : 'add'}"
-                        onclick="${assigned
-                            ? `removeSite('${staffId}','${site.name}')`
-                            : `addSite('${staffId}','${site.name}')`}">
-
-                        <i class="fas ${assigned ? 'fa-trash' : 'fa-plus'}"></i>
+                    <button class="site-action ${isAssigned ? 'remove' : 'add'}" 
+                            onclick="${isAssigned ? `removeSite(${currentStaffId}, ${site.SiteID})` : `assignSite(${currentStaffId}, ${site.SiteID})`}">
+                        <i class="fas ${isAssigned ? 'fa-trash' : 'fa-plus'}"></i>
                     </button>
-
                 </div>
-
-                <span class="site-status ${site.status}">
-                    ${site.status}
-                </span>
-
+                <span class="site-status ${site.Status?.toLowerCase()}">${site.Status || 'Unknown'}</span>
                 <div class="site-details">
-                    <div>${site.workers} Current Workers</div>
-                    <div>Target: ${site.target}</div>
+                    <div>${site.current_workers || 0} Current Workers</div>
+                    <div>Required: ${site.Required_Workers || 'N/A'}</div>
                 </div>
             </div>
         `;
     });
 }
 
-/* ===================== ADD SITE ===================== */
-function addSite(staffId, siteName) {
-
-    const site = allSites.find(s => s.name === siteName);
-
-    if (!site) return;
-
-    staffSites[staffId].push(site);
-
-    logAudit(`Assigned ${siteName} to ${staffId}`);
-
-    updateStaffBadge(staffId);
-    updateTotals();
-
-    const staffName =
-        document.querySelector(`[data-staff="${staffId}"] .staff-name`).textContent;
-
-    selectStaff(staffId, staffName);
-}
-
-/* ===================== REMOVE SITE ===================== */
-function removeSite(staffId, siteName) {
-
-    staffSites[staffId] =
-        staffSites[staffId].filter(s => s.name !== siteName);
-
-    logAudit(`Removed ${siteName} from ${staffId}`);
-
-    updateStaffBadge(staffId);
-    updateTotals();
-
-    const staffName =
-        document.querySelector(`[data-staff="${staffId}"] .staff-name`).textContent;
-
-    selectStaff(staffId, staffName);
-}
-
-/* ===================== BADGES ===================== */
-function updateStaffBadge(staffId) {
-
-    const header =
-        document.querySelector(`[data-staff="${staffId}"] .staff-item-header`);
-
-    header.querySelector('.staff-sites-badge')?.remove();
-
-    const count = staffSites[staffId].length;
-
-    if (count > 0) {
-        header.innerHTML +=
-            `<span class="staff-sites-badge">${count} Site${count>1?'s':''}</span>`;
+async function assignSite(staffId, siteId) {
+    showLoading(document.getElementById('sitesList'));
+    
+    try {
+        const data = {
+            staff_id: staffId,
+            site_id: siteId,
+            user_id: currentUserId
+        };
+        
+        await fetchApi('assign_site_to_staff.php', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        
+        showToast('Site assigned successfully!');
+        currentStaffId = staffId;
+        await loadAssignedSites(staffId);
+    } catch (error) {
+        showToast('Failed to assign site', 'error');
     }
 }
 
-/* ===================== TOTAL ASSIGNMENTS ===================== */
-function updateTotals() {
-
-    let total = 0;
-
-    Object.values(staffSites).forEach(s => {
-        total += s.length;
-    });
-
-    const summary = document.querySelector('.summary-value:last-child');
-
-    if (summary) summary.textContent = total;
-}
-
-/* ===================== AUDIT LOG ===================== */
-function logAudit(action) {
-
-    auditLogs.unshift({
-        time: new Date().toLocaleString(),
-        user: "Admin User",
-        action: action
-    });
-
-}
-
-/* ===================== VIEW AUDIT ===================== */
-function viewAuditLog() {
-
-    if (auditLogs.length === 0) {
-        alert("No audit records yet.");
-        return;
+async function removeSite(staffId, siteId) {
+    if (!confirm('Remove this site assignment?')) return;
+    
+    showLoading(document.getElementById('sitesList'));
+    
+    try {
+        const data = {
+            staff_id: staffId,
+            site_id: siteId,
+            user_id: currentUserId
+        };
+        
+        await fetchApi('remove_site_assignment.php', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        
+        showToast('Site assignment removed!');
+        currentStaffId = staffId;
+        await loadAssignedSites(staffId);
+    } catch (error) {
+        showToast('Failed to remove assignment', 'error');
     }
-
-    const logs = auditLogs
-        .map(l => `[${l.time}] ${l.user}: ${l.action}`)
-        .join('\n');
-
-    alert(logs);
 }
 
-/* ===================== SEARCH ===================== */
-function filterStaff() {
+async function viewAuditLog() {
+    try {
+        const data = await fetchApi('get_audit_logs.php?type=assignment');
+        renderAuditModal(data);
+    } catch (error) {
+        showToast('Failed to load audit logs', 'error');
+    }
+}
 
-    const filter =
-        document.getElementById('staffSearch').value.toLowerCase();
+function renderAuditModal(logs) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-clipboard-list"></i> Audit Logs (Assignments)</h3>
+                <button class="modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="audit-table">
+                    ${logs.map(log => `
+                        <div class="audit-row">
+                            <div class="audit-user">${log.user}</div>
+                            <div class="audit-action">${log.action}</div>
+                            <div class="audit-time">${new Date(log.ts).toLocaleString()}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
 
-    document.querySelectorAll('.staff-item').forEach(item => {
-
-        item.style.display =
-            item.innerText.toLowerCase().includes(filter)
-                ? 'block'
-                : 'none';
-
+/* ===================== EVENT LISTENERS ===================== */
+document.addEventListener('DOMContentLoaded', async () => {
+    currentUserId = parseInt(document.getElementById('currentUserId')?.value || 1);
+    
+    try {
+        showLoading(document.querySelector('.staff-list'));
+        await Promise.all([
+            loadStats(),
+            loadStaff(),
+            loadAllSites()
+        ]);
+    } catch (error) {
+        showToast('Failed to initialize dashboard', 'error');
+    }
+    
+    // Search
+    document.getElementById('staffSearch').addEventListener('input', (e) => {
+        renderStaffList(e.target.value);
     });
-}
-
-/* ===================== INIT ===================== */
-document.addEventListener('DOMContentLoaded', () => {
-
-    Object.keys(staffSites).forEach(updateStaffBadge);
-
-    updateTotals();
-
-    logAudit("System initialized");
-
+    
+    showToast('Site Assignment Dashboard loaded successfully!');
 });
+
+/* ===================== GLOBAL FUNCTIONS ===================== */
+async function selectStaff(staffId, staffName) {
+    currentStaffId = staffId;
+    
+    document.querySelectorAll('.staff-item').forEach(item => 
+        item.classList.remove('selected')
+    );
+    event.target.closest('.staff-item').classList.add('selected');
+    
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('sitesContent').style.display = 'block';
+    
+    document.getElementById('panelTitle').textContent = `Assign Sites to ${staffName}`;
+    
+    showLoading(document.getElementById('sitesList'));
+    await loadAssignedSites(staffId);
+}
+

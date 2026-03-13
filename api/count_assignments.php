@@ -1,7 +1,7 @@
 <?php
 /**
  * Count Total Assignments API
- * Returns the total count of site assignments to payroll staff
+ * Returns the total number of staff-site assignments
  */
 
 header('Content-Type: application/json');
@@ -18,7 +18,7 @@ if ($method === 'GET') {
         
         echo json_encode([
             'success' => true,
-            'count' => $count
+            'count' => (int)$count
         ]);
     } else {
         echo json_encode([
