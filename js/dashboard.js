@@ -32,11 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 `<span style="color:#6d28d9;">${data.kpis.avg_attendance}%</span>`;
 
             // Populate site grid
-            const siteGrid = document.querySelector('.site-grid');
-            if (!siteGrid) {
-                console.warn('Site grid container not found on page');
-                return;
-            }
+    const siteGrid = document.querySelector('.site-grid');
+    if (!siteGrid) {
+        console.warn('Site grid container not found on page');
+        return;
+    }
             siteGrid.innerHTML = '';
             data.sites.forEach(site => {
                 const workersNeeded = site.Required_Workers - site.Current_Workers;

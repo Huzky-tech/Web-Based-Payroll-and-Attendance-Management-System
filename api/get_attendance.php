@@ -14,8 +14,6 @@ try {
         throw new Exception('Site ID required');
     }
     
-    $pdo = getDbConnection();
-    
     // Get workers assigned to site
     $workers_sql = "
         SELECT DISTINCT w.WorkerID, w.First_Name, w.Last_Name, w.WorkerID as ID
@@ -23,9 +21,14 @@ try {
         INNER JOIN workerassignment wa ON w.WorkerID = wa.WorkerID
         WHERE wa.SiteID = ?
     ";
-    $workers_stmt = $pdo->prepare($workers_sql);
-    $workers_stmt->execute([$site_id]);
-    $workers = $workers_stmt->fetchAll(PDO::FETCH_ASSOC);
+    $workers_stmt = $conn->prepare($workers_sql);
+    $workers_stmt->bind_param("i", $site_id);
+    $workers_stmt->execute();
+    $workers_result = $workers_stmt->get_result();
+    $workers = [];
+    while ($row = $workers_result->fetch_assoc()) {
+        $workers[] = $row;
+    }
     
     $attendance = [];
     foreach ($workers as &$worker) {
@@ -34,9 +37,11 @@ try {
             FROM attendance 
             WHERE WorkerID = ? AND SiteID = ? AND Date = ?
         ";
-        $att_stmt = $pdo->prepare($att_sql);
-        $att_stmt->execute([$worker['WorkerID'], $site_id, $date]);
-        $record = $att_stmt->fetch(PDO::FETCH_ASSOC);
+        $att_stmt = $conn->prepare($att_sql);
+        $att_stmt->bind_param("iis", $worker['WorkerID'], $site_id, $date);
+        $att_stmt->execute();
+        $att_result = $att_stmt->get_result();
+        $record = $att_result->fetch_assoc();
         
         $worker['Time_In'] = $record ? $record['Time_In'] : null;
         $worker['Time_Out'] = $record ? $record['Time_Out'] : null;

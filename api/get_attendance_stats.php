@@ -9,8 +9,6 @@ require_once 'connection/db_config.php';
 try {
     $date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
     
-    $pdo = getDbConnection();
-    
     // Get stats for active sites
     $stats_sql = "
         SELECT 
@@ -29,9 +27,14 @@ try {
         ORDER BY present_count DESC
     ";
     
-    $stmt = $pdo->prepare($stats_sql);
-    $stmt->execute([$date]);
-    $stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $conn->prepare($stats_sql);
+    $stmt->bind_param("s", $date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stats = [];
+    while ($row = $result->fetch_assoc()) {
+        $stats[] = $row;
+    }
     
     // Ensure absent_count reflects workers without attendance
     foreach ($stats as &$stat) {

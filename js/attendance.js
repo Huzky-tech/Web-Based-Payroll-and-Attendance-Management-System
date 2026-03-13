@@ -15,11 +15,14 @@ class AttendanceSystem {
 
     bindEvents() {
         // Dynamic card binding after load
-        document.addEventListener('click', (e) => {
+document.addEventListener('click', (e) => {
             if (e.target.closest('.project-card')) {
                 this.loadSiteAttendance(e.target.closest('.project-card'));
+            } else if (e.target.matches('.add-worker-btn')) {
+                window.location.href = `worker.php?assign_site=${this.currentSiteId}`;
             }
         });
+
 
         // Filters
         const dateInput = document.querySelector('input[type="date"]');
@@ -56,7 +59,7 @@ class AttendanceSystem {
     }
 
     populateCards(stats) {
-        const container = document.querySelector('.cards-grid');
+        const container = document.getElementById('statsCards');
         if (!container) return;
 
         container.innerHTML = '';
@@ -83,9 +86,17 @@ class AttendanceSystem {
         });
     }
 
+
     async loadSiteAttendance(card) {
         document.querySelectorAll('.project-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
+
+        // Update table header with site name
+        const siteName = card.querySelector('h3').textContent;
+        const headerH3 = document.getElementById('tableSiteHeader');
+        if (headerH3) {
+            headerH3.innerHTML = `<i class="fa-solid fa-city" style="color: #f39c12;"></i> ${siteName}`;
+        }
 
         this.currentSiteId = parseInt(card.dataset.siteId);
         
@@ -104,6 +115,7 @@ class AttendanceSystem {
             console.error('Failed to load attendance:', error);
         }
     }
+
 
     displayAttendance(records) {
         const tbody = document.getElementById('attendance-body');
