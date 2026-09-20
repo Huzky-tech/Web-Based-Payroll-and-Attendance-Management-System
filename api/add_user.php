@@ -77,6 +77,9 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 try {
     user_identity_ensure_columns($conn);
     user_identity_lock($conn);
+    if (user_identity_email_exists($conn, $email, 0)) {
+        throw new RuntimeException('This email address is already registered.');
+    }
     if (user_identity_full_name_exists($conn, $full_name, 0)) {
         echo json_encode(['success' => false, 'message' => 'This first and last name combination is already registered.']);
         exit;

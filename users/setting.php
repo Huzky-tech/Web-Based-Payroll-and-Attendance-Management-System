@@ -54,7 +54,7 @@ if (!$isAccountOnlySettings) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
     <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
-<script src="../js/setting.js?v=20260920-full-name-2" defer></script>
+<script src="../js/setting.js?v=20260920-availability-3" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -481,7 +481,7 @@ if (!$isAccountOnlySettings) {
                 </div>
                 <div>
                     <label>Email Address</label>
-                    <input type="email" id="newUserEmail" placeholder="user@example.com">
+                    <input type="email" id="newUserEmail" data-no-live-validation placeholder="user@example.com">
                 </div>
                 <div>
                     <label>Role</label>
@@ -535,7 +535,7 @@ if (!$isAccountOnlySettings) {
                 </div>
                 <div>
                     <label>Email Address</label>
-                    <input type="email" id="editUserEmail" placeholder="user@example.com">
+                    <input type="email" id="editUserEmail" data-no-live-validation placeholder="user@example.com">
                 </div>
                 <div>
                     <label>Role</label>

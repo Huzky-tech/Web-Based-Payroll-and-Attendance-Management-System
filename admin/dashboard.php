@@ -72,12 +72,12 @@ if ($companyRow = $companyResult->fetch_assoc()) {
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260916-payroll-validation-1">
-<script src="../js/user_email_validation.js?v=20260920-user-management-1" defer></script>
-<script src="../js/setting.js?v=20260920-full-name-2" defer></script>
+<script src="../js/user_email_validation.js?v=20260920-availability-3" defer></script>
+<script src="../js/setting.js?v=20260920-availability-3" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'employee'): ?>
     <link rel="stylesheet" href="../css/employee.css?v=20260910-2">
-<script src="../js/employee.js?v=20260920-full-name-2" defer></script>
+<script src="../js/employee.js?v=20260920-availability-3" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'positions'): ?>
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">

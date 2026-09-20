@@ -51,8 +51,8 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/setting.css?v=20260916-payroll-validation-1">
     <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
-<script src="../js/user_email_validation.js?v=20260920-user-management-1" defer></script>
-<script src="../js/setting.js?v=20260920-full-name-2" defer></script>
+<script src="../js/user_email_validation.js?v=20260920-availability-3" defer></script>
+<script src="../js/setting.js?v=20260920-availability-3" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -380,18 +380,18 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="name-fields-row">
                     <div>
                         <label>First Name</label>
-                        <input type="text" id="newUserFirstName" placeholder="Enter first name" autocomplete="given-name" oninput="validateUserIdentityFields('new')">
+                        <input type="text" id="newUserFirstName" data-no-live-validation placeholder="Enter first name" autocomplete="given-name" oninput="validateUserIdentityFields('new')">
                         <div class="field-validation-message" id="newUserFirstNameError"></div>
                     </div>
                     <div>
                         <label>Last Name</label>
-                        <input type="text" id="newUserLastName" placeholder="Enter last name" autocomplete="family-name" oninput="validateUserIdentityFields('new')">
+                        <input type="text" id="newUserLastName" data-no-live-validation placeholder="Enter last name" autocomplete="family-name" oninput="validateUserIdentityFields('new')">
                         <div class="field-validation-message" id="newUserLastNameError"></div>
                     </div>
                 </div>
                 <div>
                     <label>Email Address</label>
-                    <input type="email" id="newUserEmail" placeholder="user@example.com" autocomplete="email" oninput="validateUserIdentityFields('new')">
+                    <input type="email" id="newUserEmail" data-no-live-validation placeholder="user@example.com" autocomplete="email" oninput="validateUserIdentityFields('new')">
                     <div class="field-validation-message" id="newUserEmailError"></div>
                 </div>
                 <div>
@@ -429,18 +429,18 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                 <div class="name-fields-row">
                     <div>
                         <label>First Name</label>
-                        <input type="text" id="editUserFirstName" placeholder="Enter first name" autocomplete="given-name" oninput="validateUserIdentityFields('edit')">
+                        <input type="text" id="editUserFirstName" data-no-live-validation placeholder="Enter first name" autocomplete="given-name" oninput="validateUserIdentityFields('edit')">
                         <div class="field-validation-message" id="editUserFirstNameError"></div>
                     </div>
                     <div>
                         <label>Last Name</label>
-                        <input type="text" id="editUserLastName" placeholder="Enter last name" autocomplete="family-name" oninput="validateUserIdentityFields('edit')">
+                        <input type="text" id="editUserLastName" data-no-live-validation placeholder="Enter last name" autocomplete="family-name" oninput="validateUserIdentityFields('edit')">
                         <div class="field-validation-message" id="editUserLastNameError"></div>
                     </div>
                 </div>
                 <div>
                     <label>Email Address</label>
-                    <input type="email" id="editUserEmail" placeholder="user@example.com" autocomplete="email" oninput="validateUserIdentityFields('edit')">
+                    <input type="email" id="editUserEmail" data-no-live-validation placeholder="user@example.com" autocomplete="email" oninput="validateUserIdentityFields('edit')">
                     <div class="field-validation-message" id="editUserEmailError"></div>
                 </div>
                 <div>

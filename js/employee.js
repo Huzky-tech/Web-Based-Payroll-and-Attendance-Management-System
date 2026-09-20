@@ -800,7 +800,7 @@ async function changeMyPassword() {
 let addUserBackgroundState = null;
 
 function trapAddUserFocus(event) {
-    if (event.key !== 'Tab') return;
+    if (event.key !== 'Tab' || document.getElementById('actionResultModal')?.classList.contains('active')) return;
     const modal = document.getElementById('addUserModal');
     const controls = Array.from(modal.querySelectorAll('input, select, textarea, button, [tabindex]'))
         .filter(control => !control.disabled && control.tabIndex >= 0 && control.getClientRects().length);
@@ -832,6 +832,13 @@ function openAddUserModal() {
     if (panel) panel.inert = true;
     document.addEventListener('keydown', trapAddUserFocus);
     window.resetUserEmailAvailability?.('new');
+    const roleSelect = document.getElementById('newUserRole');
+    if (roleSelect) {
+        const adminExists = userAllUsersData.some(user => user.role === 'Admin');
+        const adminOption = Array.from(roleSelect.options).find(option => option.value === 'Admin');
+        if (adminOption) adminOption.disabled = adminExists;
+        if (roleSelect.value === 'Admin') roleSelect.value = 'Payroll Staff';
+    }
     document.getElementById('addUserModal').style.display = 'flex';
     validateUserIdentityFields('new');
     document.getElementById('userSearchInput')?.blur();
@@ -1079,7 +1086,7 @@ async function handleAddUser() {
     const email = document.getElementById('newUserEmail').value.trim();
     const role = document.getElementById('newUserRole').value;
     if (!validateUserIdentityFields('new', true) || !role) {
-        alert('Please fill in all fields.');
+        showSettingsActionResult(false, 'Please correct the highlighted fields and wait for the availability check to finish.', 'User Creation');
         return;
     }
 
@@ -1095,13 +1102,15 @@ async function handleAddUser() {
         button.disabled = true;
         button.textContent = 'Creating account...';
     }
+    window.showProcessingModal?.('Creating account and sending the temporary password...');
     try {
         const data = await fetchJson('../api/add_user.php', { method: 'POST', body: formData });
         if (data.success) {
             closeAddUserModal();
-            await loadUsers(true);
         }
         showSettingsActionResult(data.success, data.message, 'User Creation');
+        window.resetUserEmailAvailability?.('new');
+        if (data.success) await loadUsers(true);
     } catch (error) {
         showSettingsActionResult(false, 'Unable to confirm account creation. Refresh the user list before retrying.', 'User Creation');
     } finally {

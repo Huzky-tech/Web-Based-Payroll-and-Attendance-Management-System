@@ -36,6 +36,7 @@ try {
         exit;
     }
 
+    user_identity_lock($conn);
     $conn->begin_transaction();
     $result = sample_data_run_seeder($conn, (int) $adminUserId);
     $conn->commit();

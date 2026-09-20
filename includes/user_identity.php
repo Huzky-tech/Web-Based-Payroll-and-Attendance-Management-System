@@ -93,6 +93,19 @@ function user_identity_full_name_exists(mysqli $conn, string $fullName, int $exc
     if (!$stmt->execute()) throw new RuntimeException('Unable to check full name availability.');
     $exists = $stmt->get_result()->num_rows > 0;
     $stmt->close();
+    // Some older installations still expose the legacy employee/worker forms.
+    foreach (['employees', 'workers'] as $table) {
+        if ($exists) break;
+        $tables = $conn->query("SHOW TABLES LIKE '{$table}'");
+        if (!$tables) throw new RuntimeException('Unable to check employee names.');
+        if ($tables->num_rows === 0) continue;
+        $legacy = $conn->prepare("SELECT 1 FROM {$table} WHERE LOWER(TRIM(REGEXP_REPLACE(name, '[[:space:]]+', ' '))) = LOWER(?) LIMIT 1");
+        if (!$legacy) throw new RuntimeException('Unable to check employee names.');
+        $legacy->bind_param('s', $fullName);
+        if (!$legacy->execute()) throw new RuntimeException('Unable to check employee names.');
+        $exists = $legacy->get_result()->num_rows > 0;
+        $legacy->close();
+    }
     return $exists;
 }
 function user_identity_lock(mysqli $conn): void
@@ -106,4 +119,18 @@ function user_identity_lock(mysqli $conn): void
     register_shutdown_function(static function () use ($conn): void {
         try { $conn->query("SELECT RELEASE_LOCK(CONCAT(DATABASE(), ':user_identity'))"); } catch (Throwable $ignored) {}
     });
+}
+
+function user_identity_email_exists(mysqli $conn, string $email, int $excludeUserId = 0): bool
+{
+    $workerId = user_identity_linked_worker($conn, $excludeUserId);
+    $stmt = $conn->prepare("SELECT id FROM users WHERE LOWER(TRIM(email)) = LOWER(?) AND id <> ?
+        UNION ALL SELECT WorkerID FROM worker_profile WHERE LOWER(TRIM(Email)) = LOWER(?) AND WorkerID <> ? LIMIT 1");
+    if (!$stmt) throw new RuntimeException('Unable to check email availability.');
+    $email = trim($email);
+    $stmt->bind_param('sisi', $email, $excludeUserId, $email, $workerId);
+    if (!$stmt->execute()) throw new RuntimeException('Unable to check email availability.');
+    $exists = $stmt->get_result()->num_rows > 0;
+    $stmt->close();
+    return $exists;
 }

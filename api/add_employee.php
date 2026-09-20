@@ -33,7 +33,17 @@ if ($userId <= 0) {
     exit;
 }
 
-// Assuming 'employees' table exists or update to Worker table if needed
+try {
+    user_identity_lock($conn);
+    if (user_identity_full_name_exists($conn, trim($name))) {
+        throw new RuntimeException('This first and last name combination is already registered.');
+    }
+} catch (Throwable $error) {
+    echo json_encode(['success' => false, 'message' => $error->getMessage()]);
+    exit;
+}
+
+// Legacy employee form.
 $sql = "INSERT INTO employees (name, position, site, salary, join_date) VALUES (?, ?, ?, ?, ?)";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("sssss", $name, $position, $site, $salary, $join_date);

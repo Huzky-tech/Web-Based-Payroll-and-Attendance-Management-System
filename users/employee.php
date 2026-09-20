@@ -55,7 +55,7 @@ $conn->close();
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/employee.css?v=20260906-2">
     <script>window.employeePageRole = <?php echo json_encode($currentRole, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
-    <script src="../js/employee.js?v=20260920-full-name-2" defer></script>
+    <script src="../js/employee.js?v=20260920-availability-3" defer></script>
     <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
 </head>
 <body data-employee-page="users">

@@ -219,7 +219,6 @@ try {
 
     $workerFullName = trim($firstName . ' ' . $lastName);
     $accountHash = password_hash($accountPassword, PASSWORD_DEFAULT);
-    login_security_ensure_columns($conn);
     $accountStmt = $conn->prepare("INSERT INTO users (email, password, full_name, first_name, last_name, status, password_last_set_at, must_change_password) VALUES (?, ?, ?, ?, ?, 'Active', NOW(), 1)");
     if (!$accountStmt) throw new RuntimeException('Failed to prepare worker account.');
     $accountStmt->bind_param('sssss', $email, $accountHash, $workerFullName, $firstName, $lastName);

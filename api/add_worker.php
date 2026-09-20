@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../includes/user_identity.php';
 header('Content-Type: application/json');
 include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
@@ -12,6 +13,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = $_POST['phone'] ?? '';
     $joined_date = $_POST['joined_date'] ?? null;
     $status = $_POST['status'] ?? 'active';
+
+    try {
+        user_identity_lock($conn);
+        if (user_identity_full_name_exists($conn, trim($name))) {
+            throw new RuntimeException('This first and last name combination is already registered.');
+        }
+    } catch (Throwable $error) {
+        echo json_encode(['success' => false, 'message' => $error->getMessage()]);
+        exit;
+    }
 
     // Get site_id from site name
     $site_stmt = $conn->prepare("SELECT id FROM sites WHERE site_name = ?");

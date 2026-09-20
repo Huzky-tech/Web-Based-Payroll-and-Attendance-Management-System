@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);
-$fullName = trim($_POST['full_name'] ?? '');
+$fullName = trim(preg_replace('/\s+/u', ' ', (string) ($_POST['full_name'] ?? '')));
 $email = trim($_POST['email'] ?? '');
 $profilePhotoPath = null;
 
@@ -29,6 +29,17 @@ if ($fullName === '' || $email === '') {
 
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode(['success' => false, 'message' => 'Invalid email format']);
+    exit;
+}
+
+try {
+    user_identity_ensure_columns($conn);
+    user_identity_lock($conn);
+    if (user_identity_full_name_exists($conn, $fullName, $userId)) {
+        throw new RuntimeException('This first and last name combination is already registered.');
+    }
+} catch (Throwable $error) {
+    echo json_encode(['success' => false, 'message' => $error->getMessage()]);
     exit;
 }
 

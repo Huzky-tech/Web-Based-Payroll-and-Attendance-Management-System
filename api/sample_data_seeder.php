@@ -159,6 +159,9 @@ if (!function_exists('sample_data_get_or_create_user')) {
             return $existingId;
         }
 
+        if (user_identity_full_name_exists($conn, $fullName)) {
+            throw new RuntimeException('This first and last name combination is already registered: ' . $fullName);
+        }
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $stmt = $conn->prepare("INSERT INTO users (full_name, email, password, status) VALUES (?, ?, ?, 'Active')");
         if (!$stmt) {
@@ -338,6 +341,9 @@ if (!function_exists('sample_data_get_or_create_worker')) {
             return (int) $existingId;
         }
 
+        if (user_identity_full_name_exists($conn, $firstName . ' ' . $lastName)) {
+            throw new RuntimeException('This first and last name combination is already registered: ' . $firstName . ' ' . $lastName);
+        }
         $workerStatusId = (int) (sample_data_fetch_scalar($conn, "SELECT WorkerStatusID FROM workerstatus WHERE Status = 'Active' LIMIT 1") ?? 1);
         $rateType = 'Hourly';
         $dateHired = date('Y-m-d', strtotime('-' . (90 + (crc32($phone) % 300)) . ' days'));

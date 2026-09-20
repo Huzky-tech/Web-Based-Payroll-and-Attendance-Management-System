@@ -46,6 +46,8 @@ function isAtLeastEighteenYearsOld(string $date): bool
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'POST') {
+  try {
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     $data = json_decode(file_get_contents('php://input'), true);
     
     $employeeId = $data['employee_id'] ?? 0;
@@ -164,8 +166,11 @@ if ($method === 'POST') {
         exit;
     }
     
+    user_identity_ensure_columns($conn);
+    user_identity_lock($conn);
+
     // Check if employee exists
-    $checkSql = "SELECT CONCAT(First_Name, ' ', Last_Name) AS full_name FROM worker WHERE WorkerID = ?";
+    $checkSql = "SELECT First_Name, Last_Name, CONCAT(First_Name, ' ', Last_Name) AS full_name FROM worker WHERE WorkerID = ?";
     $checkStmt = $conn->prepare($checkSql);
     $checkStmt->bind_param("i", $employeeId);
     $checkStmt->execute();
@@ -177,31 +182,17 @@ if ($method === 'POST') {
         exit;
     }
     
-    $employeeName = $checkResult->fetch_assoc()['full_name'];
+    $existingEmployee = $checkResult->fetch_assoc();
+    $employeeName = $existingEmployee['full_name'];
+    $firstName = array_key_exists('first_name', $data) ? $firstName : $existingEmployee['First_Name'];
+    $lastName = array_key_exists('last_name', $data) ? $lastName : $existingEmployee['Last_Name'];
+    $linkedUserId = user_identity_linked_user($conn, (int) $employeeId);
     $checkStmt->close();
 
-    if ($firstName !== '' && $lastName !== '') {
-        $duplicateNameStmt = $conn->prepare("
-            SELECT WorkerID
-            FROM worker
-            WHERE WorkerID <> ?
-              AND LOWER(TRIM(First_Name)) = LOWER(TRIM(?))
-              AND LOWER(TRIM(Last_Name)) = LOWER(TRIM(?))
-            LIMIT 1
-        ");
-        if ($duplicateNameStmt) {
-            $duplicateNameStmt->bind_param('iss', $employeeId, $firstName, $lastName);
-            $duplicateNameStmt->execute();
-            $duplicateName = $duplicateNameStmt->get_result()->fetch_assoc();
-            $duplicateNameStmt->close();
-
-            if ($duplicateName) {
-                echo json_encode(['success' => false, 'message' => 'Another employee already uses this name.']);
-                exit;
-            }
-        }
+    if (user_identity_full_name_exists($conn, $firstName . ' ' . $lastName, 0, (int) $employeeId)) {
+        echo json_encode(['success' => false, 'message' => 'This first and last name combination is already registered.']);
+        exit;
     }
-
     if ($phone !== null) {
         $duplicatePhoneStmt = $conn->prepare("SELECT WorkerID FROM worker WHERE WorkerID <> ? AND Phone = ? LIMIT 1");
         if ($duplicatePhoneStmt) {
@@ -287,6 +278,8 @@ if ($method === 'POST') {
         $types .= "s";
     }
     
+    $conn->begin_transaction();
+
     // Update worker table
     if (!empty($updates)) {
         $params[] = $employeeId;
@@ -299,6 +292,15 @@ if ($method === 'POST') {
         $stmt->close();
     }
     
+    // Keep the dedicated login and employee record on the same name.
+    if ($linkedUserId > 0) {
+        $fullName = trim($firstName . ' ' . $lastName);
+        $nameStmt = $conn->prepare('UPDATE users SET full_name = ?, first_name = ?, last_name = ? WHERE id = ?');
+        $nameStmt->bind_param('sssi', $fullName, $firstName, $lastName, $linkedUserId);
+        $nameStmt->execute();
+        $nameStmt->close();
+    }
+
     // Update position in workerassignment
     if (!empty($position) && $siteId) {
         $posSql = "UPDATE workerassignment SET Role_On_Site = ? WHERE WorkerID = ? AND SiteID = ?";
@@ -426,12 +428,17 @@ if ($method === 'POST') {
     logAudit($conn, $userId, 'Employee Updated', "{$currentRole} updated employee: $employeeName (ID: $employeeId)");
 
     
+    $conn->commit();
     echo json_encode([
         'success' => true, 
         'message' => 'Employee updated successfully',
         'employee_id' => $employeeId
     ]);
     
+  } catch (Throwable $error) {
+    $conn->rollback();
+    echo json_encode(['success' => false, 'message' => $error->getMessage()]);
+  }
 } else {
     echo json_encode(['success' => false, 'message' => 'Invalid request method']);
 }

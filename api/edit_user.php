@@ -157,6 +157,9 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 try {
     user_identity_ensure_columns($conn);
     user_identity_lock($conn);
+    if (user_identity_email_exists($conn, $email, $user_id)) {
+        throw new RuntimeException('This email address is already registered.');
+    }
     if (user_identity_full_name_exists($conn, $full_name, $user_id)) {
         echo json_encode(['success' => false, 'message' => 'This first and last name combination is already registered.']);
         exit;
@@ -293,9 +296,11 @@ try {
     $stmt->bind_param("sssssi", $full_name, $first_name, $last_name, $email, $status, $user_id);
 
     if ($stmt->execute()) {
-        $workerNameStmt = $conn->prepare("UPDATE worker SET First_Name = ?, Last_Name = ? WHERE UserID = ?");
-        if ($workerNameStmt) {
-            $workerNameStmt->bind_param('ssi', $first_name, $last_name, $user_id);
+        $linkedWorkerId = user_identity_linked_worker($conn, $user_id);
+        if ($linkedWorkerId > 0) {
+            $workerNameStmt = $conn->prepare("UPDATE worker SET First_Name = ?, Last_Name = ? WHERE WorkerID = ?");
+            if (!$workerNameStmt) throw new RuntimeException('Unable to synchronize the employee name.');
+            $workerNameStmt->bind_param('ssi', $first_name, $last_name, $linkedWorkerId);
             if (!$workerNameStmt->execute()) {
                 throw new RuntimeException('Unable to synchronize the worker name: ' . $workerNameStmt->error);
             }
