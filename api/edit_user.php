@@ -4,6 +4,7 @@ require_once __DIR__ . '/../includes/user_identity.php';
 include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/worker_position_helpers.php';
+require_once __DIR__ . '/../includes/manager_role.php';
 
 // Session is already started in db_config.php via api_block_for_maintenance_if_needed()
 if (session_status() === PHP_SESSION_NONE) {
@@ -19,6 +20,7 @@ if (!in_array($currentRole, ['Admin', 'Assistant Admin'], true)) {
 
 // Helper function to get user's role from role tables
 function getUserRole($conn, $user_id) {
+    manager_role_ensure_table($conn);
     // Check admin table
     $stmt = $conn->prepare("SELECT 1 FROM admin WHERE UserID = ?");
     $stmt->bind_param("i", $user_id);
@@ -48,11 +50,16 @@ function getUserRole($conn, $user_id) {
     $stmt->execute();
     if ($stmt->get_result()->num_rows > 0) return 'Assistant Admin';
 
+    $stmt = $conn->prepare("SELECT 1 FROM managers WHERE UserID = ?");
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    if ($stmt->get_result()->num_rows > 0) return 'Manager';
+
     $stmt = $conn->prepare("SELECT Position FROM worker WHERE UserID = ? LIMIT 1");
     $stmt->bind_param("i", $user_id);
     $stmt->execute();
     $worker = $stmt->get_result()->fetch_assoc();
-    if ($worker) return strcasecmp(trim((string) ($worker['Position'] ?? '')), 'Manager') === 0 ? 'Manager' : 'Worker';
+    if ($worker) return 'Worker';
     
     return 'User';
 }
@@ -89,6 +96,7 @@ function executeRoleStatement(mysqli $conn, string $sql, int $userId): void {
 function updateUserRole(mysqli $conn, int $userId, string $newRole): void {
     executeRoleStatement($conn, 'DELETE FROM admin WHERE UserID = ?', $userId);
     executeRoleStatement($conn, 'DELETE FROM assistantmanager WHERE UserID = ?', $userId);
+    executeRoleStatement($conn, 'DELETE FROM managers WHERE UserID = ?', $userId);
     executeRoleStatement($conn, 'DELETE FROM hr WHERE UserID = ?', $userId);
     executeRoleStatement($conn, 'DELETE FROM payrollstaff WHERE UserID = ?', $userId);
     executeRoleStatement($conn, 'DELETE FROM timekeeper WHERE UserID = ?', $userId);
@@ -109,6 +117,9 @@ function updateUserRole(mysqli $conn, int $userId, string $newRole): void {
             break;
         case 'Assistant Admin':
             executeRoleStatement($conn, 'INSERT INTO assistantmanager (UserID) VALUES (?)', $userId);
+            break;
+        case 'Manager':
+            executeRoleStatement($conn, 'INSERT INTO managers (UserID) VALUES (?)', $userId);
             break;
         // User/Worker - no dashboard-role table entry is needed.
     }
@@ -292,9 +303,7 @@ if ($old_role === 'Payroll Staff' && ($status === 'Inactive' || $old_role !== $r
 }
 
 try {
-    if ($role === 'Manager' || $old_role === 'Manager') {
-        worker_position_ensure_column($conn);
-    }
+    manager_role_ensure_table($conn);
     $conn->begin_transaction();
     // Update user without role column
     $stmt = $conn->prepare("UPDATE users SET full_name = ?, first_name = ?, last_name = ?, email = ?, status = ? WHERE id = ?");
@@ -317,37 +326,11 @@ try {
             updateUserRole($conn, $user_id, $role);
         }
 
-        if ($role === 'Manager') {
-            if ($linkedWorkerId > 0) {
-                $managerStmt = $conn->prepare("UPDATE worker SET Position = 'Manager' WHERE WorkerID = ?");
-                if (!$managerStmt) throw new RuntimeException('Unable to prepare the manager role update.');
-                $managerStmt->bind_param('i', $linkedWorkerId);
-                if (!$managerStmt->execute()) throw new RuntimeException('Unable to update the manager role.');
-                $managerStmt->close();
-            } else {
-                $rateType = 'Hourly';
-                $rateAmount = 0.00;
-                $dateHired = date('Y-m-d');
-                $workerStatusId = 1;
-                $managerStmt = $conn->prepare("INSERT INTO worker (First_Name, Last_Name, Position, RateType, RateAmount, DateHired, WorkerStatusID, UserID) VALUES (?, ?, 'Manager', ?, ?, ?, ?, ?)");
-                if (!$managerStmt) throw new RuntimeException('Unable to prepare the manager employee profile.');
-                $managerStmt->bind_param('sssdsii', $first_name, $last_name, $rateType, $rateAmount, $dateHired, $workerStatusId, $user_id);
-                if (!$managerStmt->execute()) throw new RuntimeException('Unable to create the manager employee profile.');
-                $managerStmt->close();
-            }
-        } elseif ($old_role === 'Manager' && $role === 'Worker' && $linkedWorkerId > 0) {
-            $workerRoleStmt = $conn->prepare("UPDATE worker SET Position = 'Worker' WHERE WorkerID = ?");
-            if (!$workerRoleStmt) throw new RuntimeException('Unable to prepare the worker role update.');
-            $workerRoleStmt->bind_param('i', $linkedWorkerId);
-            if (!$workerRoleStmt->execute()) throw new RuntimeException('Unable to update the worker role.');
-            $workerRoleStmt->close();
-        }
         $conn->commit();
         $redirect = null;
         if ($user_id === (int) ($_SESSION['user_id'] ?? 0) && $old_role !== $role) {
-            $sessionRole = $role === 'Manager' ? 'Worker' : $role;
-            $_SESSION['role'] = $sessionRole;
-            $redirect = auth_get_redirect_path($sessionRole);
+            $_SESSION['role'] = $role;
+            $redirect = auth_get_redirect_path($role);
         }
 
         echo json_encode([

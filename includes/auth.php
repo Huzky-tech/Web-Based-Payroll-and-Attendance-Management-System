@@ -3,12 +3,15 @@
 // default PHPSESSID here makes authenticated users bounce forever between
 // index.php and their dashboard.
 require_once __DIR__ . '/security.php';
+require_once __DIR__ . '/manager_role.php';
 
 if (!function_exists('auth_get_user_role')) {
     function auth_get_user_role($conn, $user_id) {
+        manager_role_ensure_table($conn);
         $roleTables = [
             'admin' => 'Admin',
             'assistantmanager' => 'Assistant Admin',
+            'managers' => 'Manager',
             'hr' => 'HR',
             'payrollstaff' => 'Payroll Staff',
             'timekeeper' => 'Timekeeper',
@@ -53,6 +56,8 @@ if (!function_exists('auth_get_redirect_path')) {
                 return '../users/hr_dashboard.php';
             case 'Timekeeper':
                 return '../users/timekeeper_dashboard.php?page=attendance';
+            case 'Manager':
+                return '../users/pending_dashboard.php';
             case 'Worker':
                 return '../users/worker_dashboard.php';
             case 'User':
@@ -267,7 +272,7 @@ if (!function_exists('require_auth')) {
         $role = auth_get_user_role($conn, (int) $_SESSION['user_id']);
         $_SESSION['role'] = $role;
 
-        $supportedRoles = ['Admin', 'Assistant Admin', 'HR', 'Payroll Staff', 'Timekeeper', 'Worker', 'User'];
+        $supportedRoles = ['Admin', 'Assistant Admin', 'HR', 'Payroll Staff', 'Timekeeper', 'Manager', 'Worker', 'User'];
         if (!in_array($role, $supportedRoles, true)) {
             $role = 'User';
             $_SESSION['role'] = $role;

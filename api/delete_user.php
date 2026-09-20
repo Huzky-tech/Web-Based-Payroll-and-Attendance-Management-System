@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json');
 include 'connection/db_config.php';
+require_once __DIR__ . '/../includes/manager_role.php';
 
 // Session may already be started in db_config.php
 if (session_status() === PHP_SESSION_NONE) {
@@ -15,11 +16,13 @@ if ($currentRole !== 'Admin') {
 }
 
 function getUserRole($conn, $user_id) {
+    manager_role_ensure_table($conn);
     $tables = [
         'admin' => 'Admin',
         'payrollstaff' => 'Payroll Staff',
         'timekeeper' => 'Timekeeper',
         'assistantmanager' => 'Assistant Admin',
+        'managers' => 'Manager',
         'worker' => 'Worker'
     ];
 

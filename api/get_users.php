@@ -2,7 +2,9 @@
 header('Content-Type: application/json');
 include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/user_identity.php';
+require_once __DIR__ . '/../includes/manager_role.php';
 try {
+    manager_role_ensure_table($conn);
     $columns = user_identity_ensure_columns($conn);
     $lockedAtSql = in_array('account_locked_at', $columns, true) ? 'u.account_locked_at' : 'NULL';
     $firstNameSql = user_identity_first_name_sql();
@@ -17,7 +19,7 @@ try {
             WHEN EXISTS (SELECT 1 FROM payrollstaff r WHERE r.UserID = u.id) THEN 'Payroll Staff'
             WHEN EXISTS (SELECT 1 FROM timekeeper r WHERE r.UserID = u.id) THEN 'Timekeeper'
             WHEN EXISTS (SELECT 1 FROM assistantmanager r WHERE r.UserID = u.id) THEN 'Assistant Admin'
-            WHEN EXISTS (SELECT 1 FROM worker r WHERE r.UserID = u.id AND LOWER(TRIM(COALESCE(r.Position, ''))) = 'manager') THEN 'Manager'
+            WHEN EXISTS (SELECT 1 FROM managers r WHERE r.UserID = u.id) THEN 'Manager'
             WHEN EXISTS (SELECT 1 FROM worker r WHERE r.UserID = u.id) THEN 'Worker'
             ELSE 'User' END AS role
         FROM users u WHERE LOWER(COALESCE(u.status, '')) <> 'inactive' ORDER BY u.id DESC");
@@ -39,6 +41,7 @@ try {
         LEFT JOIN users linked_user ON linked_user.id = w.UserID
         LEFT JOIN admin a ON a.UserID = w.UserID
         LEFT JOIN assistantmanager am ON am.UserID = w.UserID
+        LEFT JOIN managers manager_role ON manager_role.UserID = w.UserID
         LEFT JOIN hr hr_role ON hr_role.UserID = w.UserID
         LEFT JOIN payrollstaff ps ON ps.UserID = w.UserID
         LEFT JOIN timekeeper tk ON tk.UserID = w.UserID
@@ -51,6 +54,7 @@ try {
         WHERE linked_user.id IS NULL
            OR a.UserID IS NOT NULL
            OR am.UserID IS NOT NULL
+           OR manager_role.UserID IS NOT NULL
            OR hr_role.UserID IS NOT NULL
            OR ps.UserID IS NOT NULL
            OR tk.UserID IS NOT NULL

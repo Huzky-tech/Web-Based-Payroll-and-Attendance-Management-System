@@ -6,6 +6,7 @@ include '../includes/password_policy.php';
 include '../includes/email_delivery.php';
 require_once __DIR__ . '/../includes/login_security.php';
 require_once __DIR__ . '/../includes/worker_position_helpers.php';
+require_once __DIR__ . '/../includes/manager_role.php';
 require_once __DIR__ . '/record_audit_log.php';
 
 // Session may already be started in db_config.php
@@ -101,6 +102,7 @@ if ($result->num_rows > 0) {
 }
 
 try {
+    manager_role_ensure_table($conn);
     if (in_array($role, ['Manager', 'Worker'], true)) {
         worker_position_ensure_column($conn);
     }
@@ -142,6 +144,10 @@ try {
                 $role_stmt->execute();
                 break;
             case 'Manager':
+                $role_stmt = $conn->prepare("INSERT INTO managers (UserID) VALUES (?)");
+                $role_stmt->bind_param("i", $user_id);
+                $role_stmt->execute();
+                break;
             case 'Worker':
                 // Also create a worker record
                 $rate_type = 'Hourly';
