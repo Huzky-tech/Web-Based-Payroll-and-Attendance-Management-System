@@ -73,7 +73,7 @@ if ($displayName === '') {
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'worker'): ?>
     <link rel="stylesheet" href="../css/worker.css?v=20260921-manager-1">
-<script src="../js/worker.js?v=20260921-manager-1" defer></script>
+<script src="../js/worker.js?v=20260921-manager-2" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'site_assign'): ?>
     <link rel="stylesheet" href="../css/site_assign.css?v=20260906-1">

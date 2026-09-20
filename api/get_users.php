@@ -17,6 +17,7 @@ try {
             WHEN EXISTS (SELECT 1 FROM payrollstaff r WHERE r.UserID = u.id) THEN 'Payroll Staff'
             WHEN EXISTS (SELECT 1 FROM timekeeper r WHERE r.UserID = u.id) THEN 'Timekeeper'
             WHEN EXISTS (SELECT 1 FROM assistantmanager r WHERE r.UserID = u.id) THEN 'Assistant Admin'
+            WHEN EXISTS (SELECT 1 FROM worker r WHERE r.UserID = u.id AND LOWER(TRIM(COALESCE(r.Position, ''))) = 'manager') THEN 'Manager'
             WHEN EXISTS (SELECT 1 FROM worker r WHERE r.UserID = u.id) THEN 'Worker'
             ELSE 'User' END AS role
         FROM users u WHERE LOWER(COALESCE(u.status, '')) <> 'inactive' ORDER BY u.id DESC");
@@ -77,4 +78,3 @@ try {
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
 ?>
-

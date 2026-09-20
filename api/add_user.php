@@ -5,6 +5,7 @@ include 'connection/db_config.php';
 include '../includes/password_policy.php';
 include '../includes/email_delivery.php';
 require_once __DIR__ . '/../includes/login_security.php';
+require_once __DIR__ . '/../includes/worker_position_helpers.php';
 require_once __DIR__ . '/record_audit_log.php';
 
 // Session may already be started in db_config.php
@@ -50,7 +51,7 @@ if ($role === 'Assistant Admin') {
     $role = 'Assistant Admin';
 }
 
-$allowedRoles = ['Admin', 'Assistant Admin', 'HR', 'Payroll Staff', 'Timekeeper', 'Worker'];
+$allowedRoles = ['Admin', 'Assistant Admin', 'HR', 'Payroll Staff', 'Timekeeper', 'Manager', 'Worker'];
 if (!in_array($role, $allowedRoles, true)) {
     echo json_encode(['success' => false, 'message' => 'Selected role is no longer available.']);
     exit;
@@ -100,6 +101,9 @@ if ($result->num_rows > 0) {
 }
 
 try {
+    if (in_array($role, ['Manager', 'Worker'], true)) {
+        worker_position_ensure_column($conn);
+    }
     $password = generate_temporary_password($conn);
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
     login_security_ensure_columns($conn);
@@ -137,6 +141,7 @@ try {
                 $role_stmt->bind_param("i", $user_id);
                 $role_stmt->execute();
                 break;
+            case 'Manager':
             case 'Worker':
                 // Also create a worker record
                 $rate_type = 'Hourly';
@@ -144,9 +149,10 @@ try {
                 $phone = null;
                 $date_hired = date('Y-m-d');
                 $worker_status_id = 1; // Active status
-                
-                $worker_stmt = $conn->prepare("INSERT INTO worker (First_Name, Last_Name, RateType, RateAmount, Phone, DateHired, WorkerStatusID, UserID) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                $worker_stmt->bind_param("sssdssii", $first_name, $last_name, $rate_type, $rate_amount, $phone, $date_hired, $worker_status_id, $user_id);
+                $position = $role === 'Manager' ? 'Manager' : 'Worker';
+
+                $worker_stmt = $conn->prepare("INSERT INTO worker (First_Name, Last_Name, Position, RateType, RateAmount, Phone, DateHired, WorkerStatusID, UserID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $worker_stmt->bind_param("ssssdssii", $first_name, $last_name, $position, $rate_type, $rate_amount, $phone, $date_hired, $worker_status_id, $user_id);
                 if (!$worker_stmt->execute()) {
                     throw new RuntimeException('Failed to create the Worker profile.');
                 }
