@@ -1,0 +1,120 @@
+# Payroll and Attendance System - Apache configuration
+
+Options -Indexes
+DirectoryIndex index.php
+
+# Block access to environment files, source/configuration files, database
+# exports, logs, and other files that should never be downloaded publicly.
+<FilesMatch "(^\.|\.(?:env|ini|log|sql|lock|md|bak|dist)$|^composer\.(?:json|lock)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Clean authenticated dashboard URLs. Module names are moved from the
+    # query string into the path, hiding PHP controllers and ?page= values.
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/ass_dashboard\.php\?page=([^&\s]+) [NC]
+    RewriteRule ^users/ass_dashboard\.php$ /capstone/assistant/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/assistant/dashboard\?page=([^&\s]+) [NC]
+    RewriteRule ^assistant/dashboard$ /capstone/assistant/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/ass_dashboard\.php(?:[?\s]) [NC]
+    RewriteRule ^users/ass_dashboard\.php$ /capstone/assistant/dashboard [R=302,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+capstone/admin/dashboard\.php\?page=([^&\s]+) [NC]
+    RewriteRule ^admin/dashboard\.php$ /capstone/admin/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/admin/dashboard\?page=([^&\s]+) [NC]
+    RewriteRule ^admin/dashboard$ /capstone/admin/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/admin/dashboard\.php(?:[?\s]) [NC]
+    RewriteRule ^admin/dashboard\.php$ /capstone/admin/dashboard [R=302,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/hr_dashboard\.php\?page=([^&\s]+) [NC]
+    RewriteRule ^users/hr_dashboard\.php$ /capstone/hr/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/hr/dashboard\?page=([^&\s]+) [NC]
+    RewriteRule ^hr/dashboard$ /capstone/hr/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/hr_dashboard\.php(?:[?\s]) [NC]
+    RewriteRule ^users/hr_dashboard\.php$ /capstone/hr/dashboard [R=302,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/payroll_dashboard\.php\?page=([^&\s]+) [NC]
+    RewriteRule ^users/payroll_dashboard\.php$ /capstone/payroll/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/payroll/dashboard\?page=([^&\s]+) [NC]
+    RewriteRule ^payroll/dashboard$ /capstone/payroll/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/payroll_dashboard\.php(?:[?\s]) [NC]
+    RewriteRule ^users/payroll_dashboard\.php$ /capstone/payroll/dashboard [R=302,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/timekeeper_dashboard\.php\?page=([^&\s]+) [NC]
+    RewriteRule ^users/timekeeper_dashboard\.php$ /capstone/timekeeper/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/timekeeper/dashboard\?page=([^&\s]+) [NC]
+    RewriteRule ^timekeeper/dashboard$ /capstone/timekeeper/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/timekeeper_dashboard\.php(?:[?\s]) [NC]
+    RewriteRule ^users/timekeeper_dashboard\.php$ /capstone/timekeeper/dashboard [R=302,L,NE]
+
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/worker_dashboard\.php\?page=([^&\s]+) [NC]
+    RewriteRule ^users/worker_dashboard\.php$ /capstone/worker/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/worker/dashboard\?page=([^&\s]+) [NC]
+    RewriteRule ^worker/dashboard$ /capstone/worker/%1? [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/users/worker_dashboard\.php(?:[?\s]) [NC]
+    RewriteRule ^users/worker_dashboard\.php$ /capstone/worker/dashboard [R=302,L,NE]
+
+    # Keep legacy nested report URLs compatible. Report assets and API calls use
+    # paths relative to /<role>/reports, so a nested /reports/<type> URL would
+    # otherwise make them resolve under /<role>/reports/.
+    RewriteCond %{THE_REQUEST} \s/+capstone/assistant/reports/([^/?\s]+) [NC]
+    RewriteRule ^assistant/reports/([^/]+)/?$ /capstone/assistant/reports?report=$1 [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/admin/reports/([^/?\s]+) [NC]
+    RewriteRule ^admin/reports/([^/]+)/?$ /capstone/admin/reports?report=$1 [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/hr/reports/([^/?\s]+) [NC]
+    RewriteRule ^hr/reports/([^/]+)/?$ /capstone/hr/reports?report=$1 [R=302,L,NE]
+    RewriteCond %{THE_REQUEST} \s/+capstone/payroll/reports/([^/?\s]+) [NC]
+    RewriteRule ^payroll/reports/([^/]+)/?$ /capstone/payroll/reports?report=$1 [R=302,L,NE]
+
+    # Internally dispatch clean paths to the existing authenticated controllers.
+    RewriteRule ^assistant/reports/([^/]+)/?$ users/ass_dashboard.php?page=reports&report=$1 [END,QSA]
+    RewriteRule ^admin/reports/([^/]+)/?$ admin/dashboard.php?page=reports&report=$1 [END,QSA]
+    RewriteRule ^hr/reports/([^/]+)/?$ users/hr_dashboard.php?page=reports&report=$1 [END,QSA]
+    RewriteRule ^payroll/reports/([^/]+)/?$ users/payroll_dashboard.php?page=reports&report=$1 [END,QSA]
+    RewriteRule ^assistant/dashboard/?$ users/ass_dashboard.php [END,QSA]
+    RewriteRule ^assistant/([^/]+)/?$ users/ass_dashboard.php?page=$1 [END,QSA]
+    RewriteRule ^admin/dashboard/?$ admin/dashboard.php [END,QSA]
+    RewriteRule ^admin/([^/]+)/?$ admin/dashboard.php?page=$1 [END,QSA]
+    RewriteRule ^hr/dashboard/?$ users/hr_dashboard.php [END,QSA]
+    RewriteRule ^hr/([^/]+)/?$ users/hr_dashboard.php?page=$1 [END,QSA]
+    RewriteRule ^payroll/dashboard/?$ users/payroll_dashboard.php [END,QSA]
+    RewriteRule ^payroll/([^/]+)/?$ users/payroll_dashboard.php?page=$1 [END,QSA]
+    RewriteRule ^timekeeper/dashboard/?$ users/timekeeper_dashboard.php [END,QSA]
+    RewriteRule ^timekeeper/([^/]+)/?$ users/timekeeper_dashboard.php?page=$1 [END,QSA]
+    RewriteRule ^worker/dashboard/?$ users/worker_dashboard.php [END,QSA]
+    RewriteRule ^worker/([^/]+)/?$ users/worker_dashboard.php?page=$1 [END,QSA]
+
+    # Block sensitive application directories while allowing PHP to include
+    # their files internally.
+    RewriteRule ^(?:database|includes|tmp|vendor)(?:/|$) - [F,L,NC]
+
+    # Prevent Apache content negotiation from changing application routes.
+    Options -MultiViews
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Content-Security-Policy "object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(self)"
+
+    # Avoid caching authenticated PHP pages on shared machines.
+    <FilesMatch "\.php$">
+        Header always set Cache-Control "no-store, no-cache, must-revalidate"
+        Header always set Pragma "no-cache"
+    </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+    AddDefaultCharset UTF-8
+</IfModule>
+
+# Keep PHP error details out of browser responses. Errors remain available in
+# the Apache/PHP error log for local debugging.
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag log_errors On
+</IfModule>

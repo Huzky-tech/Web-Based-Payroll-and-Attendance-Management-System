@@ -1,0 +1,621 @@
+/* NiceAdmin-inspired admin dashboard home */
+:root {
+    --na-primary: #D97A00;
+    --na-primary-dark: #b86800;
+    --na-primary-soft: #fff4e6;
+    --na-text: #012970;
+    --na-muted: #6c757d;
+    --na-border: #ebeef4;
+    --na-card-shadow: 0 0 30px rgba(1, 41, 112, 0.06);
+    --na-radius: 12px;
+}
+
+.dashboard-home {
+    --bs-primary: #D97A00;
+    --bs-primary-rgb: 217, 122, 0;
+}
+
+.dashboard-home .pagetitle {
+    margin-bottom: 1.25rem;
+}
+
+.dashboard-home .pagetitle h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--na-text);
+    margin: 0 0 0.25rem;
+}
+
+.dashboard-home .pagetitle p {
+    margin: 0;
+    color: var(--na-muted);
+    font-size: 0.9rem;
+}
+
+/* KPI cards */
+.dashboard-home .info-card {
+    background: #fff;
+    border: 1px solid var(--na-border);
+    border-radius: var(--na-radius);
+    box-shadow: var(--na-card-shadow);
+    padding: 1.25rem 1.35rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.dashboard-home .info-card > div:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.dashboard-home .info-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(1, 41, 112, 0.1);
+}
+
+.dashboard-home .info-card .card-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.dashboard-home .info-card .card-icon.orange { background: var(--na-primary-soft); color: var(--na-primary); }
+.dashboard-home .info-card .card-icon.blue { background: #e8f4fd; color: #0d6efd; }
+.dashboard-home .info-card .card-icon.green { background: #e8f8ef; color: #198754; }
+.dashboard-home .info-card .card-icon.purple { background: #f0ebff; color: #6f42c1; }
+.dashboard-home .info-card .card-icon.red { background: #fdecea; color: #dc3545; }
+.dashboard-home .info-card .card-icon.teal { background: #e6f7f5; color: #0d9488; }
+
+.dashboard-home .info-card h6 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--na-muted);
+    margin: 0 0 0.2rem;
+    text-transform: none;
+}
+
+.dashboard-home .info-card .kpi-value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: var(--na-text);
+    line-height: 1.2;
+    max-width: 100%;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.dashboard-home .info-card.payroll-due-card .kpi-value {
+    font-size: clamp(0.8rem, 1.2vw, 1.3rem);
+    letter-spacing: -0.025em;
+}
+
+.dashboard-home .info-card .kpi-sub {
+    font-size: 0.75rem;
+    color: var(--na-muted);
+    margin-top: 0.15rem;
+}
+
+/* Section cards */
+.dashboard-home .card {
+    border: 1px solid var(--na-border);
+    border-radius: var(--na-radius);
+    box-shadow: var(--na-card-shadow);
+    margin-bottom: 0;
+}
+
+.dashboard-home .card .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--na-text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-home .card .card-title i {
+    color: var(--na-primary);
+}
+
+.dashboard-home .card-header {
+    background: #fff;
+    border-bottom: 1px solid var(--na-border);
+    padding: 1rem 1.25rem;
+}
+
+.dashboard-home .card-body {
+    padding: 1.25rem;
+}
+
+/* Payroll breakdown */
+.dashboard-home .payroll-breakdown .row-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 0;
+    border-bottom: 1px dashed var(--na-border);
+    font-size: 0.9rem;
+}
+
+.dashboard-home .payroll-breakdown .row-item:last-child {
+    border-bottom: none;
+    padding-top: 0.85rem;
+    margin-top: 0.25rem;
+    border-top: 2px solid var(--na-border);
+    font-weight: 700;
+    color: var(--na-text);
+}
+
+.dashboard-home .payroll-breakdown .row-item .amount {
+    font-weight: 600;
+}
+
+.dashboard-home .payroll-breakdown .row-item.net .amount {
+    color: var(--na-primary);
+    font-size: 1.1rem;
+}
+
+.dashboard-home .payroll-week-total {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--na-primary);
+}
+
+/* Active sites — minimal list */
+.dashboard-home .active-sites-card .card-header {
+    padding: 0.85rem 1.25rem;
+}
+
+.dashboard-home .active-sites-link {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--na-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+}
+
+.dashboard-home .active-sites-link:hover {
+    color: var(--na-primary);
+}
+
+.dashboard-home .sites-panel-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard-home .site-list-empty {
+    padding: 1.25rem;
+    font-size: 0.85rem;
+}
+
+.dashboard-home .site-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.7rem 1.25rem;
+    border: none;
+    border-bottom: 1px solid var(--na-border);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.dashboard-home .site-row:last-child {
+    border-bottom: none;
+}
+
+.dashboard-home .site-row:hover {
+    background: #f8fafc;
+}
+
+.dashboard-home .site-row-status {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dashboard-home .site-row-status.is-active {
+    background: #22c55e;
+}
+
+.dashboard-home .site-row-status.is-inactive {
+    background: #d1d5db;
+}
+
+.dashboard-home .site-row-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.dashboard-home .site-row-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--na-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dashboard-home .site-row-sub {
+    font-size: 0.75rem;
+    color: var(--na-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dashboard-home .site-row-workers {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--na-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.dashboard-home .site-row-chevron {
+    font-size: 0.65rem;
+    color: #cbd5e1;
+    flex-shrink: 0;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.dashboard-home .site-row:hover .site-row-chevron {
+    color: var(--na-primary);
+    transform: translateX(2px);
+}
+
+/* Tables */
+.dashboard-home .table {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+.dashboard-home .table thead th {
+    background: #f6f9ff;
+    color: var(--na-text);
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--na-border);
+    padding: 0.75rem 1rem;
+}
+
+.dashboard-home .table tbody td {
+    padding: 0.75rem 1rem;
+    vertical-align: middle;
+    border-color: var(--na-border);
+}
+
+.dashboard-home .badge-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.35em 0.65em;
+    border-radius: 6px;
+}
+
+.dashboard-home .badge-present { background: #d1fae5; color: #065f46; }
+.dashboard-home .badge-late { background: #fef3c7; color: #92400e; }
+.dashboard-home .badge-absent { background: #fee2e2; color: #991b1b; }
+.dashboard-home .badge-pending { background: #fff4e6; color: #b86800; }
+.dashboard-home .badge-active { background: #d1fae5; color: #065f46; }
+
+/* Quick actions + activity — balanced 50/50 row */
+.dashboard-home .dashboard-bottom-row {
+    margin-left: -8px;
+    margin-right: -8px;
+    margin-top: -4px;
+}
+
+.dashboard-home .dashboard-bottom-row > [class*="col-"] {
+    padding-left: 8px;
+    padding-right: 8px;
+    display: flex;
+}
+
+.dashboard-home .dashboard-bottom-row .dashboard-panel-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.dashboard-home .dashboard-bottom-row .dashboard-panel-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+    overflow: hidden;
+    padding: 0.85rem 1rem;
+}
+
+/* Reduce header padding to gain more content space */
+.dashboard-home .dashboard-bottom-row .card-header {
+    padding: 0.7rem 1rem;
+}
+
+.dashboard-home .dashboard-bottom-row .card-header .card-title {
+    font-size: 0.88rem;
+}
+
+/* Ensure activity timeline and quick actions match height */
+.dashboard-home .dashboard-bottom-row .col-md-6 {
+    display: flex;
+}
+
+.dashboard-home .quick-actions-grid-balanced {
+    grid-template-columns: repeat(2, 1fr);
+    flex: 1;
+    align-content: start;
+}
+
+.dashboard-home .quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.85rem;
+}
+
+.dashboard-home .quick-actions-grid-balanced .quick-action-btn {
+    min-height: 72px;
+    padding: 0.85rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.dashboard-home .quick-actions-grid-balanced .quick-action-btn i {
+    font-size: 1.25rem;
+}
+
+.dashboard-home .quick-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 1.1rem 0.65rem;
+    border: 1px solid var(--na-border);
+    border-radius: var(--na-radius);
+    background: #fff;
+    color: var(--na-text);
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+    transition: all 0.2s ease;
+    min-height: 96px;
+}
+
+.dashboard-home .quick-action-btn:hover {
+    border-color: var(--na-primary);
+    color: var(--na-primary);
+    background: var(--na-primary-soft);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(217, 122, 0, 0.12);
+}
+
+.dashboard-home .quick-action-btn i {
+    font-size: 1.5rem;
+    color: var(--na-primary);
+}
+
+.dashboard-home .quick-action-btn:hover i {
+    color: var(--na-primary-dark);
+}
+
+/* Activity timeline — balanced beside quick actions */
+.dashboard-home .activity-timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.dashboard-home .activity-timeline-balanced {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+    min-height: 0;
+}
+
+.dashboard-home .activity-timeline-balanced::-webkit-scrollbar {
+    width: 5px;
+}
+
+.dashboard-home .activity-timeline-balanced::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+
+.dashboard-home .activity-timeline li {
+    position: relative;
+    padding: 0 0 1.1rem 2.25rem;
+    border-left: 2px solid var(--na-border);
+    margin-left: 0.65rem;
+}
+
+.dashboard-home .activity-timeline-balanced li {
+    padding: 0 0 0.85rem 2rem;
+    margin-left: 0.55rem;
+}
+
+.dashboard-home .activity-timeline li:last-child {
+    padding-bottom: 0;
+    border-left-color: transparent;
+}
+
+.dashboard-home .activity-timeline .activity-icon {
+    position: absolute;
+    left: -0.65rem;
+    top: 0;
+    width: 1.3rem;
+    height: 1.3rem;
+    border-radius: 50%;
+    background: var(--na-primary-soft);
+    color: var(--na-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px var(--na-border);
+}
+
+.dashboard-home .activity-timeline-balanced .activity-icon {
+    left: -0.58rem;
+    width: 1.15rem;
+    height: 1.15rem;
+    font-size: 0.5rem;
+}
+
+.dashboard-home .activity-timeline .activity-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--na-text);
+    margin-bottom: 0.15rem;
+}
+
+.dashboard-home .activity-timeline-balanced .activity-title {
+    font-size: 0.82rem;
+    margin-bottom: 0.12rem;
+    line-height: 1.3;
+}
+
+.dashboard-home .activity-timeline .activity-detail {
+    font-size: 0.8rem;
+    color: var(--na-muted);
+    margin-bottom: 0.2rem;
+}
+
+.dashboard-home .activity-timeline-balanced .activity-detail {
+    font-size: 0.75rem;
+    margin-bottom: 0.12rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.35;
+}
+
+.dashboard-home .activity-timeline .activity-time {
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+
+.dashboard-home .activity-timeline-balanced .activity-time {
+    font-size: 0.7rem;
+}
+
+.dashboard-home .activity-timeline-balanced .empty-state {
+    padding: 1.5rem 0;
+    font-size: 0.85rem;
+}
+
+@media (min-width: 992px) {
+    .dashboard-home .quick-actions-grid-balanced {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Overtime actions */
+.dashboard-home .btn-ot-approve,
+.dashboard-home .btn-ot-reject {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.55rem;
+    border-radius: 6px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.dashboard-home .btn-ot-approve {
+    background: #198754;
+    color: #fff;
+}
+
+.dashboard-home .btn-ot-reject {
+    background: #fff;
+    color: #dc3545;
+    border: 1px solid #fecaca;
+    margin-left: 0.25rem;
+}
+
+.dashboard-home .chart-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+    padding: 0.5rem 0 0;
+}
+
+.dashboard-home .attendance-chart-card .card-body {
+    padding: 1rem 1.25rem 1.15rem;
+}
+
+.dashboard-home .empty-state {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--na-muted);
+    font-size: 0.9rem;
+}
+
+.dashboard-home .sites-scroll-row {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+@media (max-width: 1199px) {
+    .dashboard-home .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1499px) {
+    .dashboard-home .info-card {
+        gap: 0.65rem;
+        padding: 1rem;
+    }
+
+    .dashboard-home .info-card .card-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.1rem;
+    }
+
+    .dashboard-home .info-card.payroll-due-card .kpi-value {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .dashboard-home .quick-actions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .dashboard-home .info-card .kpi-value {
+        font-size: 1.2rem;
+    }
+
+    .dashboard-home .info-card.payroll-due-card .kpi-value {
+        font-size: clamp(1rem, 5vw, 1.2rem);
+    }
+}
+
+/* Sidebar accent to match primary */
+.sidebar .nav-item.active {
+    background-color: var(--na-primary, #D97A00) !important;
+}

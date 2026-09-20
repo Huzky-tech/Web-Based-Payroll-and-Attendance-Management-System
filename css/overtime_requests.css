@@ -1,0 +1,445 @@
+.overtime-page {
+    padding: 24px;
+}
+
+.overtime-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.overtime-header h1 {
+    font-size: 24px;
+    color: #1f2937;
+    margin: 0;
+}
+
+.overtime-header p {
+    color: #6b7280;
+    margin: 6px 0 0;
+}
+
+.overtime-primary-btn {
+    border: none;
+    background: #d97706;
+    color: #fff;
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.overtime-filters {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    margin-bottom: 18px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.overtime-filters input,
+.overtime-filters select {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 9px 12px;
+    min-height: 40px;
+    min-width: 150px;
+    font: inherit;
+    font-size: 13px;
+    outline: none;
+}
+
+.overtime-filters input:focus,
+.overtime-filters select:focus {
+    border-color: #d97706;
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.13);
+}
+
+.overtime-filters .report-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 150px;
+}
+
+.overtime-filters .report-filter-field > span:first-child {
+    color: #6b7280;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.overtime-filters .report-search-field {
+    min-width: 220px;
+}
+
+.overtime-filters .report-search-control {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.overtime-filters .report-search-control i {
+    position: absolute;
+    left: 11px;
+    color: #d97706;
+    pointer-events: none;
+}
+
+.overtime-filters .report-search-control input {
+    padding-left: 34px;
+    width: 100%;
+}
+
+.overtime-filter-reset {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: #fff;
+    color: #374151;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.overtime-filter-reset:hover {
+    background: #f9fafb;
+}
+
+.overtime-table-wrap {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.overtime-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.overtime-table th,
+.overtime-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: left;
+    font-size: 14px;
+}
+
+.overtime-table th {
+    background: #f9fafb;
+    color: #6b7280;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.overtime-status {
+    display: inline-flex;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.overtime-status.pending { background: #fef3c7; color: #b45309; }
+.overtime-status.approved { background: #dcfce7; color: #15803d; }
+.overtime-status.rejected { background: #fee2e2; color: #b91c1c; }
+
+.overtime-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.overtime-action-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.overtime-action-btn.approve { background: #10b981; color: #fff; }
+.overtime-action-btn.reject { background: #ef4444; color: #fff; }
+.overtime-action-btn.view { background: #f3f4f6; color: #374151; }
+
+.overtime-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1400;
+}
+
+.overtime-modal-overlay.active { display: flex; }
+
+.overtime-modal {
+    width: min(640px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow: auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+}
+
+.overtime-modal-header,
+.overtime-modal-footer {
+    padding: 18px 22px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.overtime-modal-footer {
+    border-bottom: none;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.overtime-modal-body {
+    padding: 18px 22px;
+    display: grid;
+    gap: 14px;
+}
+
+.overtime-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.overtime-form-group input,
+.overtime-form-group select,
+.overtime-form-group textarea {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+.overtime-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.overtime-note {
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #92400e;
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13px;
+}
+
+.overtime-empty {
+    padding: 28px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.overtime-status-field {
+    display: grid;
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.overtime-status-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #1f2937;
+}
+
+.report-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 16px;
+}
+
+.report-pagination[hidden] {
+    display: none;
+}
+
+.report-page-btn {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    color: #1f2937;
+    cursor: pointer;
+    font-size: 13px;
+    min-height: 34px;
+    padding: 7px 13px;
+}
+
+.report-page-btn:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.report-page-label {
+    color: #4b5563;
+    font-size: 13px;
+}
+
+.overtime-total-hours {
+    font-weight: 700;
+    color: #d97706;
+}
+
+@media (max-width: 768px) {
+    .overtime-form-grid { grid-template-columns: 1fr; }
+    .overtime-filters { justify-content: stretch; width: 100%; margin-left: 0; }
+    .overtime-filters input,
+    .overtime-filters select,
+    .overtime-primary-btn { flex: 1; min-width: 150px; }
+
+    .overtime-table-wrap {
+        overflow: hidden;
+    }
+
+    .overtime-table,
+    .overtime-table tbody {
+        display: block;
+        width: 100%;
+    }
+
+    .overtime-table thead {
+        display: none;
+    }
+
+    .overtime-table tbody tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 20px;
+        padding: 18px 16px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .overtime-table tbody tr:last-child {
+        border-bottom: 0;
+    }
+
+    .overtime-table td {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        white-space: normal;
+    }
+
+    .overtime-table td::before {
+        content: attr(data-label);
+        color: #94a3b8;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .overtime-table td:first-child {
+        grid-column: 1;
+        grid-row: 1;
+        font-size: 16px;
+        font-weight: 700;
+    }
+
+    .overtime-table td:nth-last-child(2) {
+        grid-column: 2;
+        grid-row: 1;
+        align-items: flex-end;
+    }
+
+    .overtime-table td:first-child::before,
+    .overtime-table td:nth-last-child(2)::before {
+        display: none;
+    }
+
+    .overtime-table td:last-child {
+        grid-column: 1 / -1;
+        display: block;
+        margin-top: 4px;
+        padding-top: 14px;
+        border-top: 1px solid #eef2f7;
+    }
+
+    .overtime-table td:last-child::before {
+        display: none;
+    }
+
+    .overtime-table td[colspan] {
+        grid-column: 1 / -1;
+        display: block;
+        text-align: center;
+    }
+
+    .overtime-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+    }
+
+    .overtime-action-btn {
+        min-height: 38px;
+    }
+}
+
+@media (max-width: 480px) {
+    .overtime-page {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .overtime-filters {
+        display: grid;
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+
+    .overtime-filters .report-filter-field,
+    .overtime-filters input,
+    .overtime-filters select,
+    .overtime-primary-btn {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .overtime-table tbody tr {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 16px 12px;
+    }
+
+    .overtime-table td,
+    .overtime-table td:first-child,
+    .overtime-table td:nth-last-child(2),
+    .overtime-table td:last-child {
+        grid-column: 1;
+        grid-row: auto;
+        align-items: flex-start;
+    }
+}

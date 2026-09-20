@@ -1,0 +1,393 @@
+/* Shared visual refresh for the Assistant Admin dashboard and embedded modules. */
+body[data-dashboard-role=assistant] {
+    --assistant-accent: #d97706;
+    --assistant-accent-dark: #b45309;
+    --assistant-ink: #172033;
+    --assistant-muted: #64748b;
+    --assistant-border: #e5e7eb;
+    --assistant-surface: #ffffff;
+    background: linear-gradient(180deg, #fffaf4 0, #f6f7fb 260px, #eef2f7 100%);
+}
+
+/* Keep the dashboard shell stationary when embedded page styles are loaded. */
+@media (min-width: 801px) {
+    body[data-dashboard-role=assistant] {
+        display: flex !important;
+        width: 100% !important;
+        height: 100vh !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+
+    body[data-dashboard-role=assistant] > .sidebar {
+        position: relative !important;
+        inset: auto !important;
+        flex: 0 0 240px !important;
+        width: 240px !important;
+        min-width: 240px !important;
+        max-width: 240px !important;
+        height: 100vh !important;
+        transform: none !important;
+        overflow: hidden !important;
+    }
+
+    body[data-dashboard-role=assistant] > .sidebar > .sidebar-header {
+        flex: 0 0 96px !important;
+        width: 240px !important;
+        height: 96px !important;
+        min-height: 96px !important;
+        padding: 24px 24px 16px !important;
+        box-sizing: border-box !important;
+    }
+
+    body[data-dashboard-role=assistant] > .sidebar > .sidebar-header h2 {
+        margin: 0 !important;
+        font-size: 18px !important;
+        line-height: 1.25 !important;
+    }
+
+    body[data-dashboard-role=assistant] > .sidebar > .nav-menu {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        overflow-y: auto !important;
+    }
+
+    body[data-dashboard-role=assistant] > .main-content {
+        position: relative !important;
+        flex: 1 1 auto !important;
+        width: calc(100% - 240px) !important;
+        min-width: 0 !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+
+    body[data-dashboard-role=assistant] > .main-content > .top-header {
+        position: relative !important;
+        top: auto !important;
+        flex: 0 0 78px !important;
+        width: 100% !important;
+        height: 78px !important;
+        min-height: 78px !important;
+        max-height: 78px !important;
+        padding: 16px 28px !important;
+        box-sizing: border-box !important;
+    }
+
+    body[data-dashboard-role=assistant] > .main-content > .dashboard-content {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+    }
+}
+
+body[data-dashboard-role=assistant] .main-content > .top-header {
+    min-height: 78px;
+    padding: 16px 28px;
+    background: rgba(255, 255, 255, 0.92);
+    border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+    backdrop-filter: blur(16px);
+}
+
+body[data-dashboard-role=assistant] .page-title {
+    color: var(--assistant-ink);
+    font-size: 1.45rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+}
+
+body[data-dashboard-role=assistant] .dashboard-content {
+    padding: 26px 28px 34px;
+}
+
+body[data-dashboard-role=assistant] .dashboard-hero {
+    border: 1px solid rgba(217, 119, 6, 0.16);
+    border-radius: 18px;
+    background: linear-gradient(125deg, #7c3408 0%, #a64b0b 55%, #d97706 100%);
+    box-shadow: 0 20px 46px rgba(124, 52, 8, 0.2);
+}
+
+body[data-dashboard-role=assistant] .analytics-card,
+body[data-dashboard-role=assistant] .kpi-card,
+body[data-dashboard-role=assistant] .table-container,
+body[data-dashboard-role=assistant] .content-area > .panel,
+body[data-dashboard-role=assistant] .content-area > .card,
+body[data-dashboard-role=assistant] .settings-card,
+body[data-dashboard-role=assistant] .report-card {
+    border: 1px solid var(--assistant-border);
+    border-radius: 14px;
+    background: var(--assistant-surface);
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
+}
+
+body[data-dashboard-role=assistant] .analytics-card:hover,
+body[data-dashboard-role=assistant] .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.1);
+}
+
+body[data-dashboard-role=assistant] .section-title,
+body[data-dashboard-role=assistant] .content-area h1,
+body[data-dashboard-role=assistant] .content-area h2 {
+    color: var(--assistant-ink);
+    letter-spacing: -0.02em;
+}
+
+body[data-dashboard-role=assistant] .content-area {
+    width: 100%;
+    max-width: none;
+}
+
+body[data-dashboard-role=assistant] table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+body[data-dashboard-role=assistant] table thead th {
+    background: #f8fafc;
+    color: #475569;
+    border-bottom: 1px solid var(--assistant-border);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+}
+
+body[data-dashboard-role=assistant] table tbody tr {
+    transition: background-color 0.16s ease;
+}
+
+body[data-dashboard-role=assistant] table tbody tr:hover {
+    background: #fffaf2;
+}
+
+body[data-dashboard-role=assistant] input,
+body[data-dashboard-role=assistant] select,
+body[data-dashboard-role=assistant] textarea {
+    border-color: #cbd5e1;
+    border-radius: 9px;
+}
+
+body[data-dashboard-role=assistant] input:focus,
+body[data-dashboard-role=assistant] select:focus,
+body[data-dashboard-role=assistant] textarea:focus {
+    border-color: var(--assistant-accent);
+    box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12);
+    outline: none;
+}
+
+body[data-dashboard-role=assistant] .primary-btn,
+body[data-dashboard-role=assistant] .btn-primary,
+body[data-dashboard-role=assistant] button[type=submit] {
+    border-radius: 9px;
+    background: var(--assistant-accent);
+    box-shadow: 0 7px 18px rgba(217, 119, 6, 0.18);
+}
+
+body[data-dashboard-role=assistant] .primary-btn:hover,
+body[data-dashboard-role=assistant] .btn-primary:hover,
+body[data-dashboard-role=assistant] button[type=submit]:hover {
+    background: var(--assistant-accent-dark);
+}
+
+@media (max-width: 900px) {
+    body[data-dashboard-role=assistant] .dashboard-content { padding: 18px; }
+    body[data-dashboard-role=assistant] .main-content > .top-header { padding: 14px 18px; }
+}
+
+/* Assistant Admin dashboard home */
+.assistant-dashboard-home .dashboard-content {
+    background:
+        radial-gradient(circle at 92% 0, rgba(245, 158, 11, 0.12), transparent 28%),
+        #f5f7fb;
+}
+
+.assistant-dashboard-home .dashboard-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.7fr);
+    gap: 28px;
+    align-items: stretch;
+    min-height: 290px;
+    padding: 34px 40px;
+    overflow: hidden;
+    height: auto;
+}
+
+.assistant-dashboard-home .dashboard-hero::after {
+    content: '';
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    right: -75px;
+    top: -120px;
+    border: 50px solid rgba(255,255,255,.08);
+    border-radius: 50%;
+}
+
+.assistant-dashboard-home .hero-copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    overflow: visible;
+}
+.assistant-dashboard-home .hero-eyebrow {
+    display: inline-flex;
+    padding: 7px 11px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 999px;
+    background: rgba(255,255,255,.1);
+    color: #ffedd5;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+
+.assistant-dashboard-home .hero-copy h2 {
+    max-width: 760px;
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: clamp(1.55rem, 2.45vw, 2rem);
+    line-height: 1.16;
+    letter-spacing: -.035em;
+}
+
+.assistant-dashboard-home .hero-copy p {
+    display: block;
+    max-width: 720px;
+    margin: 0;
+    color: rgba(255,255,255,.8);
+    font-size: .96rem;
+    line-height: 1.55;
+    overflow: visible;
+}
+
+.assistant-dashboard-home .hero-panel {
+    position: relative;
+    z-index: 1;
+    padding: 22px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 15px;
+    background: rgba(255,255,255,.1);
+    backdrop-filter: blur(12px);
+    min-width: 0;
+    height: auto;
+}
+
+.assistant-dashboard-home .hero-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+    min-width: 0;
+}
+.assistant-dashboard-home .hero-stat-label { color: rgba(255,255,255,.7); font-size: 12px; }
+.assistant-dashboard-home .hero-stat-value {
+    max-width: 100%;
+    color: #fff;
+    font-size: clamp(1.15rem, 2vw, 1.45rem);
+    line-height: 1.25;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.assistant-dashboard-home .hero-divider { height: 1px; margin: 16px 0; background: rgba(255,255,255,.16); }
+
+.assistant-dashboard-home .section-header { margin: 30px 0 14px; }
+.assistant-dashboard-home .section-kicker {
+    margin-bottom: 5px;
+    color: var(--assistant-accent);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+.assistant-dashboard-home .analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.assistant-dashboard-home .analytics-grid > .analytics-card,
+.assistant-dashboard-home .analytics-bottom-row .analytics-card {
+    min-height: 116px;
+    padding: 20px;
+}
+
+.assistant-dashboard-home .analytics-bottom-row {
+    display: contents;
+}
+
+.assistant-dashboard-home .analytics-card .label,
+.assistant-dashboard-home .kpi-label { color: var(--assistant-muted); font-size: 12px; font-weight: 700; }
+.assistant-dashboard-home .analytics-card .value,
+.assistant-dashboard-home .kpi-value { margin-top: 7px; color: var(--assistant-ink); font-size: 1.55rem; font-weight: 850; }
+
+.assistant-dashboard-home .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 14px;
+}
+
+.assistant-dashboard-home .kpi-card {
+    min-height: 108px;
+    padding: 20px;
+    border-top: 3px solid transparent;
+}
+.assistant-dashboard-home .kpi-blue { border-top-color: #3b82f6; }
+.assistant-dashboard-home .kpi-green { border-top-color: #22c55e; }
+.assistant-dashboard-home .kpi-yellow { border-top-color: #f59e0b; }
+.assistant-dashboard-home .kpi-purple { border-top-color: #a855f7; }
+
+.assistant-dashboard-home .assistant-sites-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 14px;
+}
+
+.assistant-dashboard-home .table-container {
+    margin-top: 28px;
+    overflow: hidden;
+}
+
+.assistant-dashboard-home .table-container .section-header { margin: 0; padding: 21px 22px; border-bottom: 1px solid var(--assistant-border); }
+.assistant-dashboard-home .table-container table { width: 100%; }
+
+@media (max-width: 1180px) {
+    .assistant-dashboard-home .dashboard-hero {
+        grid-template-columns: minmax(0, 1.45fr) minmax(240px, .65fr);
+        min-height: 310px;
+        padding: 32px;
+    }
+    .assistant-dashboard-home .analytics-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .assistant-dashboard-home .assistant-sites-panel { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+@media (max-width: 980px) {
+    .assistant-dashboard-home .dashboard-hero { grid-template-columns: 1fr; }
+    .assistant-dashboard-home .hero-panel {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+    }
+    .assistant-dashboard-home .hero-divider { width: 1px; height: 48px; margin: 0 18px; }
+}
+
+@media (max-width: 760px) {
+    .assistant-dashboard-home .dashboard-hero { grid-template-columns: 1fr; padding: 28px 24px; }
+    .assistant-dashboard-home .analytics-grid,
+    .assistant-dashboard-home .kpi-strip,
+    .assistant-dashboard-home .assistant-sites-panel { grid-template-columns: 1fr; }
+    .assistant-dashboard-home .hero-panel {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .assistant-dashboard-home .hero-divider { width: 100%; height: 1px; margin: 14px 0; }
+}

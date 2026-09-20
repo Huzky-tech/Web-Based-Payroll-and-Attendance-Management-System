@@ -1,0 +1,2 @@
+ALTER TABLE projectsite
+    ADD COLUMN Is_Priority TINYINT(1) NOT NULL DEFAULT 0;

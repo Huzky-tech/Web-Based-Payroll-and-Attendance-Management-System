@@ -1,0 +1,1 @@
+ALTER TABLE worker ADD COLUMN Position VARCHAR(100) NULL AFTER Last_Name;

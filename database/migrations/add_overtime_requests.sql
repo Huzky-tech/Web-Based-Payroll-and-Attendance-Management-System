@@ -1,0 +1,27 @@
+-- Timekeeper overtime request workflow.
+CREATE TABLE IF NOT EXISTS `overtime_requests` (
+  `OvertimeID` int(11) NOT NULL AUTO_INCREMENT,
+  `WorkerID` int(11) NOT NULL,
+  `SiteID` int(11) NOT NULL,
+  `RequestDate` date NOT NULL,
+  `OvertimeType` varchar(50) NOT NULL,
+  `OvertimeStart` time NOT NULL,
+  `OvertimeEnd` time NOT NULL,
+  `TotalHours` decimal(5,2) NOT NULL DEFAULT 0.00,
+  `Reason` text NOT NULL,
+  `SubmittedBy` int(11) NOT NULL,
+  `Status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `ApprovedBy` int(11) DEFAULT NULL,
+  `ApprovedDate` datetime DEFAULT NULL,
+  `CreatedAt` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`OvertimeID`),
+  KEY `idx_overtime_worker` (`WorkerID`),
+  KEY `idx_overtime_site` (`SiteID`),
+  KEY `idx_overtime_status` (`Status`),
+  KEY `idx_overtime_request_date` (`RequestDate`),
+  KEY `idx_overtime_submitted_by` (`SubmittedBy`),
+  CONSTRAINT `fk_overtime_worker` FOREIGN KEY (`WorkerID`) REFERENCES `worker` (`WorkerID`),
+  CONSTRAINT `fk_overtime_site` FOREIGN KEY (`SiteID`) REFERENCES `projectsite` (`SiteID`),
+  CONSTRAINT `fk_overtime_submitted_by` FOREIGN KEY (`SubmittedBy`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_overtime_approved_by` FOREIGN KEY (`ApprovedBy`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

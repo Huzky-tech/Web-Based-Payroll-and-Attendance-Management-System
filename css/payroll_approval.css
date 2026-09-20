@@ -1,0 +1,479 @@
+.payroll-approval-page {
+    color: #1f2937;
+}
+
+.payroll-approval-header {
+    margin-bottom: 28px;
+}
+
+.payroll-approval-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.payroll-approval-header p {
+    color: #6b7280;
+    font-size: 15px;
+}
+
+.payroll-approval-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.payroll-approval-summary-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payroll-approval-summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.payroll-approval-summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.payroll-approval-summary-icon.pending {
+    background: #fff7ed;
+    color: #ea580c;
+}
+
+.payroll-approval-summary-icon.approved {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.payroll-approval-summary-icon.rejected {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.payroll-approval-summary-label {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 4px;
+}
+
+.payroll-approval-summary-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.payroll-approval-summary-value.pending {
+    color: #ea580c;
+}
+
+.payroll-approval-summary-value.approved {
+    color: #059669;
+}
+
+.payroll-approval-summary-value.rejected {
+    color: #dc2626;
+}
+
+.payroll-approval-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.payroll-approval-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.payroll-approval-filter-btn {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #4b5563;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.payroll-approval-filter-btn:hover {
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.payroll-approval-filter-btn.active {
+    background: #fff7ed;
+    border-color: #f59e0b;
+    color: #d97706;
+}
+
+.payroll-approval-search {
+    position: relative;
+    min-width: 280px;
+    flex: 1;
+    max-width: 360px;
+}
+
+.payroll-approval-search input {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px 12px 42px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payroll-approval-search input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.payroll-approval-search i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+.payroll-approval-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.payroll-approval-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 22px 24px;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.payroll-approval-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+    border-color: #d1d5db;
+}
+
+.payroll-approval-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.payroll-approval-card-title-wrap {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.payroll-approval-card-title {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.payroll-approval-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.payroll-approval-status-badge.pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.payroll-approval-status-badge.approved {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.payroll-approval-status-badge.rejected {
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.payroll-approval-card-amount {
+    text-align: right;
+}
+
+.payroll-approval-card-amount .amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.payroll-approval-card-amount .period {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.payroll-approval-card-submitted {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 18px;
+}
+
+.payroll-approval-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.payroll-approval-metric {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.payroll-approval-metric-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 6px;
+}
+
+.payroll-approval-metric-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.payroll-approval-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.payroll-approval-meta {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.payroll-approval-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.payroll-approval-btn {
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.payroll-approval-btn.view {
+    background: transparent;
+    color: #2563eb;
+    padding-left: 0;
+}
+
+.payroll-approval-btn.view:hover {
+    color: #1d4ed8;
+}
+
+.payroll-approval-btn.reject {
+    background: #fff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.payroll-approval-btn.reject:hover {
+    background: #fef2f2;
+}
+
+.payroll-approval-btn.approve {
+    background: #059669;
+    color: #fff;
+}
+
+.payroll-approval-btn.approve:hover {
+    background: #047857;
+}
+
+.payroll-approval-btn.export {
+    background: #1d6f42;
+    color: #fff;
+}
+
+.payroll-approval-btn.export:hover {
+    background: #155734;
+}
+
+.payroll-approval-btn[hidden] {
+    display: none !important;
+}
+
+.payroll-approval-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.payroll-approval-empty {
+    background: #fff;
+    border: 1px dashed #d1d5db;
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.payroll-approval-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1200;
+}
+
+.payroll-approval-modal-overlay.active {
+    display: flex;
+}
+
+.payroll-approval-modal {
+    width: 100%;
+    max-width: 560px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+    overflow: hidden;
+}
+
+.payroll-approval-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.payroll-approval-modal-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.payroll-approval-modal-body {
+    padding: 20px 24px;
+    display: grid;
+    gap: 12px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.payroll-approval-detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 14px;
+}
+
+.payroll-approval-detail-row strong {
+    color: #374151;
+}
+
+.payroll-approval-detail-row span {
+    color: #6b7280;
+    text-align: right;
+}
+
+.payroll-approval-modal-body textarea {
+    width: 100%;
+    min-height: 120px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 14px;
+    resize: vertical;
+}
+
+.payroll-approval-modal-body textarea:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+
+.payroll-approval-modal-footer {
+    padding: 16px 24px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid #f3f4f6;
+}
+
+@media (max-width: 992px) {
+    .payroll-approval-summary,
+    .payroll-approval-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .payroll-approval-summary,
+    .payroll-approval-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .payroll-approval-card-header,
+    .payroll-approval-card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .payroll-approval-card-amount {
+        text-align: left;
+    }
+
+    .payroll-approval-search {
+        max-width: none;
+        width: 100%;
+    }
+
+    .payroll-approval-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
