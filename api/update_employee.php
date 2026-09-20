@@ -251,6 +251,11 @@ if ($method === 'POST') {
         $params[] = $salaryType;
         $types .= "s";
     }
+    if (!empty($position)) {
+        $updates[] = "Position = ?";
+        $params[] = $position;
+        $types .= "s";
+    }
     $updates[] = "WorkerStatusID = ?";
     $params[] = $workerStatusId;
     $types .= "i";

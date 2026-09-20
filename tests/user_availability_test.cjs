@@ -42,7 +42,7 @@ async function run(file) {
  const events=[];window.showProcessingModal=()=>events.push('processing');
  context.fetchJson=async()=>({success:true,message:'Created'});context.closeAddUserModal=()=>events.push('close');context.showSettingsActionResult=(ok,msg)=>events.push(ok?'success':'error');
  let release;context.loadUsers=()=>new Promise(resolve=>{events.push('refresh');release=resolve;});
- const pending=context.handleAddUser();await Promise.resolve();await Promise.resolve();
+ const pending=context.handleAddUser();await new Promise(setImmediate);
  assert.deepEqual(events,['processing','close','success','refresh']);passed++;
  release();await pending;
  context.fetchJson=async()=>({success:false,message:'Already registered'});events.length=0;await context.handleAddUser();

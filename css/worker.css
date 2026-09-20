@@ -1483,6 +1483,17 @@
     font-size: 12px;
 }
 
+.employee-name-error {
+    display: block;
+    margin-top: 5px;
+    color: #dc2626;
+    font-size: 12px;
+}
+
+.employee-name-error.valid {
+    color: #15803d;
+}
+
 .employee-profile-field-error {
     display: block;
     margin-top: 5px;

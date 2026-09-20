@@ -89,19 +89,6 @@ try {
     exit;
 }
 
-// Prevent creating more than one admin if already exists
-if ($role === 'Admin') {
-    $admin_count_stmt = $conn->prepare("SELECT COUNT(*) as count FROM admin");
-    $admin_count_stmt->execute();
-    $admin_count_result = $admin_count_stmt->get_result();
-    $admin_count = $admin_count_result->fetch_assoc()['count'];
-    
-    if ($admin_count >= 1) {
-        echo json_encode(['success' => false, 'message' => 'Only one admin account is allowed. Please assign a different role.']);
-        exit;
-    }
-}
-
 // Check if email exists
 $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
 $stmt->bind_param("s", $email);

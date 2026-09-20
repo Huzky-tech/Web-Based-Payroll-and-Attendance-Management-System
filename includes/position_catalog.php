@@ -18,6 +18,7 @@ function position_catalog_ensure_table(mysqli $conn): bool
         ['Electrician', 175, 30000], ['Plumber', 170, 29000],
         ['Welder', 165, 28000], ['Painter', 140, 24000],
         ['Heavy Equipment Operator', 190, 33000], ['Site Foreman', 220, 38000],
+        ['Manager', 250, 45000],
     ];
     $stmt = $conn->prepare('INSERT IGNORE INTO employee_position_catalog (position_name, hourly_rate, salary_rate) VALUES (?, ?, ?)');
     if (!$stmt) return false;

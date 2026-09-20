@@ -145,7 +145,7 @@ $actionHistory = array_slice($actionHistory, 0, 30);
     <title>History - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/history.css">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <script src="../js/history.js" defer></script>
 </head>
 <body>

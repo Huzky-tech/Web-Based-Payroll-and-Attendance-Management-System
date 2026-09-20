@@ -15,7 +15,7 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <script src="../js/attendance.js?v=20260915-schedule-refresh-1" defer></script>
 </head>
 <body>

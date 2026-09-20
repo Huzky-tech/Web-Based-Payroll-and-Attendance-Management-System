@@ -37,30 +37,30 @@ if ($companyRow = $companyResult->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../css/dashboard.css?v=20260908-1">
-    <link rel="stylesheet" href="../css/active_site.css?v=20260911-7">
+    <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <?php if (!isset($_GET['page'])): ?>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="../css/dashboard_home.css?v=20260906-6">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
     <?php endif; ?>
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'site_assign'): ?>
     <link rel="stylesheet" href="../css/site_assign.css?v=20260911-1">
 <script src="../js/site_assign.js?v=20260913-security-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'worker'): ?>
-    <link rel="stylesheet" href="../css/worker.css?v=20260913-4">
-<script src="../js/worker.js?v=20260913-image-1" defer></script>
+    <link rel="stylesheet" href="../css/worker.css?v=20260921-manager-1">
+<script src="../js/worker.js?v=20260921-manager-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'attendance'): ?>
     <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
 <script src="../js/attendance.js?v=20260913-security-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'active_site'): ?>
-    <link rel="stylesheet" href="../css/active_site.css?v=20260907-1">
+    <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="../js/active_site.js?v=20260911-5" defer></script>
+<script src="../js/active_site.js?v=20260921-manager-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'reports'): ?>
     <link rel="stylesheet" href="../css/reports.css?v=20260907-5">
@@ -73,11 +73,11 @@ if ($companyRow = $companyResult->fetch_assoc()) {
     <?php if (isset($_GET['page']) && $_GET['page'] === 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260916-payroll-validation-1">
 <script src="../js/user_email_validation.js?v=20260920-availability-3" defer></script>
-<script src="../js/setting.js?v=20260920-availability-3" defer></script>
+<script src="../js/setting.js?v=20260921-admin-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'employee'): ?>
     <link rel="stylesheet" href="../css/employee.css?v=20260910-2">
-<script src="../js/employee.js?v=20260920-availability-3" defer></script>
+<script src="../js/employee.js?v=20260921-admin-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'positions'): ?>
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">

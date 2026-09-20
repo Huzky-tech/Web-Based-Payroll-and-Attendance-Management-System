@@ -14,11 +14,11 @@ $canManageSites = $currentRole === 'Assistant Admin';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Active Sites - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/active_site.css?v=20260906-3">
+    <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <link rel="stylesheet" href="../css/responsive_mobile.css?v=20260903-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
     <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<script src="../js/active_site.js?v=20260907-1" defer></script>
+<script src="../js/active_site.js?v=20260921-manager-1" defer></script>
 </head>
 <body data-dashboard-role="<?php echo ($_SESSION['role'] ?? '') === 'Assistant Admin' ? 'assistant' : (($_SESSION['role'] ?? '') === 'Admin' ? 'admin' : 'payroll'); ?>">
 <?php endif; ?>
@@ -218,12 +218,9 @@ $canManageSites = $currentRole === 'Assistant Admin';
                                 <label for="siteManager">Manager</label>
                                 <div class="input-with-icon">
                                     <i class="fas fa-briefcase"></i>
-                                    <input 
-                                        type="text" 
-                                        id="siteManager" 
-                                        name="siteManager" 
-                                        placeholder="e.g. John Smith"
-                                    >
+                                    <select id="siteManager" name="siteManager" required>
+                                        <option value="" selected disabled>Select manager</option>
+                                    </select>
                                 </div>
                             </div>
 

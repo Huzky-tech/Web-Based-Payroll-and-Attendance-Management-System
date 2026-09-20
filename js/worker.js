@@ -683,7 +683,7 @@ function renderProfileFields(emp, profile, editMode) {
         'Select country'
     );
     const relationshipOptions = selectOptions(
-        ['Mother', 'Father', 'Parent', 'Sibling', 'Spouse', 'Child', 'Guardian', 'Relative', 'Friend', 'Other'],
+        ['Mother', 'Father', 'Sibling', 'Child', 'Guardian', 'Relative', 'Friend', 'Other'],
         profile.emergency_contact_relationship,
         'Select relationship'
     ).replace('<option value="">', '<option value="" disabled hidden>');
@@ -946,12 +946,20 @@ function syncAddEmployeePhoneFields(sourceInput = null) {
 function validateWorkerNameInput(input, stripInvalid = false) {
     const original = input.value;
     const label = input.name === 'emergency_contact_name' ? 'Emergency contact name' : input.name === 'first_name' ? 'First name' : 'Last name';
-    if (stripInvalid) input.value = original.replace(/[^\p{L}\s]/gu, '');
+    const isEmergencyContact = input.name === 'emergency_contact_name';
+    const invalidCharacters = isEmergencyContact ? /[^\p{L}\s.'-]/gu : /[^\p{L}\s]/gu;
+    const hasInvalidCharacters = isEmergencyContact ? /[^\p{L}\s.'-]/u : /[^\p{L}\s]/u;
+    const validPattern = isEmergencyContact
+        ? /^[\p{L}]+(?:[ .'-][\p{L}]+)*$/u
+        : /^[\p{L}]+(?: [\p{L}]+)*$/u;
+    if (stripInvalid) input.value = original.replace(invalidCharacters, '');
     const value = input.value;
     let message = '';
-    if (stripInvalid && /[^\p{L}\s]/u.test(original)) message = `${label} cannot contain numbers or special characters.`;
+    if (stripInvalid && hasInvalidCharacters.test(original)) message = `${label} cannot contain numbers or unsupported special characters.`;
     else if (!value.trim()) message = `${label} is required.`;
-    else if (!/^[\p{L}]+(?: [\p{L}]+)*$/u.test(value)) message = `${label} must contain letters and single spaces only, without leading or trailing spaces.`;
+    else if (!validPattern.test(value)) message = isEmergencyContact
+        ? `${label} can only contain letters, spaces, periods, apostrophes, and hyphens.`
+        : `${label} must contain letters and single spaces only, without leading or trailing spaces.`;
     else if (value.length > 50) message = `${label} must not exceed 50 characters.`;
     input.setCustomValidity(message);
     input.setAttribute('aria-label', label);
@@ -959,11 +967,37 @@ function validateWorkerNameInput(input, stripInvalid = false) {
     return !message;
 }
 
+function showEmployeeNameAvailability(form, message = '', valid = false) {
+    const firstNameInput = form?.querySelector('input[name="first_name"]');
+    const lastNameInput = form?.querySelector('input[name="last_name"]');
+    [firstNameInput, lastNameInput].forEach((input) => {
+        if (!input) return;
+        input.dataset.noLiveValidation = 'true';
+        input.classList.toggle('employee-field-invalid', Boolean(message));
+        input.classList.toggle('field-live-valid', valid && !message);
+        input.classList.remove('field-live-invalid');
+        input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    });
+
+    let error = lastNameInput?.parentElement?.querySelector('.employee-name-error');
+    if (!error && lastNameInput) {
+        error = document.createElement('small');
+        error.className = 'employee-name-error';
+        error.setAttribute('aria-live', 'polite');
+        lastNameInput.insertAdjacentElement('afterend', error);
+    }
+    if (error) {
+        error.textContent = message;
+        error.classList.toggle('valid', valid && !message);
+    }
+}
+
 // Delegation also covers edit fields recreated by modal rendering.
 document.addEventListener('input', event => {
     const input = event.target;
     if (!input.matches?.('#addEmployeeForm input[name="first_name"], #addEmployeeForm input[name="last_name"], #addEmployeeForm input[name="emergency_contact_name"], #viewEmployeeProfileForm input[name="first_name"], #viewEmployeeProfileForm input[name="last_name"], #viewEmployeeProfileForm input[name="emergency_contact_name"]')) return;
-    if (/[^\p{L}\s]/u.test(input.value)) {
+    const invalidCharacters = input.name === 'emergency_contact_name' ? /[^\p{L}\s.'-]/u : /[^\p{L}\s]/u;
+    if (invalidCharacters.test(input.value)) {
         event.workerNameRejected = true;
         clearTimeout(employeeNameCheckTimers.get(input.form));
         validateWorkerNameInput(input, true);
@@ -983,6 +1017,9 @@ function setEmployeeNameValidity(form, message = '') {
         if (message) lastNameInput.setCustomValidity(message);
         lastNameInput.dispatchEvent(new Event('change', { bubbles: true }));
     }
+    if (message) {
+        showEmployeeNameAvailability(form, message, false);
+    }
 }
 
 async function checkEmployeeNameDuplicate(form, excludeWorkerId = 0) {
@@ -990,8 +1027,12 @@ async function checkEmployeeNameDuplicate(form, excludeWorkerId = 0) {
     const lastName = form?.querySelector('input[name="last_name"]')?.value.trim() || '';
     setEmployeeNameValidity(form, '');
 
-    if (!firstName || !lastName) return false;
+    if (!firstName || !lastName) {
+        showEmployeeNameAvailability(form, '', false);
+        return false;
+    }
     if (!Array.from(form.querySelectorAll('input[name="first_name"], input[name="last_name"]')).every(input => input.checkValidity())) return true;
+    showEmployeeNameAvailability(form, 'Checking full name...', false);
 
     const params = new URLSearchParams({ first_name: firstName, last_name: lastName });
     if (excludeWorkerId > 0) params.set('exclude_worker_id', String(excludeWorkerId));
@@ -1001,12 +1042,16 @@ async function checkEmployeeNameDuplicate(form, excludeWorkerId = 0) {
         if (form.querySelector('input[name="first_name"]').value.trim() !== firstName ||
             form.querySelector('input[name="last_name"]').value.trim() !== lastName) return true;
         const message = result.duplicate
-            ? (result.message || 'An employee with this first name and last name already exists.')
+            ? (result.message || 'This first and last name combination is already registered.')
             : '';
         setEmployeeNameValidity(form, message);
+        if (!message) {
+            showEmployeeNameAvailability(form, 'Full name is available.', true);
+        }
         return Boolean(result.duplicate);
     } catch (error) {
         console.warn('Could not check employee name:', error);
+        showEmployeeNameAvailability(form, 'Unable to verify full name availability. Please try again.', false);
         return false;
     }
 }
@@ -1029,6 +1074,7 @@ function bindEmployeeNameDuplicateValidation(form, excludeWorkerId = 0) {
     inputs.forEach((input) => {
         input.maxLength = 50;
         input.required = true;
+        input.dataset.noLiveValidation = 'true';
         input.setAttribute('aria-label', input.name === 'first_name' ? 'First name' : 'Last name');
         input.addEventListener('input', scheduleCheck);
         input.addEventListener('blur', () => checkEmployeeNameDuplicate(form, excludeWorkerId));
@@ -1053,7 +1099,11 @@ async function loadEmployeePositionCatalog() {
     try {
         const data = await fetchJson(`${API_BASE}get_position_catalog.php`);
         if (!data.success || !Array.isArray(data.positions) || !data.positions.length) return;
-        positionSelect.innerHTML = '<option value="" selected disabled>Select position</option>' + data.positions.map((position) => `
+        const positions = [...data.positions];
+        if (!positions.some((position) => String(position.position_name || '').toLowerCase() === 'manager')) {
+            positions.push({ position_name: 'Manager', hourly_rate: 250, salary_rate: 45000 });
+        }
+        positionSelect.innerHTML = '<option value="" selected disabled>Select position</option>' + positions.map((position) => `
             <option value="${escapeHtml(position.position_name)}"
                 data-hourly-rate="${Number(position.hourly_rate)}"
                 data-salary-rate="${Number(position.salary_rate)}">${escapeHtml(position.position_name)}</option>

@@ -83,7 +83,7 @@ if (!$overtimeReportInnerOnly) {
     <div class="report-pagination" id="overtimeReportPagination" aria-label="Overtime table pagination"></div>
 </div>
 
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <?php if (!$embeddedDashboard && !$overtimeReportInnerOnly): ?>
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>
 </body>

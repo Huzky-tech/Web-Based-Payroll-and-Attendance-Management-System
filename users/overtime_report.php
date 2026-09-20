@@ -13,7 +13,7 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Overtime Report</title>
     <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>
 </head>
 <body>

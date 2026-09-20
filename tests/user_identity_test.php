@@ -19,14 +19,24 @@ function verify(bool $condition, string $label): void {
     $checks++;
 }
 try {
-    $conn->query('CREATE TABLE users (id INT PRIMARY KEY, full_name VARCHAR(255), status VARCHAR(20)) ENGINE=InnoDB');
+    $conn->query('CREATE TABLE users (id INT PRIMARY KEY, full_name VARCHAR(255), status VARCHAR(20), email VARCHAR(255)) ENGINE=InnoDB');
     $conn->query('CREATE TABLE worker (WorkerID INT PRIMARY KEY, UserID INT NULL, First_Name VARCHAR(50), Last_Name VARCHAR(50)) ENGINE=InnoDB');
+    $conn->query('CREATE TABLE worker_profile (WorkerID INT PRIMARY KEY, Email VARCHAR(255)) ENGINE=InnoDB');
     foreach (['admin','hr','payrollstaff','timekeeper','assistantmanager'] as $table) $conn->query("CREATE TABLE {$table} (UserID INT)");
     user_identity_ensure_columns($conn);
     user_identity_ensure_columns($conn);
     $conn->query("INSERT INTO users (id,full_name,status) VALUES (1,'John Vruz','Active'),(2,'Jane Cruz','Inactive'),(3,'Mary Jane De la Cruz','Active'),(4,'Admin Person','Active'),(5,'Shared Account','Active')");
     $conn->query("INSERT INTO worker VALUES (1,1,'John','Vruz'),(2,NULL,'Ana','Smith'),(3,4,'Legacy','Worker'),(4,5,'Shared','One'),(5,5,'Shared','Two'),(6,3,'Mary Jane','De la Cruz')");
     $conn->query('INSERT INTO admin VALUES (4)');
+    $conn->query("UPDATE users SET email = CONCAT('user', id, '@example.test')");
+    $conn->query("INSERT INTO worker_profile VALUES (1,'user1@example.test'), (2,'employee@example.test'), (3,'legacy@example.test')");
+    verify(user_identity_email_exists($conn, 'USER1@example.test'), 'Case-insensitive user email duplicate');
+    verify(user_identity_email_exists($conn, 'user2@example.test'), 'Archived user email duplicate');
+    verify(user_identity_email_exists($conn, 'employee@example.test'), 'Employee-only email duplicate');
+    verify(!user_identity_email_exists($conn, 'user1@example.test', 1), 'Edit excludes own login and dedicated employee email');
+    verify(!user_identity_email_exists($conn, 'user4@example.test', 4), 'Admin can retain own email');
+    verify(user_identity_email_exists($conn, 'legacy@example.test', 4), 'Admin cannot reuse legacy employee email');
+    verify(!user_identity_email_exists($conn, 'new@example.test'), 'Unused email available');
     verify(!user_identity_full_name_exists($conn,'John Smith'), 'Same first name / different surname allowed');
     verify(!user_identity_full_name_exists($conn,'Peter Vruz'), 'Different first name / same surname allowed');
     verify(user_identity_full_name_exists($conn,'John Vruz'), 'Exact duplicate rejected');

@@ -157,7 +157,7 @@ $overtimeUiRole = match ($currentRole) {
     </div>
 </div>
 
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <?php if (!$embeddedDashboard): ?>
 <script src="../js/overtime_requests.js?v=20260907-3" defer></script>
 </body>

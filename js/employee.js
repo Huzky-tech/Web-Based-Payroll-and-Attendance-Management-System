@@ -834,10 +834,9 @@ function openAddUserModal() {
     window.resetUserEmailAvailability?.('new');
     const roleSelect = document.getElementById('newUserRole');
     if (roleSelect) {
-        const adminExists = userAllUsersData.some(user => user.role === 'Admin');
         const adminOption = Array.from(roleSelect.options).find(option => option.value === 'Admin');
-        if (adminOption) adminOption.disabled = adminExists;
-        if (roleSelect.value === 'Admin') roleSelect.value = 'Payroll Staff';
+        if (adminOption) adminOption.disabled = false;
+        if (!roleSelect.value) roleSelect.value = 'Admin';
     }
     document.getElementById('addUserModal').style.display = 'flex';
     validateUserIdentityFields('new');
@@ -1026,7 +1025,7 @@ function closeAddUserModal() {
     document.getElementById('newUserFirstName').value = '';
     document.getElementById('newUserLastName').value = '';
     document.getElementById('newUserEmail').value = '';
-    document.getElementById('newUserRole').value = 'Payroll Staff';
+    document.getElementById('newUserRole').value = 'Admin';
     validateUserIdentityFields('new');
 }
 
@@ -1203,7 +1202,7 @@ function closeEditUserModal() {
     if (emailField) emailField.value = '';
     const roleSelect = document.getElementById('editUserRole');
     if (roleSelect) {
-        roleSelect.value = 'Payroll Staff';
+        roleSelect.value = 'Admin';
         roleSelect.disabled = false;
         roleSelect.style.opacity = '1';
     }

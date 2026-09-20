@@ -95,7 +95,7 @@ $userEmail = $_SESSION['email'] ?? 'your account';
             color: #ffffff;
         }
     </style>
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 </head>
 <body>
     <main class="card">

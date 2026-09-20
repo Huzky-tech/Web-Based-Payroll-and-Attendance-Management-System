@@ -50,9 +50,9 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
     <title>Settings - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/setting.css?v=20260916-payroll-validation-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <script src="../js/user_email_validation.js?v=20260920-availability-3" defer></script>
-<script src="../js/setting.js?v=20260920-availability-3" defer></script>
+<script src="../js/setting.js?v=20260921-admin-1" defer></script>
 </head>
 <body>
 <?php endif; ?>

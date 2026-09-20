@@ -63,6 +63,14 @@ if (!function_exists('auth_get_redirect_path')) {
     }
 }
 
+if (!function_exists('auth_get_access_denied_redirect_path')) {
+    function auth_get_access_denied_redirect_path($role): string {
+        $path = auth_get_redirect_path($role);
+        $separator = str_contains($path, '?') ? '&' : '?';
+        return $path . $separator . 'access_denied=1';
+    }
+}
+
 if (!function_exists('auth_is_maintenance_mode')) {
     function auth_is_maintenance_mode($conn): bool {
         if (!$conn instanceof mysqli) {
@@ -284,7 +292,7 @@ if (!function_exists('require_auth')) {
                 exit();
             }
 
-            header('Location: ' . auth_get_redirect_path($role));
+            header('Location: ' . auth_get_access_denied_redirect_path($role));
             exit();
         }
 

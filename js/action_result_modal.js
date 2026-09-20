@@ -301,6 +301,16 @@
 
     }
 
+    function showAccessDeniedModal(message) {
+        showActionResultModal({
+            type: 'error',
+            title: 'Access Restricted',
+            message: message || 'You cannot access this page.',
+            okText: 'OK',
+            autoClose: false
+        });
+    }
+
     function setProcessingControls(modal) {
         modal.querySelector('[data-action-result-close]').style.display = 'none';
         modal.querySelector('[data-action-result-cancel]').style.display = 'none';
@@ -338,6 +348,7 @@
 
     window.closeActionResultModal = closeActionResultModal;
     window.showActionResultModal = showActionResultModal;
+    window.showAccessDeniedModal = showAccessDeniedModal;
     window.showProcessingModal = showProcessingModal;
     window.completeProcessingModal = completeProcessingModal;
     window.showCrudResultModal = function (success, message, actionLabel, onClose) {
@@ -493,14 +504,29 @@
             // open a global success modal. Callers that genuinely need the generic
             // processing UI can opt in with { showProcessing: true }.
             const tracked = !['GET', 'HEAD', 'OPTIONS'].includes(method) && init.showProcessing === true;
-            if (!tracked) return nativeFetch(input, init);
+            if (!tracked) {
+                const response = await nativeFetch(input, init);
+                if (response.status === 403) {
+                    response.clone().json()
+                        .then((data) => showAccessDeniedModal(data?.message || 'You cannot perform this action.'))
+                        .catch(() => showAccessDeniedModal('You cannot perform this action.'));
+                }
+                return response;
+            }
             activeProcesses += 1;
             showProcessingModal();
             try {
                 const response = await nativeFetch(input, init);
                 activeProcesses = Math.max(0, activeProcesses - 1);
                 if (response.ok && activeProcesses === 0) completeProcessingModal();
-                if (!response.ok) closeActionResultModal();
+                if (!response.ok) {
+                    closeActionResultModal();
+                    if (response.status === 403) {
+                        response.clone().json()
+                            .then((data) => showAccessDeniedModal(data?.message || 'You cannot perform this action.'))
+                            .catch(() => showAccessDeniedModal('You cannot perform this action.'));
+                    }
+                }
                 return response;
             } catch (error) {
                 activeProcesses = Math.max(0, activeProcesses - 1);
@@ -509,6 +535,17 @@
             }
         };
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search || '');
+        if (!params.has('access_denied')) return;
+
+        params.delete('access_denied');
+        const cleanQuery = params.toString();
+        const cleanUrl = `${window.location.pathname}${cleanQuery ? `?${cleanQuery}` : ''}${window.location.hash || ''}`;
+        window.history.replaceState({}, document.title, cleanUrl);
+        showAccessDeniedModal('You cannot access this page.');
+    });
 
     document.addEventListener('submit', (event) => {
         const form = event.target;

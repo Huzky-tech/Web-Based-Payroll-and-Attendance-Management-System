@@ -19,7 +19,7 @@ $displayName = trim((string) ($_SESSION['full_name'] ?? $_SESSION['email'] ?? 'T
     <link rel="stylesheet" href="../css/dashboard_shell.css?v=20260424-1">
     <?php if (isset($_GET['page']) && $_GET['page'] === 'attendance'): ?>
     <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <script src="../js/attendance.js?v=20260913-security-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'overtime_requests'): ?>

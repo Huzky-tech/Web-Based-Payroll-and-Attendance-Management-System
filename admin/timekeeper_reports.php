@@ -93,7 +93,7 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     </div>
 </div>
 
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <?php if (!$embeddedDashboard): ?>
 <script src="../js/timekeeper_reports.js?v=20260913-security-1" defer></script>
 </body>

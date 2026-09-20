@@ -19,7 +19,7 @@ if (!in_array($selectedReport, $validReports, true)) {
     <title>Reports - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
       <link rel="stylesheet" href="../css/reports.css?v=20260907-5">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
       <?php if ($selectedReport === 'overtime'): ?>
       <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>

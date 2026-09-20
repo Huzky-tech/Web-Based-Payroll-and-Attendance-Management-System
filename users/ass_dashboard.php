@@ -64,14 +64,14 @@ $pageTitles = [
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/ass_dashboard.css?v=20260821-1">
     <link rel="stylesheet" href="../css/dashboard_shell.css?v=20260908-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'site_assign'): ?>
     <link rel="stylesheet" href="../css/site_assign.css?v=20260906-1">
 <script src="../js/site_assign.js?v=20260913-security-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'worker'): ?>
-    <link rel="stylesheet" href="../css/worker.css?v=20260913-4">
-<script src="../js/worker.js?v=20260913-image-1" defer></script>
+    <link rel="stylesheet" href="../css/worker.css?v=20260921-manager-1">
+<script src="../js/worker.js?v=20260921-manager-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'attendance'): ?>
     <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
@@ -79,7 +79,7 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'active_site'): ?>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="../css/active_site.css?v=20260907-1">
+    <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 <script src="../js/active_site.js?v=20260907-2" defer></script>
     <?php endif; ?>
@@ -93,7 +93,7 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
-<script src="../js/setting.js?v=20260920-availability-3" defer></script>
+<script src="../js/setting.js?v=20260921-admin-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'positions'): ?>
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">

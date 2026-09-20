@@ -9,6 +9,7 @@ include 'connection/db_config.php';
 include '../includes/auth.php';
 require_once __DIR__ . '/site_schedule_helpers.php';
 require_once __DIR__ . '/site_activation_helpers.php';
+require_once __DIR__ . '/site_manager_helpers.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff']);
 
@@ -138,8 +139,8 @@ if ($method === 'POST') {
         echo json_encode(['success' => false, 'message' => 'Site name may contain letters and single spaces only.']);
         exit;
     }
-    if ($siteManager !== null && $siteManager !== '' && !preg_match('/^[\p{L}]+(?: [\p{L}]+)*$/u', $siteManager)) {
-        echo json_encode(['success' => false, 'message' => 'Manager name may contain letters and single spaces only.']);
+    if ($siteManager !== null && ($siteManager === '' || !site_manager_name_exists($conn, $siteManager))) {
+        echo json_encode(['success' => false, 'message' => 'Please select a valid manager from the employee manager list.']);
         exit;
     }
 

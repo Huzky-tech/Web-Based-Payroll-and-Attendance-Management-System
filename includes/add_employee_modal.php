@@ -58,6 +58,7 @@
                             <option value="Painter" data-hourly-rate="140" data-salary-rate="24000">Painter</option>
                             <option value="Heavy Equipment Operator" data-hourly-rate="190" data-salary-rate="33000">Heavy Equipment Operator</option>
                             <option value="Site Foreman" data-hourly-rate="220" data-salary-rate="38000">Site Foreman</option>
+                            <option value="Manager" data-hourly-rate="250" data-salary-rate="45000">Manager</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -195,9 +196,7 @@
                                 <option value="" disabled hidden selected>Select relationship</option>
                                 <option value="Mother">Mother</option>
                                 <option value="Father">Father</option>
-                                <option value="Parent">Parent</option>
                                 <option value="Sibling">Sibling</option>
-                                <option value="Spouse">Spouse</option>
                                 <option value="Child">Child</option>
                                 <option value="Guardian">Guardian</option>
                                 <option value="Relative">Relative</option>

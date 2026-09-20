@@ -2014,7 +2014,8 @@
             color: #94a3b8;
         }
 
-        .input-with-icon input {
+        .input-with-icon input,
+        .input-with-icon select {
             padding-left: 44px;
         }
 
@@ -2574,7 +2575,9 @@
 }
 
 input.site-field-invalid,
-input.site-field-invalid:focus {
+input.site-field-invalid:focus,
+select.site-field-invalid,
+select.site-field-invalid:focus {
     border-color: #dc2626 !important;
     box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1) !important;
 }

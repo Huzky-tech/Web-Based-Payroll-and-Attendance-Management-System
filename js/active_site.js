@@ -88,6 +88,7 @@ const defaultRoleOptions = [
 const activeSiteState = {
     sites: [],
     siteMap: new Map(),
+    managers: [],
     siteFilters: { search: '', workers: '', status: '', sort: 'newest' },
     pendingDashboardAction: null,
     pendingArchiveSiteId: null,
@@ -404,6 +405,42 @@ function markFieldForLiveValidation(field, message = '') {
     field.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+function managerOptionHtml(manager, selectedValue = '') {
+    const name = typeof manager === 'string' ? manager : manager?.full_name;
+    const position = typeof manager === 'string' ? 'Manager' : (manager?.position || 'Manager');
+    if (!name) return '';
+    return `<option value="${escapeHtml(name)}"${name === selectedValue ? ' selected' : ''}>${escapeHtml(name)}${position ? ` - ${escapeHtml(position)}` : ''}</option>`;
+}
+
+function populateManagerSelect(select, selectedValue = '') {
+    if (!select) return;
+    const selected = String(selectedValue || '').trim();
+    const managers = activeSiteState.managers || [];
+    const hasSelected = selected && managers.some((manager) => String(manager.full_name || '') === selected);
+    const options = ['<option value="" disabled>Select manager</option>'];
+    if (selected && !hasSelected) {
+        options.push(managerOptionHtml({ full_name: selected, position: 'Current manager' }, selected));
+    }
+    options.push(...managers.map((manager) => managerOptionHtml(manager, selected)));
+    if (managers.length === 0 && !selected) {
+        options.push('<option value="" disabled>No managers available</option>');
+    }
+    select.innerHTML = options.join('');
+    select.value = selected || '';
+}
+
+async function loadSiteManagers() {
+    try {
+        const result = await fetchJson('../api/get_site_managers.php', { cache: 'no-store' });
+        activeSiteState.managers = result.success && Array.isArray(result.managers) ? result.managers : [];
+    } catch (error) {
+        console.error('Unable to load site managers:', error);
+        activeSiteState.managers = [];
+    }
+    populateManagerSelect(document.getElementById('siteManager'));
+    populateManagerSelect(document.getElementById('editSiteManager'), document.getElementById('editSiteManager')?.value || '');
+}
+
 function handleSiteLetterOnlyInput(event) {
     const field = event.target;
     const originalValue = field.value;
@@ -425,7 +462,7 @@ function handleSiteLetterOnlyInput(event) {
 }
 
 function bindSiteLetterOnlyValidation() {
-    ['siteName', 'editSiteName', 'siteManager', 'editSiteManager'].forEach((id) => {
+    ['siteName', 'editSiteName'].forEach((id) => {
         document.getElementById(id)?.addEventListener('input', handleSiteLetterOnlyInput);
     });
 }
@@ -1374,7 +1411,7 @@ function validateAddSiteStep(stepIndex) {
     if (stepIndex === 2) {
         const managerField = document.getElementById('siteManager');
         if (!values.siteManager) {
-            alert('Please enter the manager name.');
+            alert('Please select a manager.');
             return false;
         }
         if (managerField?.validationMessage) {
@@ -2125,6 +2162,7 @@ function openEditSite(siteId) {
             field.value = value;
         }
     });
+    populateManagerSelect(document.getElementById('editSiteManager'), site.Site_Manager || '');
     const editRadiusInput = document.getElementById('editGeofenceRadiusM');
     const editRadiusHidden = document.getElementById('editGeofenceRadiusMHidden');
     const editLatitude = document.getElementById('editGeofenceLatitude');
@@ -2185,6 +2223,11 @@ if (editSiteForm) {
 
         if (!validateTargetCapacityField(document.getElementById('editRequiredWorkers'))) {
             setEditSiteFeedback(document.getElementById('editRequiredWorkers').validationMessage, 'error');
+            return;
+        }
+
+        if (!siteManager) {
+            setEditSiteFeedback('Please select a manager.', 'error');
             return;
         }
 
@@ -3719,4 +3762,4 @@ if (assignWorkersModal) {
     assignWorkersModal.setAttribute('aria-hidden', 'true');
     assignWorkersModal.dataset.opening = 'false';
 }
-loadSites();
+loadSiteManagers().finally(loadSites);

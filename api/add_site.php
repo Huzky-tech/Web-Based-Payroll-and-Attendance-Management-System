@@ -4,6 +4,7 @@ include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_auth($conn, ['Admin', 'Assistant Admin']);
 require_once __DIR__ . '/site_schedule_helpers.php';
+require_once __DIR__ . '/site_manager_helpers.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 function logAudit($conn, $userId, $action, $details) {
@@ -67,8 +68,8 @@ if (!preg_match('/^[\p{L}]+(?: [\p{L}]+)*$/u', $siteName)) {
     exit;
 }
 
-if ($siteManager !== '' && !preg_match('/^[\p{L}]+(?: [\p{L}]+)*$/u', $siteManager)) {
-    echo json_encode(['status' => 'error', 'message' => 'Manager name may contain letters and single spaces only.']);
+if ($siteManager === '' || !site_manager_name_exists($conn, $siteManager)) {
+    echo json_encode(['status' => 'error', 'message' => 'Please select a valid manager from the employee manager list.']);
     exit;
 }
 

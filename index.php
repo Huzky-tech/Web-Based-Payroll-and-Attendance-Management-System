@@ -234,7 +234,7 @@ $conn->close();
     <link rel="icon" type="image/png" href="images/company-building-logo.png?v=20260907-1">
     <script>window.CSRF_CONFIG=<?php echo json_encode(['token' => security_csrf_token()], ( JSON_UNESCAPED_SLASHES) | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
     <script src="js/csrf.js?v=20260820-1"></script>
-    <script src="js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="js/action_result_modal.js?v=20260920-access-1" defer></script>
     <script>
         window.FIRST_TIME_PASSWORD_FLOW=<?php echo !empty($first_login) ? 'true' : 'false'; ?>;
         window.FIRST_TIME_LOGIN_EMAIL=<?php echo json_encode(!empty($first_login) ? (string) ($_SESSION['must_change_password_email'] ?? '') : '', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;

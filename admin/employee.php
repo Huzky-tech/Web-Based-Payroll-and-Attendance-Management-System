@@ -14,8 +14,8 @@ login_security_ensure_columns($conn);
 <title>Employee - Philippians CDO</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="stylesheet" href="../css/employee.css?v=20260910-2">
-<script src="../js/action_result_modal.js?v=20260912-1" defer></script>
-<script src="../js/employee.js?v=20260920-availability-3" defer></script>
+<script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+<script src="../js/employee.js?v=20260921-admin-1" defer></script>
 </head><body>
 <?php endif; ?>
 <div class="main-content"><div class="content-area">

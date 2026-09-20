@@ -29,7 +29,7 @@ if ($currentRole === 'Payroll Staff') {
     <title>Payroll Staff Site Assignment - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/site_assign.css?v=20260906-1">
-    <script src="../js/action_result_modal.js?v=20260912-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
 <script src="../js/site_assign.js?v=20260913-security-1" defer></script>
 </head>
 <body>
