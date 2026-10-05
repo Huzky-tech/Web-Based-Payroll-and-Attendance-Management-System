@@ -7,6 +7,7 @@ $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff',
 require_once __DIR__ . '/overtime_helpers.php';
 require_once __DIR__ . '/payroll_approval_helpers.php';
 require_once __DIR__ . '/payroll_deduction_helpers.php';
+require_once __DIR__ . '/payroll_snapshot_helpers.php';
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
 
 function get_current_payroll_staff_id(mysqli $conn, int $userId): int {
@@ -128,6 +129,18 @@ if (!$settings) {
 
 $effectivePeriodStart = $periodStart;
 
+// DDL must complete before starting the payroll transaction (MySQL implicitly
+// commits DDL). All payroll reads below then share one consistent snapshot.
+try {
+    payroll_snapshot_ensure_table($conn);
+    if (!$conn->begin_transaction()) {
+        throw new RuntimeException('Unable to start payroll transaction.');
+    }
+} catch (Throwable $error) {
+    echo json_encode(['success' => false, 'message' => $error->getMessage()]);
+    exit;
+}
+
 $approvedOvertimeJoin = overtime_table_exists($conn)
     ? "LEFT JOIN (
             SELECT WorkerID, SiteID, COALESCE(SUM(TotalHours), 0) AS approved_overtime_hours
@@ -213,9 +226,9 @@ if (count($workers) === 0) {
 
 $overtimeRate = (float) ($settings['overtime_rate'] ?? 1.25);
 
-$conn->begin_transaction();
-
 try {
+    $snapshotAttendance = payroll_snapshot_attendance($conn, (int) $siteId, $periodStart, $periodEnd);
+    $snapshotWorkers = [];
     $insertPayrollStmt = $conn->prepare("
         INSERT INTO payroll (
             WorkerID,
@@ -290,6 +303,29 @@ try {
         $netPay = round($grossPay - $deductions, 2);
 
         $workerId = (int) $worker['WorkerID'];
+
+        $snapshotWorker = $worker;
+        $snapshotWorker['position'] = $roleOnSite;
+        $snapshotWorker['Gross_Pay'] = $grossPay;
+        $snapshotWorker['Total_Deductions'] = $deductions;
+        $snapshotWorker['Net_Pay'] = $netPay;
+        $snapshotWorker['regular_hours'] = $regularHours;
+        $snapshotWorker['overtime_hours'] = $overtimeHours;
+        $snapshotWorker['deduction_breakdown'] = $deductionBreakdown;
+        $snapshotWorker['fixed_deductions'] = $fixedDeductionBreakdown;
+        $snapshotWorker['absent_days'] = 0;
+        $snapshotWorker['late_hours'] = 0.0;
+        foreach ($snapshotAttendance[$workerId] ?? [] as $day) {
+            if (strcasecmp((string) $day['AttendanceStatus'], 'Absent') === 0) {
+                $snapshotWorker['absent_days']++;
+            }
+            if (strcasecmp((string) $day['AttendanceStatus'], 'Late') === 0
+                && !empty($day['Time_In']) && $day['Time_In'] !== '00:00:00'
+                && !empty($day['Time_Out']) && $day['Time_Out'] !== '00:00:00') {
+                $snapshotWorker['late_hours'] += max(0, 8 - (float) $day['Hours_Worked']);
+            }
+        }
+        $snapshotWorkers[] = $snapshotWorker;
 
         $existingPayrollStmt->bind_param("iss", $workerId, $periodStart, $periodEnd);
         $existingPayrollStmt->execute();
@@ -488,6 +524,15 @@ try {
     $recordId = $recordStmt->insert_id;
     $recordStmt->close();
 
+    payroll_snapshot_save($conn, (int) $recordId, [
+        'version' => 1,
+        'site_name' => (string) $site['Site_Name'],
+        'submitted_by_name' => (string) ($_SESSION['full_name'] ?? $currentRole),
+        'settings' => $settings,
+        'workers' => $snapshotWorkers,
+        'attendance' => array_intersect_key($snapshotAttendance, array_flip(array_column($snapshotWorkers, 'WorkerID'))),
+    ]);
+
     // A site payroll batch requires review when Payroll Staff or HR submits it.
     // Store a workflow notification immediately so Admin and Assistant Admin
     // do not have to discover the pending batch manually.
@@ -521,7 +566,9 @@ try {
         }
     }
 
-    $conn->commit();
+    if (!$conn->commit()) {
+        throw new RuntimeException('Unable to commit payroll submission.');
+    }
 
     echo json_encode([
         'success' => true,
@@ -535,7 +582,7 @@ try {
             'net_pay' => $roundedNet
         ]
     ]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
     $conn->rollback();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

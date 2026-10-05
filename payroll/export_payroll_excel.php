@@ -105,129 +105,29 @@ if ($currentRole === 'Payroll Staff' && payroll_approval_columns_ready($conn)) {
     }
 }
 
-$settingsResult = $conn->query('SELECT sss_rate, philhealth_rate, pagibig_rate FROM payroll_settings WHERE id = 1 LIMIT 1');
-$settings = $settingsResult ? $settingsResult->fetch_assoc() : [];
+// Never reconstruct a historical submission from today's assignments or rates.
+require_once __DIR__ . '/../api/payroll_snapshot_helpers.php';
+try {
+    $snapshot = payroll_snapshot_load($conn, $recordId);
+} catch (Throwable $error) {
+    http_response_code(500);
+    exit('Unable to read the saved payroll data. Please contact the administrator.');
+}
+$summaryOnly = $snapshot === null;
+$workers = $snapshot['workers'] ?? [];
+$settings = $snapshot['settings'] ?? [];
+$attendanceByWorker = $snapshot['attendance'] ?? [];
+if ($snapshot !== null) {
+    $record['site_name'] = $snapshot['site_name'] ?? $record['site_name'];
+    $record['submitted_by_name'] = $snapshot['submitted_by_name'] ?? $record['submitted_by_name'];
+}
 $sssRate = (float) ($settings['sss_rate'] ?? 0);
 $philhealthRate = (float) ($settings['philhealth_rate'] ?? 0);
 $pagibigRate = (float) ($settings['pagibig_rate'] ?? 0);
-$hasGovernmentDeductionColumn = worker_government_deduction_column_exists($conn);
-$governmentDeductionSelect = $hasGovernmentDeductionColumn
-    ? "COALESCE(w.GovernmentDeductionStatus, 'With Deductions') AS GovernmentDeductionStatus"
-    : "'With Deductions' AS GovernmentDeductionStatus";
-$governmentDeductionGroupBy = $hasGovernmentDeductionColumn ? ', w.GovernmentDeductionStatus' : '';
-
-$workerStmt = $conn->prepare("
-    SELECT
-        w.WorkerID,
-        w.First_Name,
-        w.Last_Name,
-        COALESCE(NULLIF(TRIM(wa.Role_On_Site), ''), 'Construction Worker') AS position,
-        w.RateType,
-        w.RateAmount,
-        {$governmentDeductionSelect},
-        p.Gross_Pay,
-        p.Total_Deductions,
-        p.Net_Pay,
-        COALESCE(SUM(CASE
-            WHEN a.AttendanceStatus = 'Present'
-             AND a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
-             AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
-            THEN 1 ELSE 0
-        END), 0) AS present_days,
-        COALESCE(SUM(CASE
-            WHEN a.AttendanceStatus = 'Late'
-             AND a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
-             AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
-            THEN 1 ELSE 0
-        END), 0) AS late_days,
-        COALESCE(SUM(CASE WHEN a.AttendanceStatus = 'Absent' THEN 1 ELSE 0 END), 0) AS absent_days,
-        COALESCE(SUM(CASE
-            WHEN a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
-             AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
-            THEN a.Overtime_Hours ELSE 0
-        END), 0) AS overtime_hours,
-        COALESCE(SUM(CASE
-            WHEN a.AttendanceStatus = 'Late'
-             AND a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
-             AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
-            THEN GREATEST(0, 8 - a.Hours_Worked) ELSE 0
-        END), 0) AS late_hours
-    FROM payroll_records pr
-    INNER JOIN payroll p
-        ON p.Pay_Period_Start = pr.Period_start
-        AND p.Pay_Period_End = pr.Period_end
-    INNER JOIN workerassignment wa
-        ON wa.WorkerID = p.WorkerID
-        AND wa.SiteID = pr.SiteID
-    INNER JOIN worker w ON w.WorkerID = p.WorkerID
-    LEFT JOIN attendance a
-        ON a.WorkerID = w.WorkerID
-        AND a.SiteID = pr.SiteID
-        AND a.Date BETWEEN pr.Period_start AND pr.Period_end
-    WHERE pr.Payroll_RecordsID = ?
-    GROUP BY
-        w.WorkerID, w.First_Name, w.Last_Name, wa.Role_On_Site,
-        w.RateType, w.RateAmount{$governmentDeductionGroupBy}, p.Gross_Pay, p.Total_Deductions, p.Net_Pay
-    ORDER BY w.Last_Name, w.First_Name
-");
-
-if (!$workerStmt) {
-    http_response_code(500);
-    exit('Failed to prepare payroll export query.');
-}
-
-$workerStmt->bind_param('i', $recordId);
-$workerStmt->execute();
-$workerResult = $workerStmt->get_result();
-
-$workers = [];
-while ($row = $workerResult->fetch_assoc()) {
-    $workers[] = $row;
-}
-$workerStmt->close();
-
-if (count($workers) === 0) {
-    http_response_code(404);
-    exit('No worker payroll rows found for this record.');
-}
-
 $periodStart = $record['period_start'];
 $periodEnd = $record['period_end'];
 $periodDays = max(1, (int) ((strtotime($periodEnd) - strtotime($periodStart)) / 86400) + 1);
 $periodDates = payroll_export_build_period_dates($periodStart, $periodEnd);
-
-$attendanceByWorker = [];
-$attendanceStmt = $conn->prepare("
-    SELECT
-        a.WorkerID,
-        a.Date,
-        a.Time_In,
-        a.Time_Out,
-        a.Hours_Worked,
-        a.AttendanceStatus
-    FROM attendance a
-    INNER JOIN payroll_records pr ON pr.SiteID = a.SiteID
-    WHERE pr.Payroll_RecordsID = ?
-      AND a.Date BETWEEN pr.Period_start AND pr.Period_end
-");
-
-if ($attendanceStmt) {
-    $attendanceStmt->bind_param('i', $recordId);
-    $attendanceStmt->execute();
-    $attendanceResult = $attendanceStmt->get_result();
-
-    while ($attendanceRow = $attendanceResult->fetch_assoc()) {
-        $workerId = (int) ($attendanceRow['WorkerID'] ?? 0);
-        $dateKey = (string) ($attendanceRow['Date'] ?? '');
-        if ($workerId <= 0 || $dateKey === '') {
-            continue;
-        }
-        $attendanceByWorker[$workerId][$dateKey] = $attendanceRow;
-    }
-
-    $attendanceStmt->close();
-}
-
 $fixedColumnCount = 2;
 $summaryColumnCount = 11;
 $dayColumnCount = count($periodDates);
@@ -303,6 +203,23 @@ foreach ($headerLines as $label => $value) {
     $row++;
 }
 
+if ($summaryOnly) {
+    $sheet->mergeCells("A{$row}:{$lastCol}{$row}");
+    $sheet->setCellValue("A{$row}", 'Historical summary only: worker details were not saved with this submission. Original details cannot be reconstructed reliably.');
+    $sheet->getStyle("A{$row}")->getAlignment()->setWrapText(true);
+    $sheet->getRowDimension($row)->setRowHeight(36);
+    $row++;
+    foreach (['Workers' => $record['worker_count'], 'Regular Hours' => $record['regular_hours'], 'Overtime Hours' => $record['overtime_hours']] as $label => $value) {
+        $sheet->setCellValue("A{$row}", $label);
+        $sheet->setCellValue("B{$row}", $value);
+        $row++;
+    }
+    $totals['gross'] = $record['total_gross_pay'];
+    $totals['deductions'] = $record['total_deductions'];
+    $totals['net'] = $record['total_net_pay'];
+    $totals['overtime'] = $record['overtime_hours'];
+}
+
 $row++;
 $tableHeaderRow = $row;
 
@@ -340,16 +257,12 @@ foreach ($workers as $worker) {
     $lateHours = round((float) ($worker['late_hours'] ?? 0), 2);
     $otHours = round((float) ($worker['overtime_hours'] ?? 0), 2);
     $grossPay = round((float) ($worker['Gross_Pay'] ?? 0), 2);
-    $deductionBreakdown = compute_worker_payroll_deductions(
-        $grossPay,
-        (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
-        $settings
-    );
+    $deductionBreakdown = $worker['deduction_breakdown'];
     $deductions = round((float) ($worker['Total_Deductions'] ?? $deductionBreakdown['total']), 2);
     $netPay = round((float) ($worker['Net_Pay'] ?? 0), 2);
 
-    $absenceDeduction = round($dailyRate * $absentDays, 2);
-    $lateDeduction = round($hourlyRate * $lateHours, 2);
+    $absenceDeduction = 0.0;
+    $lateDeduction = (float) ($worker['fixed_deductions']['late'] ?? 0);
     $sssDeduction = $deductionBreakdown['sss'];
     $philhealthDeduction = $deductionBreakdown['philhealth'];
     $pagibigDeduction = $deductionBreakdown['pagibig'];
@@ -437,15 +350,15 @@ $tableRange = "A{$tableHeaderRow}:{$signatureCol}{$totalRow}";
 $sheet->getStyle($tableRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
 $row += 2;
+if (!$summaryOnly) {
 $sheet->setCellValue("A{$row}", 'DEDUCTIONS BREAKDOWN');
 $sheet->getStyle("A{$row}")->getFont()->setBold(true)->setSize(12);
 $row++;
 
-$breakdown['other'] = max(0, round($totals['deductions'] - ($breakdown['sss'] + $breakdown['philhealth'] + $breakdown['pagibig']), 2));
+$breakdown['other'] = max(0, round($totals['deductions'] - ($breakdown['sss'] + $breakdown['philhealth'] + $breakdown['pagibig'] + $breakdown['late']), 2));
 
 $breakdownLines = [
-    'Absences (Daily Rate × Absent Days)' => round($breakdown['absence'], 2),
-    'Late (Hourly Rate × Late Hours)' => round($breakdown['late'], 2),
+    'Late deductions (saved at processing)' => round($breakdown['late'], 2),
 ];
 
 if ($sssRate > 0) {
@@ -466,6 +379,7 @@ foreach ($breakdownLines as $label => $amount) {
     $sheet->setCellValue("B{$row}", $amount);
     $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode($currencyFormat);
     $row++;
+}
 }
 
 $row += 2;
