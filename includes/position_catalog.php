@@ -2,6 +2,11 @@
 
 function position_catalog_ensure_table(mysqli $conn): bool
 {
+    // Default positions belong only to a newly created catalog. Re-seeding on
+    // every read makes a successfully deleted default position reappear.
+    $existingTable = $conn->query("SHOW TABLES LIKE 'employee_position_catalog'");
+    $tableAlreadyExists = $existingTable && $existingTable->num_rows > 0;
+
     $sql = "CREATE TABLE IF NOT EXISTS employee_position_catalog (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
         position_name VARCHAR(100) NOT NULL,
@@ -12,6 +17,8 @@ function position_catalog_ensure_table(mysqli $conn): bool
         UNIQUE KEY uq_employee_position_name (position_name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     if (!$conn->query($sql)) return false;
+    if ($tableAlreadyExists) return true;
+
     $defaults = [
         ['Construction Worker', 125, 22000], ['Laborer', 110, 19000],
         ['Carpenter', 150, 26000], ['Mason', 150, 26000],
@@ -24,7 +31,10 @@ function position_catalog_ensure_table(mysqli $conn): bool
     if (!$stmt) return false;
     foreach ($defaults as [$name, $hourly, $salary]) {
         $stmt->bind_param('sdd', $name, $hourly, $salary);
-        $stmt->execute();
+        if (!$stmt->execute()) {
+            $stmt->close();
+            return false;
+        }
     }
     $stmt->close();
     return true;

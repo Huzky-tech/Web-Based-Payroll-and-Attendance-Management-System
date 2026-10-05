@@ -25,11 +25,22 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     echo json_encode(['success' => false, 'message' => 'Invalid email format']);
     exit;
 }
-if (!preg_match('/^[\p{L}\p{N}\s&.,()\-]+$/u', $company_name)
-    || ($tax_id !== '' && !preg_match('/^\d+(?:-\d+)*$/', $tax_id))
-    || ($phone !== '' && !preg_match('/^\d+$/', $phone))
-    || ($address !== '' && !preg_match('/^[\p{L}\p{N}\s,.-]+$/u', $address))) {
-    echo json_encode(['success' => false, 'message' => 'One or more fields contain invalid special characters.']);
+if (!preg_match('/^[\p{L}\p{N}\s&.,()\-]+$/u', $company_name)) {
+    echo json_encode(['success' => false, 'message' => 'Company name contains unsupported characters.']);
+    exit;
+}
+if ($tax_id !== '' && !preg_match('/^\d+(?:-\d+)*$/', $tax_id)) {
+    echo json_encode(['success' => false, 'message' => 'Tax ID must contain numbers and hyphens only.']);
+    exit;
+}
+// Phone numbers may contain conventional formatting, for example
+// +63 912-345-6789 or (555) 123-4567.
+if ($phone !== '' && !preg_match('/^[\d\s\-()+]+$/', $phone)) {
+    echo json_encode(['success' => false, 'message' => 'Phone number has an invalid format.']);
+    exit;
+}
+if ($address !== '' && !preg_match('/^[\p{L}\p{N}\s,.-]+$/u', $address)) {
+    echo json_encode(['success' => false, 'message' => 'Address contains unsupported characters.']);
     exit;
 }
 

@@ -16,7 +16,7 @@ $response = [
 ========================= */
 $sql = "
     SELECT DATE(`Date`) as log_date, COUNT(*) as count
-    FROM Audit_logs
+    FROM audit_logs
     WHERE `Date` >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
     GROUP BY DATE(`Date`)
 ";
@@ -42,7 +42,7 @@ for ($i = 6; $i >= 0; $i--) {
 ========================= */
 $sql = "
     SELECT COALESCE(Action, 'Unknown') as action, COUNT(*) as count
-    FROM Audit_logs
+    FROM audit_logs
     WHERE `Date` >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     GROUP BY Action
     ORDER BY count DESC
@@ -63,7 +63,7 @@ $sql = "
     SELECT
         COALESCE(u.email, 'System') as user,
         COUNT(a.Audit_logsID) as actions
-    FROM Audit_logs a
+    FROM audit_logs a
     LEFT JOIN users u ON a.UserID = u.id
     WHERE a.`Date` >= DATE_SUB(NOW(), INTERVAL 7 DAY)
     GROUP BY a.UserID

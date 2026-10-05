@@ -3,6 +3,8 @@ header('Content-Type: application/json');
 include 'connection/db_config.php';
 include '../includes/auth.php';
 include '../includes/password_policy.php';
+require_once __DIR__ . '/password_change_notification.php';
+require_once __DIR__ . '/record_audit_log.php';
 
 require_auth($conn, ['Admin', 'Payroll Staff', 'HR']);
 
@@ -36,7 +38,7 @@ if ($newPassword !== $confirmPassword) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT password FROM users WHERE id = ? LIMIT 1");
+$stmt = $conn->prepare("SELECT password, full_name FROM users WHERE id = ? LIMIT 1");
 $stmt->bind_param('i', $userId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -54,6 +56,10 @@ $updateStmt = $conn->prepare("UPDATE users SET password = ?, password_last_set_a
 $updateStmt->bind_param('si', $hashedPassword, $userId);
 
 if ($updateStmt->execute()) {
+    if (auth_get_user_role($conn, $userId) !== 'Admin') {
+        notify_admins_of_password_change($conn, $userId, (string) ($user['full_name'] ?? ''), 'account settings');
+    }
+    record_audit_log($userId, 'Password Changed', 'Changed password from account settings.');
     echo json_encode(['success' => true, 'message' => 'Password updated successfully']);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to update password']);

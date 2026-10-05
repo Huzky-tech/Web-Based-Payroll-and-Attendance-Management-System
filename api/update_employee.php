@@ -11,12 +11,13 @@ include '../includes/auth.php';
 require_once __DIR__ . '/employee_helpers.php';
 require_once __DIR__ . '/worker_email_helpers.php';
 require_once __DIR__ . '/payroll_deduction_helpers.php';
+require_once __DIR__ . '/../includes/position_catalog.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'HR']);
 
 // Helper function for audit logging
 function logAudit($conn, $userId, $action, $details) {
-    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())");
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
     $stmt->close();
@@ -170,7 +171,7 @@ if ($method === 'POST') {
     user_identity_lock($conn);
 
     // Check if employee exists
-    $checkSql = "SELECT First_Name, Last_Name, CONCAT(First_Name, ' ', Last_Name) AS full_name FROM worker WHERE WorkerID = ?";
+    $checkSql = "SELECT First_Name, Last_Name, Position, RateType, RateAmount, CONCAT(First_Name, ' ', Last_Name) AS full_name FROM worker WHERE WorkerID = ?";
     $checkStmt = $conn->prepare($checkSql);
     $checkStmt->bind_param("i", $employeeId);
     $checkStmt->execute();
@@ -188,6 +189,38 @@ if ($method === 'POST') {
     $lastName = array_key_exists('last_name', $data) ? $lastName : $existingEmployee['Last_Name'];
     $linkedUserId = user_identity_linked_user($conn, (int) $employeeId);
     $checkStmt->close();
+
+    $position = trim((string) $position);
+    $salaryType = in_array($salaryType, ['Hourly', 'Salary'], true) ? $salaryType : 'Hourly';
+    if ($position !== '') {
+        if (!position_catalog_ensure_table($conn)) {
+            throw new RuntimeException('Unable to load the position catalog.');
+        }
+
+        $catalogStmt = $conn->prepare(
+            'SELECT position_name, hourly_rate, salary_rate FROM employee_position_catalog WHERE LOWER(position_name) = LOWER(?) LIMIT 1'
+        );
+        if (!$catalogStmt) {
+            throw new RuntimeException('Unable to verify the selected position.');
+        }
+        $catalogStmt->bind_param('s', $position);
+        $catalogStmt->execute();
+        $catalogPosition = $catalogStmt->get_result()->fetch_assoc();
+        $catalogStmt->close();
+
+        if (!$catalogPosition) {
+            if (strcasecmp($position, (string) ($existingEmployee['Position'] ?? '')) !== 0) {
+                throw new RuntimeException('Select a valid position from the position list.');
+            }
+            // Preserve older workers whose historical position no longer exists
+            // in the catalog; do not accept a browser-supplied replacement rate.
+            $salaryType = (string) ($existingEmployee['RateType'] ?? 'Hourly');
+            $salary = (float) ($existingEmployee['RateAmount'] ?? 0);
+        } else {
+            $position = trim((string) $catalogPosition['position_name']);
+            $salary = (float) ($salaryType === 'Salary' ? $catalogPosition['salary_rate'] : $catalogPosition['hourly_rate']);
+        }
+    }
 
     if (user_identity_full_name_exists($conn, $firstName . ' ' . $lastName, 0, (int) $employeeId)) {
         echo json_encode(['success' => false, 'message' => 'This first and last name combination is already registered.']);

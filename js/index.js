@@ -63,7 +63,12 @@
 
         captchaReroll.disabled = true;
         try {
-            const response = await fetch('api/reroll_login_captcha.php', { method: 'POST' });
+            // Replacing the CAPTCHA is a small background action.  Keep the login
+            // page in place and do not open the global success/processing modal.
+            const response = await fetch('api/reroll_login_captcha.php', {
+                method: 'POST',
+                showProcessing: false
+            });
             const result = await response.json();
             if (!response.ok || !result.success) {
                 throw new Error(result.message || 'Unable to get a new CAPTCHA question.');

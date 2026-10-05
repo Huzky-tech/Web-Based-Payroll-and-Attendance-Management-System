@@ -23,6 +23,17 @@ function attendance_report_h($value): string {
     return htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
 }                          
 
+function attendance_report_display_label(string $attendanceType): string {
+    $labels = [
+        'Time In' => 'AM IN',
+        'Lunch Out' => 'AM OUT',
+        'Lunch In' => 'PM IN',
+        'Time Out' => 'PM OUT',
+    ];
+
+    return $labels[$attendanceType] ?? $attendanceType;
+}
+
 function attendance_report_photo_url(?string $photoPath): string {
     $photoPath = trim((string) $photoPath);
     if ($photoPath === '') {
@@ -169,7 +180,7 @@ if ($evidenceResult) {
         $radius = isset($row['Geofence_Radius_M']) ? (float) $row['Geofence_Radius_M'] : null;
         $row['gps_verification'] = attendance_gps_verification_label($distance, $radius);
         $row['photo_label'] = !empty($row['AttendanceType'])
-            ? attendance_photo_display_label((string) $row['AttendanceType'])
+            ? attendance_report_display_label((string) $row['AttendanceType'])
             : 'No Photo Uploaded';
         $row['attendance_timestamp'] = attendance_report_timestamp(
             $row['Date'] ?? '',
@@ -188,7 +199,7 @@ if ($evidenceResult) {
     <title>Attendance Summary - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/reports.css?v=20260905-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
 </head>
 <body>
 <div class="main-content">
@@ -317,6 +328,14 @@ if ($evidenceResult) {
                         $gpsLabel = ($latitude !== null && $latitude !== '' && $longitude !== null && $longitude !== '')
                             ? number_format((float) $latitude, 6) . ', ' . number_format((float) $longitude, 6)
                             : 'Not recorded';
+                        $hasValidGps = is_numeric($latitude) && is_numeric($longitude)
+                            && (float) $latitude >= -90 && (float) $latitude <= 90
+                            && (float) $longitude >= -180 && (float) $longitude <= 180;
+                        $gpsMapUrl = $hasValidGps
+                            ? 'https://www.openstreetmap.org/?mlat=' . rawurlencode((string) $latitude)
+                                . '&mlon=' . rawurlencode((string) $longitude)
+                                . '#map=18/' . rawurlencode((string) $latitude) . '/' . rawurlencode((string) $longitude)
+                            : '';
                         $distanceLabel = ($row['DistanceFromSite'] !== null && $row['DistanceFromSite'] !== '')
                             ? number_format((float) $row['DistanceFromSite'], 2) . ' m'
                             : 'Not recorded';
@@ -333,7 +352,16 @@ if ($evidenceResult) {
                             <span class="reports-no-photo">No Photo Uploaded</span>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo attendance_report_h($gpsLabel); ?></td>
+                        <td>
+                            <?php if ($hasValidGps): ?>
+                            <a class="report-gps-link" href="<?php echo attendance_report_h($gpsMapUrl); ?>" target="_blank" rel="noopener" title="Open this scan location on the map">
+                                <i class="fas fa-location-dot" aria-hidden="true"></i>
+                                <?php echo attendance_report_h($gpsLabel); ?>
+                            </a>
+                            <?php else: ?>
+                            <?php echo attendance_report_h($gpsLabel); ?>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo attendance_report_h($distanceLabel); ?></td>
                         <td><?php echo attendance_report_h($row['gps_verification']); ?></td>
                     </tr>

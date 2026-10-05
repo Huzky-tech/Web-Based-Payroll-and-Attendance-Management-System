@@ -5,6 +5,8 @@
     const nativeFetch = window.fetch ? window.fetch.bind(window) : null;
     let autoCloseTimer = null;
     let activeProcesses = 0;
+    const lockedControls = new Map();
+    let lastActionControl = null;
 
     function ensureStyles() {
         if (document.getElementById(STYLE_ID)) return;
@@ -209,6 +211,7 @@
     function closeActionResultModal() {
         const modal = document.getElementById(MODAL_ID);
         if (!modal) return;
+        if (modal.dataset.processing === 'true') return;
 
         window.clearTimeout(autoCloseTimer);
         autoCloseTimer = null;
@@ -254,6 +257,7 @@
         }
         window.clearTimeout(autoCloseTimer);
         autoCloseTimer = null;
+        delete modal.dataset.processing;
         const icon = modal.querySelector('[data-action-result-icon]');
         const iconClass = type === 'success' ? 'fa-check' : 'fa-exclamation';
         const title = config.title || (type === 'success' ? 'Action Completed' : 'Action Failed');
@@ -312,6 +316,7 @@
     }
 
     function setProcessingControls(modal) {
+        modal.dataset.processing = 'true';
         modal.querySelector('[data-action-result-close]').style.display = 'none';
         modal.querySelector('[data-action-result-cancel]').style.display = 'none';
         modal.querySelector('[data-action-result-ok]').style.display = 'none';
@@ -328,22 +333,67 @@
         const icon = modal.querySelector('[data-action-result-icon]');
         icon.className = 'action-result-modal__icon processing';
         icon.innerHTML = '<span class=action-result-modal__spinner aria-hidden=true></span>';
-        modal.querySelector('#actionResultModalTitle').textContent = 'Processing';
-        modal.querySelector('#actionResultModalMessage').textContent = message;
+        modal.querySelector('#actionResultModalTitle').textContent = 'Processing...';
+        modal.querySelector('#actionResultModalMessage').textContent = message || 'Please wait while we complete your request.';
         setProcessingControls(modal);
     }
 
     function completeProcessingModal(message = 'Completed successfully.') {
-        const modal = ensureModal();
-        if (!modal) return;
         activeProcesses = 0;
-        const icon = modal.querySelector('[data-action-result-icon]');
-        icon.className = 'action-result-modal__icon success';
-        icon.textContent = '\u2713';
-        modal.querySelector('#actionResultModalTitle').textContent = 'Completed';
-        modal.querySelector('#actionResultModalMessage').textContent = message;
-        setProcessingControls(modal);
-        autoCloseTimer = setTimeout(closeActionResultModal, 2000);
+        showActionResultModal({
+            type: 'success',
+            title: 'Success',
+            message,
+            autoClose: false
+        });
+    }
+
+    function showErrorModal(message = 'The request could not be completed. Please try again.', title = 'Something went wrong') {
+        activeProcesses = 0;
+        showActionResultModal({ type: 'error', title, message, autoClose: false, okText: 'Close' });
+    }
+
+    function lockActionControl(control) {
+        if (!(control instanceof HTMLElement)) return;
+        const count = lockedControls.get(control) || 0;
+        if (count === 0) {
+            control.dataset.actionResultWasDisabled = control.disabled ? '1' : '0';
+            if ('disabled' in control) control.disabled = true;
+            control.setAttribute('aria-busy', 'true');
+        }
+        lockedControls.set(control, count + 1);
+    }
+
+    function unlockActionControl(control) {
+        if (!(control instanceof HTMLElement) || !lockedControls.has(control)) return;
+        const remaining = (lockedControls.get(control) || 1) - 1;
+        if (remaining > 0) {
+            lockedControls.set(control, remaining);
+            return;
+        }
+        lockedControls.delete(control);
+        if ('disabled' in control && control.dataset.actionResultWasDisabled !== '1') control.disabled = false;
+        delete control.dataset.actionResultWasDisabled;
+        control.removeAttribute('aria-busy');
+    }
+
+    async function runWithProcessingModal(operation, options = {}) {
+        const control = options.button instanceof HTMLElement ? options.button : lastActionControl;
+        lockActionControl(control);
+        showProcessingModal(options.loadingMessage || 'Please wait while we complete your request.');
+        try {
+            const result = await operation();
+            if (result && typeof result === 'object' && result.success === false) {
+                throw new Error(result.message || 'The request could not be completed.');
+            }
+            completeProcessingModal(options.successMessage || result?.message || 'The request was completed successfully.');
+            return result;
+        } catch (error) {
+            showErrorModal(error?.message || 'The request could not be completed. Please try again.', options.errorTitle);
+            throw error;
+        } finally {
+            unlockActionControl(control);
+        }
     }
 
     window.closeActionResultModal = closeActionResultModal;
@@ -351,12 +401,18 @@
     window.showAccessDeniedModal = showAccessDeniedModal;
     window.showProcessingModal = showProcessingModal;
     window.completeProcessingModal = completeProcessingModal;
+    window.showLoadingModal = showProcessingModal;
+    window.showSuccessModal = completeProcessingModal;
+    window.showErrorModal = showErrorModal;
+    window.runWithProcessingModal = runWithProcessingModal;
     window.showCrudResultModal = function (success, message, actionLabel, onClose) {
         showActionResultModal({
             type: success ? 'success' : 'error',
             title: `${actionLabel || 'Action'} ${success ? 'Successful' : 'Unsuccessful'}`,
             message,
-            onClose
+            onClose,
+            autoClose: false,
+            okText: success ? 'OK' : 'Close'
         });
     };
 
@@ -497,13 +553,18 @@
         window.showSayModal(message, options);
     };
 
+    function isBackgroundRequest(input, init) {
+        if (init.background === true || init.showProcessing === false) return true;
+        const url = typeof input === 'string' ? input : (input?.url || '');
+        return /(?:session_activity|mark_admin_notification_read|admin_notifications)/i.test(url);
+    }
+
     if (nativeFetch) {
         window.fetch = async function (input, init = {}) {
             const method = String(init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
-            // Background POST requests (autosaves, heartbeats, and polling) must not
-            // open a global success modal. Callers that genuinely need the generic
-            // processing UI can opt in with { showProcessing: true }.
-            const tracked = !['GET', 'HEAD', 'OPTIONS'].includes(method) && init.showProcessing === true;
+            // Server mutations triggered from the UI all use the shared lifecycle.
+            // Background heartbeats and explicit opt-outs remain silent.
+            const tracked = !['GET', 'HEAD', 'OPTIONS'].includes(method) && !isBackgroundRequest(input, init);
             if (!tracked) {
                 const response = await nativeFetch(input, init);
                 if (response.status === 403) {
@@ -514,27 +575,45 @@
                 return response;
             }
             activeProcesses += 1;
-            showProcessingModal();
+            const control = lastActionControl;
+            lockActionControl(control);
+            showProcessingModal('Please wait while we complete your request.');
             try {
                 const response = await nativeFetch(input, init);
                 activeProcesses = Math.max(0, activeProcesses - 1);
-                if (response.ok && activeProcesses === 0) completeProcessingModal();
-                if (!response.ok) {
-                    closeActionResultModal();
+                let body = null;
+                try {
+                    const contentType = response.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) body = await response.clone().json();
+                } catch (_) {
+                    body = null;
+                }
+                if (!response.ok || body?.success === false) {
                     if (response.status === 403) {
-                        response.clone().json()
-                            .then((data) => showAccessDeniedModal(data?.message || 'You cannot perform this action.'))
-                            .catch(() => showAccessDeniedModal('You cannot perform this action.'));
+                        showAccessDeniedModal(body?.message || 'You cannot perform this action.');
+                    } else if (activeProcesses === 0) {
+                        showErrorModal(body?.message || `Request failed: ${response.status}`);
                     }
+                } else if (activeProcesses === 0) {
+                    completeProcessingModal(body?.message || 'The request was completed successfully.');
                 }
                 return response;
             } catch (error) {
                 activeProcesses = Math.max(0, activeProcesses - 1);
-                closeActionResultModal();
+                if (activeProcesses === 0) showErrorModal('Unable to reach the server. Please try again.');
                 throw error;
+            } finally {
+                unlockActionControl(control);
             }
         };
     }
+
+    document.addEventListener('click', (event) => {
+        const control = event.target instanceof Element
+            ? event.target.closest('button, input[type="submit"], input[type="button"]')
+            : null;
+        if (control && !control.closest(`#${MODAL_ID}`)) lastActionControl = control;
+    }, true);
 
     document.addEventListener('DOMContentLoaded', () => {
         const params = new URLSearchParams(window.location.search || '');

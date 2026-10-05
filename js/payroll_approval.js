@@ -267,13 +267,9 @@ function downloadPayrollExcel(recordId) {
     const appRoot = roleIndex > 0 ? `/${pathParts.slice(0, roleIndex).join('/')}` : '';
     const exportUrl = `${appRoot}/payroll/export_payroll_excel.php?id=${encodeURIComponent(String(id))}`;
 
-    const link = document.createElement('a');
-    link.href = exportUrl;
-    link.download = '';
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    // Let the export controller provide the Excel filename and MIME headers.
+    // This keeps Hostinger from treating the download as a saved HTML page.
+    window.location.assign(exportUrl);
 }
 
 function openPayrollRejectModal(recordId) {
@@ -460,9 +456,12 @@ function bindPayrollApprovalEvents() {
         const siteId = Number(event.currentTarget.dataset.siteId || 0);
         if (!siteId) return;
         const payrollPath = payrollApprovalState.role === 'hr' || window.location.pathname.includes('/hr/')
-            ? '/capstone/hr/payroll'
-            : '/capstone/payroll/payroll';
-        window.location.href = `${payrollPath}?site_id=${siteId}&correction=1`;
+            ? '../users/hr_dashboard.php?page=payroll'
+            : '../users/payroll_dashboard.php?page=payroll';
+        const payrollUrl = new URL(payrollPath, window.location.href);
+        payrollUrl.searchParams.set('site_id', String(siteId));
+        payrollUrl.searchParams.set('correction', '1');
+        window.location.href = payrollUrl.toString();
     });
     document.getElementById('cancelPayrollRejectBtn')?.addEventListener('click', closePayrollRejectModal);
 

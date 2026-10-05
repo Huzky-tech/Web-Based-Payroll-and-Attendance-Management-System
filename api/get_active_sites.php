@@ -8,6 +8,7 @@ header('Content-Type: application/json');
 include 'connection/db_config.php';
 include '../includes/auth.php';
 require_once __DIR__ . '/site_schedule_helpers.php';
+require_once __DIR__ . '/site_activation_helpers.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 $userId = (int) ($_SESSION['user_id'] ?? 0);
@@ -15,6 +16,15 @@ $userId = (int) ($_SESSION['user_id'] ?? 0);
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    // Apply the three-worker activation rule before returning active sites.
+    $siteIdsResult = $conn->query("SELECT SiteID FROM projectsite WHERE LOWER(COALESCE(Status, '')) <> 'archived'");
+    if ($siteIdsResult) {
+        while ($siteIdRow = $siteIdsResult->fetch_assoc()) {
+            site_sync_activation_status($conn, (int) $siteIdRow['SiteID']);
+        }
+        $siteIdsResult->free();
+    }
+
     $joinSql = '';
     $whereParts = ["LOWER(s.Status) = 'active'"];
     $types = '';
@@ -76,8 +86,8 @@ if ($method === 'GET') {
                 {$timekeeperSelect},
                 s.Status,
                 {$scheduleSelect},
-                (SELECT COUNT(*) FROM WorkerAssignment wa WHERE wa.SiteID = s.SiteID) AS Current_Workers
-            FROM ProjectSite s
+                (SELECT COUNT(*) FROM workerassignment wa WHERE wa.SiteID = s.SiteID) AS Current_Workers
+            FROM projectsite s
             {$timekeeperJoin}
             {$joinSql}
             LEFT JOIN (
@@ -96,15 +106,30 @@ if ($method === 'GET') {
     if ($types !== '') {
         $stmt = $conn->prepare($sql);
         if (!$stmt) {
+            error_log('get_active_sites prepare failed: ' . $conn->error);
+            http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Failed to prepare site query']);
             exit;
         }
 
         $stmt->bind_param($types, ...$params);
-        $stmt->execute();
+        if (!$stmt->execute()) {
+            error_log('get_active_sites execute failed: ' . $stmt->error);
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Unable to load sites. Please contact the administrator.']);
+            $stmt->close();
+            exit;
+        }
         $result = $stmt->get_result();
     } else {
         $result = $conn->query($sql);
+    }
+
+    if (!$result) {
+        error_log('get_active_sites query failed: ' . $conn->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Unable to load sites. Please contact the administrator.']);
+        exit;
     }
 
     $sites = [];

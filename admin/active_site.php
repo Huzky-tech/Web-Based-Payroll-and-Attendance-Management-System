@@ -4,7 +4,7 @@ include '../includes/auth.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 $embeddedDashboard = $embeddedDashboard ?? false;
-$canManageSites = in_array($currentRole, ['Admin', 'Assistant Admin'], true);
+$canManageSites = in_array($currentRole, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR'], true);
 $googleMapsApiKey = htmlspecialchars(getenv('GOOGLE_MAPS_API_KEY') ?: '', ENT_QUOTES, 'UTF-8');
 ?>
 <?php if (!$embeddedDashboard): ?>
@@ -18,11 +18,11 @@ $googleMapsApiKey = htmlspecialchars(getenv('GOOGLE_MAPS_API_KEY') ?: '', ENT_QU
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
-    <link rel="stylesheet" href="../css/responsive_mobile.css?v=20260903-1">
+    <link rel="stylesheet" href="../css/responsive_mobile.css?v=20261001-layout-1">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<script src="../js/active_site.js?v=20260921-manager-1" defer></script>
+<script src="../js/active_site.js?v=20261004-site-management-roles-1" defer></script>
 
 </head>
 <body data-dashboard-role="<?php
@@ -175,7 +175,7 @@ $googleMapsApiKey = htmlspecialchars(getenv('GOOGLE_MAPS_API_KEY') ?: '', ENT_QU
                             </div>
 
                             <div class="form-group form-group-full">
-                                <div class="site-status-note"><i class="fas fa-info-circle"></i> New sites start as <strong>Inactive</strong> and automatically become active once a worker is assigned.</div>
+                                <div class="site-status-note"><i class="fas fa-info-circle"></i> New sites start as <strong>Inactive</strong> and automatically become active after <strong>3 workers</strong> are assigned.</div>
                             </div>
                         </div>
                     </section>
@@ -377,7 +377,7 @@ $googleMapsApiKey = htmlspecialchars(getenv('GOOGLE_MAPS_API_KEY') ?: '', ENT_QU
                             </div>
                             <div class="summary-group">
                                 <label>STATUS</label>
-                                <span class="badge-active badge-inactive" id="confirmSiteStatus">Inactive until workers are assigned</span>
+                                <span class="badge-active badge-inactive" id="confirmSiteStatus">Inactive until 3 workers are assigned</span>
                             </div>
                             <div class="summary-group full-width">
                                 <label>LOCATION</label>

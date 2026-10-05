@@ -29,6 +29,10 @@ function isPayrollStaffSettingsView() {
     return window.isPayrollStaffSettings === true;
 }
 
+function isAssistantAdminSettingsView() {
+    return window.currentUserRole === 'Assistant Admin';
+}
+
 function showSettingsActionResult(success, message, actionLabel = 'Settings Action') {
     if (typeof window.showCrudResultModal === 'function') {
         window.showCrudResultModal(success, message, actionLabel);
@@ -132,7 +136,7 @@ function setupGeneralSettingsLiveValidation() {
     const textRules = {
         company_name: { label: 'Company name', pattern: /[^\p{L}\p{N}\s&.,()-]/gu },
         tax_id: { label: 'Tax ID', pattern: /[^\d-]/g },
-        phone: { label: 'Phone number', pattern: /\D/g },
+        phone: { label: 'Phone number', pattern: /[^\d\s\-()+]/g },
         address: { label: 'Address', pattern: /[^\p{L}\p{N}\s,.-]/gu }
     };
     Object.entries(textRules).forEach(([id, rule]) => {
@@ -350,6 +354,42 @@ async function loadNotificationSettings() {
     document.getElementById('email_digest_frequency').value = data.data.email_digest_frequency || 'Daily';
 }
 
+async function loadAssistantNotificationSettings() {
+    if (!isAssistantAdminSettingsView()) return;
+    const data = await fetchJson('../api/get_assistant_notification_settings.php');
+    if (!data.success || !data.data) {
+        throw new Error(data.message || 'Unable to load notification settings.');
+    }
+
+    const settings = data.data;
+    document.getElementById('assistant_in_system_notifications').checked = Number(settings.in_system_notifications) === 1;
+    document.getElementById('assistant_payroll_processing').checked = Number(settings.payroll_processing) === 1;
+    document.getElementById('assistant_attendance_issues').checked = Number(settings.attendance_issues) === 1;
+    document.getElementById('assistant_site_assignments').checked = Number(settings.site_assignments) === 1;
+    document.getElementById('assistant_overtime_requests').checked = Number(settings.overtime_requests) === 1;
+}
+
+async function saveAssistantNotificationSettings() {
+    if (!isAssistantAdminSettingsView()) return;
+
+    const form = new FormData();
+    form.append('in_system_notifications', document.getElementById('assistant_in_system_notifications').checked ? '1' : '0');
+    form.append('payroll_processing', document.getElementById('assistant_payroll_processing').checked ? '1' : '0');
+    form.append('attendance_issues', document.getElementById('assistant_attendance_issues').checked ? '1' : '0');
+    form.append('site_assignments', document.getElementById('assistant_site_assignments').checked ? '1' : '0');
+    form.append('overtime_requests', document.getElementById('assistant_overtime_requests').checked ? '1' : '0');
+
+    try {
+        const result = await fetchJson('../api/update_assistant_notification_settings.php', {
+            method: 'POST',
+            body: form
+        });
+        showSettingsActionResult(Boolean(result.success), result.message, 'Notification Settings');
+    } catch (error) {
+        showSettingsActionResult(false, error.message || 'Unable to save notification settings.', 'Notification Settings');
+    }
+}
+
 let userPasswordPolicy = { min_password_length: 8, require_special_char: 1, require_number: 1, require_uppercase: 1 };
 
 async function loadSecuritySettings() {
@@ -457,7 +497,7 @@ function updateSampleDataDevToolsVisibility(systemSettings = null) {
 
 async function loadAllSettings() {
     const loaders = window.currentUserRole === 'Assistant Admin'
-        ? [['System', loadSystemSettings]]
+        ? [['Notifications', loadAssistantNotificationSettings], ['System', loadSystemSettings]]
         : [
             ['Company', loadCompanySettings],
             ['Payroll', loadPayrollSettings],
@@ -1494,6 +1534,7 @@ window.handleOvertimeToggle = handleOvertimeToggle;
 window.handleLogoPreview = handleLogoPreview;
 window.saveAll = saveAll;
 window.saveActiveTab = saveActiveTab;
+window.saveAssistantNotificationSettings = saveAssistantNotificationSettings;
 window.openAddUserModal = openAddUserModal;
 window.closeAddUserModal = closeAddUserModal;
 window.togglePassword = togglePassword;

@@ -39,11 +39,11 @@ const useMyEditLocationBtn = document.getElementById('useMyEditLocationBtn');
 const editSiteMapFeedback = document.getElementById('editSiteMapFeedback');
 const editSiteLocationMap = document.getElementById('editSiteLocationMap');
 const activeSiteDashboardRole = document.body?.dataset?.dashboardRole || '';
-const activeSiteReadOnly = activeSiteDashboardRole === 'payroll';
+const activeSiteReadOnly = false;
 const activeSiteIsAdmin = activeSiteDashboardRole === 'admin';
-const activeSiteCanManageSites = activeSiteDashboardRole === 'admin' || activeSiteDashboardRole === 'assistant';
-const activeSiteCanAssignWorkers = activeSiteCanManageSites || activeSiteDashboardRole === 'hr';
-const activeSiteCanAssignTimekeepers = activeSiteCanManageSites;
+const activeSiteCanManageSites = ['admin', 'assistant', 'payroll', 'hr'].includes(activeSiteDashboardRole);
+const activeSiteCanAssignWorkers = activeSiteCanManageSites;
+const activeSiteCanAssignTimekeepers = activeSiteDashboardRole === 'admin' || activeSiteDashboardRole === 'assistant';
 const activeSiteCanPrioritize = ['admin', 'assistant', 'hr', 'payroll'].includes(activeSiteDashboardRole);
 const archiveSiteModal = document.getElementById('archiveSiteModal');
 const closeArchiveSiteModalBtn = document.getElementById('closeArchiveSiteModal');
@@ -100,6 +100,7 @@ const activeSiteState = {
         geofenceCircle: null,
         leafletReady: null,
         geocodeTimer: null,
+        addressLookupId: 0,
         searchAbortController: null,
         defaultCenter: [12.8797, 121.7740],
         defaultZoom: 6
@@ -114,6 +115,7 @@ const activeSiteState = {
         instance: null,
         marker: null,
         geocodeTimer: null,
+        addressLookupId: 0,
         searchAbortController: null,
         defaultCenter: [12.8797, 121.7740],
         defaultZoom: 6
@@ -793,7 +795,7 @@ function updateAddSiteConfirmSummary() {
         confirmSiteHours.textContent = `${formatTimeDisplay(values.shiftStart)} → ${formatTimeDisplay(values.lunchStart)}-${formatTimeDisplay(values.lunchEnd)} → ${formatTimeDisplay(values.shiftEnd)} (${workingHours} hrs)`;
     }
     if (confirmSiteStatus) {
-        confirmSiteStatus.textContent = 'Inactive until workers are assigned';
+        confirmSiteStatus.textContent = 'Inactive until 3 workers are assigned';
         confirmSiteStatus.className = 'badge-active badge-inactive';
     }
 }
@@ -1000,6 +1002,26 @@ function fillSiteLocationFromGps(address, latitude, longitude) {
     siteLocationInput.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+async function fillSiteLocationFromMapPin(latitude, longitude) {
+    const lookupId = ++activeSiteState.addSiteMap.addressLookupId;
+    setSiteMapFeedback('Pin placed. Finding the site address...', 'info');
+
+    let address = '';
+    try {
+        address = await reverseGeocodePhilippineLocation(latitude, longitude);
+    } catch (error) {
+        console.warn('Could not retrieve the pinned site address:', error);
+    }
+
+    if (lookupId !== activeSiteState.addSiteMap.addressLookupId) return;
+
+    fillSiteLocationFromGps(address, latitude, longitude);
+    setSiteMapFeedback(
+        address ? 'Pin and site address added. You can adjust the address if needed.' : 'Pin and coordinates added. Enter the site address if it needs more detail.',
+        address ? 'success' : 'info'
+    );
+}
+
 async function ensureSiteLocationMap() {
     if (!siteLocationMap) {
         return null;
@@ -1017,9 +1039,9 @@ async function ensureSiteLocationMap() {
 
     const map = createLeafletMap(siteLocationMap, center, activeSiteState.addSiteMap.defaultZoom);
 
-    map.on('click', (event) => {
-        placeSiteMarker(event.latlng.lat, event.latlng.lng, true);
-        setSiteMapFeedback('Pin moved. You can drag it again if needed.', 'success');
+    map.on('click', async (event) => {
+        await placeSiteMarker(event.latlng.lat, event.latlng.lng, true);
+        await fillSiteLocationFromMapPin(event.latlng.lat, event.latlng.lng);
     });
 
     activeSiteState.addSiteMap.instance = map;
@@ -1125,12 +1147,12 @@ async function placeSiteMarker(latitude, longitude, centerMap = false) {
         activeSiteState.addSiteMap.marker = window.L.marker(position, {
             draggable: true
         }).addTo(map);
-        activeSiteState.addSiteMap.marker.on('dragend', (event) => {
+        activeSiteState.addSiteMap.marker.on('dragend', async (event) => {
             const markerPosition = event.target.getLatLng();
             updateCoordinateInput(markerPosition.lat, markerPosition.lng);
             setAddGeofenceHidden(markerPosition.lat, markerPosition.lng);
             syncAddGeofenceCircleWithInputs();
-            setSiteMapFeedback('Pin updated from the map.', 'success');
+            await fillSiteLocationFromMapPin(markerPosition.lat, markerPosition.lng);
         });
     } else {
         activeSiteState.addSiteMap.marker.setLatLng(position);
@@ -1735,6 +1757,31 @@ function updateEditCoordinateInput(latitude, longitude) {
     editSiteCoordinatesInput.value = `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 }
 
+async function fillEditSiteLocationFromMapPin(latitude, longitude) {
+    const lookupId = ++activeSiteState.editSiteMap.addressLookupId;
+    setEditSiteMapFeedback('Pin placed. Finding the site address...', 'info');
+
+    let address = '';
+    try {
+        address = await reverseGeocodePhilippineLocation(latitude, longitude);
+    } catch (error) {
+        console.warn('Could not retrieve the edited site address from the pin:', error);
+    }
+
+    if (lookupId !== activeSiteState.editSiteMap.addressLookupId) return;
+
+    if (editSiteLocationInput) {
+        editSiteLocationInput.value = address || `Pinned location (${latitude.toFixed(6)}, ${longitude.toFixed(6)})`;
+        editSiteLocationInput.setCustomValidity('');
+        editSiteLocationInput.dispatchEvent(new Event('input', { bubbles: true }));
+        editSiteLocationInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    setEditSiteMapFeedback(
+        address ? 'Pin and site address updated. You can adjust the address if needed.' : 'Pin and coordinates updated. Enter the site address if it needs more detail.',
+        address ? 'success' : 'info'
+    );
+}
+
 async function ensureEditSiteLocationMap() {
     // Ensure geofence circle exists if inputs were already set.
 
@@ -1753,9 +1800,9 @@ async function ensureEditSiteLocationMap() {
 
     const map = createLeafletMap(editSiteLocationMap, center, activeSiteState.editSiteMap.defaultZoom);
 
-    map.on('click', (event) => {
-        placeEditSiteMarker(event.latlng.lat, event.latlng.lng, true);
-        setEditSiteMapFeedback('Pin moved. You can drag it again if needed.', 'success');
+    map.on('click', async (event) => {
+        await placeEditSiteMarker(event.latlng.lat, event.latlng.lng, true);
+        await fillEditSiteLocationFromMapPin(event.latlng.lat, event.latlng.lng);
     });
 
     activeSiteState.editSiteMap.instance = map;
@@ -1857,12 +1904,12 @@ async function placeEditSiteMarker(latitude, longitude, centerMap = false) {
         activeSiteState.editSiteMap.marker = window.L.marker(position, {
             draggable: true
         }).addTo(map);
-        activeSiteState.editSiteMap.marker.on('dragend', (event) => {
+        activeSiteState.editSiteMap.marker.on('dragend', async (event) => {
             const markerPosition = event.target.getLatLng();
             updateEditCoordinateInput(markerPosition.lat, markerPosition.lng);
             setEditGeofenceHidden(markerPosition.lat, markerPosition.lng);
             syncEditGeofenceCircleWithInputs();
-            setEditSiteMapFeedback('Pin updated from the map.', 'success');
+            await fillEditSiteLocationFromMapPin(markerPosition.lat, markerPosition.lng);
         });
     } else {
         activeSiteState.editSiteMap.marker.setLatLng(position);
@@ -2135,6 +2182,16 @@ function openSiteDetails(siteId) {
 function openEditSite(siteId) {
     const site = activeSiteState.siteMap.get(Number(siteId));
     if (!site || !editSiteModal || !editSiteForm) {
+        return;
+    }
+
+    if (Number(site.Has_Attendance ?? site.has_attendance ?? 0) === 1) {
+        const message = 'This site can no longer be edited because attendance has already been recorded.';
+        if (typeof window.showCrudResultModal === 'function') {
+            window.showCrudResultModal(false, message, 'Site Editing Locked');
+        } else {
+            window.alert(message);
+        }
         return;
     }
 
@@ -2970,7 +3027,10 @@ async function openAssignWorkersModal(siteId) {
 
 async function loadSites() {
     try {
-        const sites = await fetchJson('../api/get_sites.php');
+        // New sites begin as Inactive while staffing is completed. Both Active
+        // and Inactive sites belong here; only explicitly archived sites belong
+        // on the Archive page.
+        const sites = await fetchJson('../api/get_sites.php?exclude_archived=1');
         if (!Array.isArray(sites)) {
             throw new Error('Invalid site payload');
         }
@@ -3028,6 +3088,7 @@ async function loadSites() {
             const timekeeperName = site.Timekeeper || 'Not assigned';
             const normalizedStatus = toSafeClassName(status);
             const isPriority = Number(site.Is_Priority || 0) === 1;
+            const hasAttendance = Number(site.Has_Attendance ?? site.has_attendance ?? 0) === 1;
             if (isPriority) card.classList.add('priority-site');
             card.innerHTML = `
                 <div class="card-header">
@@ -3091,9 +3152,9 @@ async function loadSites() {
                         <i class="far fa-eye"></i>
                         <span>View Details</span>
                     </button>
-                    ${activeSiteCanManageSites ? `<button class="btn-manage" type="button" data-site-action="edit" data-site-id="${siteId}">
-                        <i class="far fa-pen-to-square"></i>
-                        <span>Edit</span>
+                    ${activeSiteCanManageSites ? `<button class="btn-manage" type="button" data-site-action="edit" data-site-id="${siteId}"${hasAttendance ? ' disabled aria-disabled="true" title="Site editing is locked because attendance has started."' : ''}>
+                        <i class="${hasAttendance ? 'fas fa-lock' : 'far fa-pen-to-square'}"></i>
+                        <span>${hasAttendance ? 'Editing Locked' : 'Edit'}</span>
                     </button>` : ''}
                     ${activeSiteIsAdmin ? `
                     <button class="btn-archive-site" type="button" data-site-action="archive" data-site-id="${siteId}" title="Archive Site">
@@ -3262,7 +3323,7 @@ if (addSiteForm) {
                 await loadSites();
                 window.showCrudResultModal?.(
                     true,
-                    result.message || 'Site added successfully.',
+                    result.message || 'Site created as Inactive. It will become Active after 3 workers are assigned.',
                     'Site Creation'
                 );
             } else {
@@ -3594,12 +3655,12 @@ if (assignWorkersTempBtn) {
         const dashboardFile = currentPath.split('/').pop() || '';
 
         if (activeSiteDashboardRole === 'assistant') {
-            window.location.href = '/capstone/assistant/dashboard?page=worker';
+            window.location.href = '../users/ass_dashboard.php?page=worker';
             return;
         }
 
         if (activeSiteDashboardRole === 'payroll') {
-            window.location.href = '/capstone/payroll/employee';
+            window.location.href = '../users/payroll_dashboard.php?page=worker';
             return;
         }
 
@@ -3614,7 +3675,7 @@ if (assignWorkersTempBtn) {
         }
 
         if (dashboardFile === 'ass_dashboard.php') {
-            window.location.href = '/capstone/assistant/dashboard?page=worker';
+            window.location.href = '../users/ass_dashboard.php?page=worker';
             return;
         }
 

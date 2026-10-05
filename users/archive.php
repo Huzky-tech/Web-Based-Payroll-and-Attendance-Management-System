@@ -14,8 +14,8 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <title>Archive - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../css/archive.css?v=20260814-2">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
-<script src="../js/archive.js?v=20260814-2" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
+<script src="../js/archive.js?v=20261004-worker-user-filter-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -24,7 +24,7 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <div class="archive-header-card">
         <div class="archive-header-left">
             <div class="archive-header-icon">
-                <i class="fa-regular fa-box-archive"></i>
+                <i class="fa-solid fa-box-archive"></i>
             </div>
 
             <div class="archive-header-text">
@@ -45,7 +45,8 @@ $embeddedDashboard = $embeddedDashboard ?? false;
             </button>
 
             <button class="archive-tag active" type="button" data-type="all" id="archiveTagAll">All (0)</button>
-            <button class="archive-tag" type="button" data-type="employee" id="archiveTagEmployee">Employee (0)</button>
+            <button class="archive-tag" type="button" data-type="employee" id="archiveTagEmployee">Workers (0)</button>
+            <button class="archive-tag" type="button" data-type="user" id="archiveTagUser">Users (0)</button>
             <button class="archive-tag" type="button" data-type="site" id="archiveTagSite">Site (0)</button>
         </div>
     </div>

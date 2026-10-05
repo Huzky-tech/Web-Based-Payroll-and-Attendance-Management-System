@@ -1,7 +1,7 @@
 <?php
 /**
  * Assign Worker to Site API
- * Insert worker-site assignment into WorkerAssignment table
+ * Insert worker-site assignment into workerassignment table
  */
 
 header('Content-Type: application/json');
@@ -23,11 +23,6 @@ if (!$workerId || !$siteId) {
     exit;
 }
 
-if ($currentRole === 'Payroll Staff') {
-    echo json_encode(['success' => false, 'message' => 'Payroll staff can only view assigned site details']);
-    exit;
-}
-
 if (!isEmployeeApprovedForAssignment($conn, (int) $workerId)) {
     echo json_encode(['success' => false, 'message' => 'This employee is pending approval and cannot be assigned to a site yet.']);
     exit;
@@ -35,11 +30,17 @@ if (!isEmployeeApprovedForAssignment($conn, (int) $workerId)) {
 
 // Prevent assigning a worker who is already assigned to any site.
 $checkSql = "SELECT wa.SiteID, ps.Site_Name
-             FROM WorkerAssignment wa
+             FROM workerassignment wa
              LEFT JOIN projectsite ps ON wa.SiteID = ps.SiteID
              WHERE wa.WorkerID = ?
              LIMIT 1";
 $stmt = $conn->prepare($checkSql);
+if (!$stmt) {
+    error_log('assign_worker lookup failed: ' . $conn->error);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Unable to check worker assignments. Please contact the administrator.']);
+    exit;
+}
 $stmt->bind_param("i", $workerId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -83,8 +84,14 @@ if ($workerStmt) {
 }
 
 // Insert assignment
-$insertSql = "INSERT INTO WorkerAssignment (WorkerID, SiteID, Assigned_Date, Role_On_Site) VALUES (?, ?, CURDATE(), '')";
+$insertSql = "INSERT INTO workerassignment (WorkerID, SiteID, Assigned_Date, Role_On_Site) VALUES (?, ?, CURDATE(), '')";
 $stmt = $conn->prepare($insertSql);
+if (!$stmt) {
+    error_log('assign_worker insert preparation failed: ' . $conn->error);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Unable to save worker assignment. Please contact the administrator.']);
+    exit;
+}
 $stmt->bind_param("ii", $workerId, $siteId);
 
 if ($stmt->execute()) {

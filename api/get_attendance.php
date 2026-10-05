@@ -9,6 +9,7 @@ require_once '../includes/auth.php';
 require_once __DIR__ . '/site_schedule_helpers.php';
 require_once __DIR__ . '/timekeeper_assignment_helpers.php';
 require_once __DIR__ . '/attendance_photo_helpers.php';
+require_once __DIR__ . '/overtime_helpers.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR', 'Timekeeper']);
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
@@ -46,6 +47,8 @@ function bindDynamicParams(mysqli_stmt $stmt, string $types, array $params): voi
 try {
     require_once __DIR__ . '/attendance_schema_helpers.php';
     attendance_schema_ensure_table($conn);
+    require_once __DIR__ . '/attendance_auto_lunch.php';
+    attendance_apply_due_lunch_out($conn);
     ensure_attendance_punch_photo_columns($conn);
     auto_close_open_attendance_at_shift_end($conn);
     $date = isset($_GET['date']) && $_GET['date'] !== '' ? $_GET['date'] : date('Y-m-d');
@@ -246,6 +249,12 @@ try {
     }
     $filterStmt->close();
 
+    $hasApprovedOvertime = overtime_table_exists($conn);
+    $approvedOvertimeSelect = $hasApprovedOvertime
+        ? "(SELECT COALESCE(SUM(ot.TotalHours), 0) FROM overtime_requests ot
+            WHERE ot.WorkerID = w.WorkerID AND ot.SiteID = wa.SiteID
+              AND ot.RequestDate = ? AND ot.Status = 'Approved')"
+        : '0';
     $dataSql = "
         SELECT
             w.WorkerID,
@@ -264,6 +273,7 @@ try {
             a.Time_Out,
             COALESCE(a.Hours_Worked, 0) AS Hours_Worked,
             COALESCE(a.Overtime_Hours, 0) AS Overtime_Hours,
+            {$approvedOvertimeSelect} AS Approved_Overtime_Hours,
             a.AttendanceStatus AS AttendanceStatus,
             a.IsLate AS IsLate,
             a.Date,
@@ -274,6 +284,10 @@ try {
 
     $dataTypes = $types;
     $dataParams = $params;
+    if ($hasApprovedOvertime) {
+        $dataTypes = 's' . $dataTypes;
+        array_unshift($dataParams, $date);
+    }
 
     $dataStmt = $conn->prepare($dataSql);
     if (!$dataStmt) {

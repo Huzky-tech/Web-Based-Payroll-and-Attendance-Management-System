@@ -103,12 +103,11 @@ function updateDateTime() {
 }
 
 function selectReportType(reportType) {
-    const role = String(document.body?.dataset?.dashboardRole || 'admin').toLowerCase();
-    const routeRole = role === 'assistant' ? 'assistant' : (role === 'payroll' ? 'payroll' : (role === 'hr' ? 'hr' : 'admin'));
-    // Keep the report page at one path level.  The dashboard and report scripts
-    // use relative asset/API URLs (for example, ../api/...), which resolve
-    // incorrectly from /reports/payroll or another nested report URL.
-    const targetUrl = new URL(`/capstone/${routeRole}/reports`, window.location.origin);
+    // Preserve the deployment folder and controller (including ?page=reports).
+    // Flatten legacy nested report URLs so relative assets still resolve.
+    const targetUrl = new URL(window.location.href);
+    targetUrl.pathname = targetUrl.pathname.replace(/\/reports\/(?:attendance|payroll|deductions|overtime)\/?$/, '/reports');
+    targetUrl.hash = '';
     targetUrl.searchParams.set('report', reportType);
 
     window.location.assign(targetUrl.toString());

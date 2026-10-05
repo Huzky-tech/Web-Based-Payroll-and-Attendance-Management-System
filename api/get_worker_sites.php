@@ -31,7 +31,7 @@ if ($method === 'GET') {
                 ps.Required_Workers,
                 ps.Site_Manager,
                 ps.Status AS site_status,
-                (SELECT COUNT(*) FROM WorkerAssignment w WHERE w.SiteID = ps.SiteID) AS current_workers
+                (SELECT COUNT(*) FROM workerassignment w WHERE w.SiteID = ps.SiteID) AS current_workers
             FROM workerassignment wa
             INNER JOIN projectsite ps ON wa.SiteID = ps.SiteID
             WHERE wa.WorkerID = ?

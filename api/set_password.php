@@ -24,22 +24,13 @@ $email = $isFirstLoginChange
     : (string) ($_SESSION['pending_email'] ?? '');
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-// Database connection
-$servername = "localhost";
-$username = "root";
-$password_db = "";
-$dbname = "payroll_db";
-
-$conn = new mysqli($servername, $username, $password_db, $dbname);
-
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Database error']);
-    exit;
-}
+// Use the same configured database as login and the dashboards.
+require_once __DIR__ . '/connection/db_config.php';
 
 require_once __DIR__ . '/../includes/password_policy.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/record_audit_log.php';
+require_once __DIR__ . '/password_change_notification.php';
 if ($passwordError = password_policy_validate($conn, $password)) {
     echo json_encode(['success' => false, 'message' => $passwordError]);
     exit;
@@ -61,6 +52,10 @@ if ($isFirstLoginChange) {
     $userStmt->execute();
     $user = $userStmt->get_result()->fetch_assoc() ?: [];
     $role = auth_get_user_role($conn, $userId);
+    if ($role !== 'Admin') {
+        notify_admins_of_password_change($conn, $userId, (string) ($user['full_name'] ?? ''), 'first-time setup');
+    }
+    record_audit_log($userId, 'Password Changed', 'Completed first-time password setup.');
     $_SESSION['user_id'] = $userId;
     $_SESSION['full_name'] = $user['full_name'] ?? '';
     $_SESSION['email'] = $user['email'] ?? $email;

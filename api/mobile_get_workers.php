@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-include 'connection/db_config.php';
+require_once __DIR__ . '/connection/db_config.php';
 require_once __DIR__ . '/mobile_auth_helpers.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
@@ -84,3 +84,4 @@ echo json_encode([
 ]);
 
 $conn->close();
+

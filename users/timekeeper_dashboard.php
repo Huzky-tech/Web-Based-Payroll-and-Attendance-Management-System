@@ -17,14 +17,16 @@ $displayName = trim((string) ($_SESSION['full_name'] ?? $_SESSION['email'] ?? 'T
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/payroll_dashboard.css?v=20260424-2">
     <link rel="stylesheet" href="../css/dashboard_shell.css?v=20260424-1">
+    <link rel="stylesheet" href="../css/responsive_mobile.css?v=20261001-layout-1">
+    <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'attendance'): ?>
-    <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
-<script src="../js/attendance.js?v=20260913-security-1" defer></script>
+    <link rel="stylesheet" href="../css/attendance.css?v=20260930-view-modal-scroll-1">
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
+<script src="../js/attendance.js?v=20261001-mark-absent-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'overtime_requests'): ?>
     <link rel="stylesheet" href="../css/overtime_requests.css">
-<script src="../js/overtime_requests.js?v=20260813-2" defer></script>
+<script src="../js/overtime_requests.js?v=20261001-actions-only-status-1" defer></script>
     <?php endif; ?>
 </head>
 <body data-dashboard-role="timekeeper">

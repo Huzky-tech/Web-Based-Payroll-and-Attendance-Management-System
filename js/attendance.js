@@ -281,7 +281,7 @@ class AttendanceSystem {
     async loadAttendance() {
         const tbody = document.getElementById('attendance-body');
         if (tbody) {
-            tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Loading attendance...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Loading attendance...</td></tr>';
         }
 
         try {
@@ -299,7 +299,7 @@ class AttendanceSystem {
         } catch (error) {
             console.error('Failed to load attendance:', error);
             if (tbody) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">Could not load attendance records.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">Could not load attendance records.</td></tr>';
             }
             this.updateRecordCount(0);
         }
@@ -403,7 +403,7 @@ class AttendanceSystem {
         if (!tbody) return;
 
         if (!records.length) {
-            tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;">No attendance records found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">No attendance records found.</td></tr>';
             this.updateRecordCount(0);
             return;
         }
@@ -435,11 +435,12 @@ class AttendanceSystem {
                 <td>${this.escapeHtml(scanLog?.timekeeper_name || 'Not recorded')}</td>
                 <td class="scan-coordinate-cell">${mapLink}</td>
                 <td class="photo-evidence-cell">${this.renderPhotoEvidenceCell(record)}</td>
+                <td>${Number(record.Approved_Overtime_Hours || 0).toFixed(2)}</td>
                 <td class="action-btns">
-                    ${this.canModifyAttendance && (!record.Time_In || record.Time_In === '00:00:00') ? `<i class="fa-solid fa-play-circle" title="Clock In" onclick="attendanceSystem.clockIn(${Number(record.WorkerID || record.ID) || 0}, ${Number(record.SiteID || this.filters.siteId || 0) || 0})" style="cursor:pointer; color:#27AE60; font-size:1.2em;"></i>` : ''}
-                    ${this.canModifyAttendance && record.Time_In && record.Time_In !== '00:00:00' && (!record.Lunch_Out || record.Lunch_Out === '00:00:00') ? `<i class="fa-solid fa-utensils" title="Lunch Out" onclick="attendanceSystem.clockLunchOut(${Number(record.AttendanceID) || 0})" style="cursor:pointer; color:#f59e0b; font-size:1.1em;"></i>` : ''}
-                    ${this.canModifyAttendance && record.Lunch_Out && record.Lunch_Out !== '00:00:00' && (!record.Lunch_In || record.Lunch_In === '00:00:00') ? `<i class="fa-solid fa-arrow-right-to-bracket" title="PM Time In" onclick="attendanceSystem.clockLunchIn(${Number(record.AttendanceID) || 0})" style="cursor:pointer; color:#2563eb; font-size:1.1em;"></i>` : ''}
-                    ${this.canModifyAttendance && record.Lunch_In && record.Lunch_In !== '00:00:00' && (!record.Time_Out || record.Time_Out === '00:00:00') ? `<i class="fa-solid fa-stop-circle" title="Clock Out" onclick="attendanceSystem.clockOut(${Number(record.AttendanceID) || 0})" style="cursor:pointer; color:#E74C3C; font-size:1.2em;"></i>` : ''}
+                    ${this.canModifyAttendance && (!record.Time_In || record.Time_In === '00:00:00') ? `<i class="fa-solid fa-play-circle" title="AM IN" onclick="attendanceSystem.clockIn(${Number(record.WorkerID || record.ID) || 0}, ${Number(record.SiteID || this.filters.siteId || 0) || 0})" style="cursor:pointer; color:#27AE60; font-size:1.2em;"></i>` : ''}
+                    ${this.canModifyAttendance && record.Time_In && record.Time_In !== '00:00:00' && (!record.Lunch_Out || record.Lunch_Out === '00:00:00') ? `<i class="fa-solid fa-utensils" title="AM OUT" onclick="attendanceSystem.clockLunchOut(${Number(record.AttendanceID) || 0})" style="cursor:pointer; color:#f59e0b; font-size:1.1em;"></i>` : ''}
+                    ${this.canModifyAttendance && record.Lunch_Out && record.Lunch_Out !== '00:00:00' && (!record.Lunch_In || record.Lunch_In === '00:00:00') ? `<i class="fa-solid fa-arrow-right-to-bracket" title="PM IN" onclick="attendanceSystem.clockLunchIn(${Number(record.AttendanceID) || 0})" style="cursor:pointer; color:#2563eb; font-size:1.1em;"></i>` : ''}
+                    ${this.canModifyAttendance && record.Lunch_In && record.Lunch_In !== '00:00:00' && (!record.Time_Out || record.Time_Out === '00:00:00') ? `<i class="fa-solid fa-stop-circle" title="PM OUT" onclick="attendanceSystem.clockOut(${Number(record.AttendanceID) || 0})" style="cursor:pointer; color:#E74C3C; font-size:1.2em;"></i>` : ''}
                     <i class="fa-regular fa-eye" title="View" onclick="attendanceSystem.viewAttendance(${Number(record.WorkerID || record.ID) || 0})" style="cursor:pointer;"></i>
                     ${this.canModifyAttendance ? (record.AttendanceID ? `<i class="fa-solid fa-pencil" title="Edit" onclick="attendanceSystem.editAttendance(${Number(record.AttendanceID) || 0})" style="cursor:pointer;"></i>` : `<i class="fa-solid fa-pencil" title="No attendance record to edit" style="cursor:not-allowed; opacity:0.4;"></i>`) : ''}
                 </td>
@@ -489,14 +490,14 @@ class AttendanceSystem {
                 // Success should not be followed by an “unsuccessful” modal.
                 // Some browsers/pages may still trigger alert() based modals from other code;
                 // ensure we only alert on the correct branch.
-                this.showPunchResult(true, result.message || `Clocked in successfully at ${result.time_in}`, 'Clock In');
+                this.showPunchResult(true, this.formatAttendanceDisplayMessage(result.message || `AM IN recorded at ${result.time_in}`), 'AM IN');
                 await Promise.all([this.loadStats(), this.loadAttendance()]);
                 return;
             }
 
-            this.showPunchResult(false, result.error || result.message || 'Unable to clock in.', 'Clock In');
+            this.showPunchResult(false, this.formatAttendanceDisplayMessage(result.error || result.message || 'Unable to record AM IN.'), 'AM IN');
         } catch (error) {
-            this.showPunchResult(false, error.message || 'Unable to clock in.', 'Clock In');
+            this.showPunchResult(false, this.formatAttendanceDisplayMessage(error.message || 'Unable to record AM IN.'), 'AM IN');
         } finally {
             this.punchInProgress.delete(punchKey);
         }
@@ -524,6 +525,32 @@ class AttendanceSystem {
         return `${hours}:${minutesText} ${suffix}`;
     }
 
+    formatAttendanceDisplayLabel(label) {
+        const labels = {
+            'Time In': 'AM IN',
+            'Lunch Out': 'AM OUT',
+            'Lunch In': 'PM IN',
+            'Time Out': 'PM OUT',
+            'AM Time In Photo': 'AM IN Photo',
+            'PM Time In Photo': 'PM IN Photo',
+            'Time Out Photo': 'PM OUT Photo',
+        };
+        return labels[String(label || '')] || String(label || '');
+    }
+
+    formatAttendanceDisplayMessage(message) {
+        return String(message || '')
+            .replace(/PM Time In/gi, 'PM IN')
+            .replace(/Lunch Out/gi, 'AM OUT')
+            .replace(/Lunch In/gi, 'PM IN')
+            .replace(/Time Out/gi, 'PM OUT')
+            .replace(/Time In/gi, 'AM IN')
+            .replace(/Clocked in/gi, 'AM IN recorded')
+            .replace(/Clock In/gi, 'AM IN')
+            .replace(/Clocked out/gi, 'PM OUT recorded')
+            .replace(/Clock Out/gi, 'PM OUT');
+    }
+
     async clockLunchOut(attendanceId) {
         try {
             const today = this.getLocalDateValue();
@@ -533,7 +560,7 @@ class AttendanceSystem {
                 await this.loadAttendance();
                 const todayRecord = this.getRecordByAttendanceId(attendanceId);
                 if (!todayRecord) {
-                    this.showPunchResult(false, 'Lunch Out can only be recorded from today\'s attendance record.', 'Lunch Out');
+                    this.showPunchResult(false, 'AM OUT can only be recorded from today\'s attendance record.', 'AM OUT');
                     return;
                 }
             }
@@ -545,14 +572,14 @@ class AttendanceSystem {
             const result = await response.json();
 
             if (result.success) {
-                alert(`Lunch out recorded at ${this.formatAttendanceTime(result.lunch_out)}`);
+                alert(`AM OUT recorded at ${this.formatAttendanceTime(result.lunch_out)}`);
                 await Promise.all([this.loadStats(), this.loadAttendance()]);
                 return;
             }
 
-            alert('Error: ' + (result.error || 'Unknown error'));
+            alert('Error: ' + this.formatAttendanceDisplayMessage(result.error || 'Unknown error'));
         } catch (error) {
-            alert('Lunch out failed: ' + error.message);
+            alert('AM OUT failed: ' + this.formatAttendanceDisplayMessage(error.message));
         }
     }
 
@@ -565,7 +592,7 @@ class AttendanceSystem {
                 await this.loadAttendance();
                 const todayRecord = this.getRecordByAttendanceId(attendanceId);
                 if (!todayRecord) {
-                    this.showPunchResult(false, 'PM Time In can only be recorded from today\'s attendance record.', 'PM Time In');
+                    this.showPunchResult(false, 'PM IN can only be recorded from today\'s attendance record.', 'PM IN');
                     return;
                 }
             }
@@ -577,14 +604,14 @@ class AttendanceSystem {
             const result = await response.json();
 
             if (result.success) {
-                alert(`PM time in recorded at ${this.formatAttendanceTime(result.lunch_in)}`);
+                alert(`PM IN recorded at ${this.formatAttendanceTime(result.lunch_in)}`);
                 await Promise.all([this.loadStats(), this.loadAttendance()]);
                 return;
             }
 
-            alert('Error: ' + (result.error || 'Unknown error'));
+            alert('Error: ' + this.formatAttendanceDisplayMessage(result.error || 'Unknown error'));
         } catch (error) {
-            alert('PM time in failed: ' + error.message);
+            alert('PM IN failed: ' + this.formatAttendanceDisplayMessage(error.message));
         }
     }
 
@@ -601,7 +628,7 @@ class AttendanceSystem {
                 await this.loadAttendance();
                 const todayRecord = this.getRecordByAttendanceId(attendanceId);
                 if (!todayRecord) {
-                    this.showPunchResult(false, 'Time Out can only be recorded from today\'s attendance record.', 'Clock Out');
+                    this.showPunchResult(false, 'PM OUT can only be recorded from today\'s attendance record.', 'PM OUT');
                     return;
                 }
             }
@@ -613,14 +640,14 @@ class AttendanceSystem {
             const result = await response.json();
 
             if (response.ok && result.success) {
-                this.showPunchResult(true, result.message || `Clocked out successfully: ${result.hours_worked}h (${result.status})`, 'Clock Out');
+                this.showPunchResult(true, this.formatAttendanceDisplayMessage(result.message || `PM OUT recorded: ${result.hours_worked}h (${result.status})`), 'PM OUT');
                 await Promise.all([this.loadStats(), this.loadAttendance()]);
                 return;
             }
 
-            this.showPunchResult(false, result.error || result.message || 'Unable to clock out.', 'Clock Out');
+            this.showPunchResult(false, this.formatAttendanceDisplayMessage(result.error || result.message || 'Unable to record PM OUT.'), 'PM OUT');
         } catch (error) {
-            this.showPunchResult(false, error.message || 'Unable to clock out.', 'Clock Out');
+            this.showPunchResult(false, this.formatAttendanceDisplayMessage(error.message || 'Unable to record PM OUT.'), 'PM OUT');
         } finally {
             this.punchInProgress.delete(punchKey);
         }
@@ -656,9 +683,9 @@ class AttendanceSystem {
         }
 
         const columnMap = {
-            'Time In': { path: record.AMTimeInPhoto, time: record.Time_In, label: 'AM Time In Photo' },
-            'Lunch In': { path: record.PMTimeInPhoto, time: record.Lunch_In, label: 'PM Time In Photo' },
-            'Time Out': { path: record.TimeOutPhoto, time: record.Time_Out, label: 'Time Out Photo' },
+            'Time In': { path: record.AMTimeInPhoto, time: record.Time_In, label: 'AM IN Photo' },
+            'Lunch In': { path: record.PMTimeInPhoto, time: record.Lunch_In, label: 'PM IN Photo' },
+            'Time Out': { path: record.TimeOutPhoto, time: record.Time_Out, label: 'PM OUT Photo' },
         };
 
         this.photoTypeOrder.forEach((type) => {
@@ -685,7 +712,7 @@ class AttendanceSystem {
             const fallbackPath = String(record.PhotoPath || '').trim();
             if (fallbackPath) {
                 logs.push({
-                    label: 'AM Time In Photo',
+                    label: 'AM IN Photo',
                     attendance_type: 'Time In',
                     photo_path: fallbackPath,
                     event_time: record.Time_In || '',
@@ -750,9 +777,9 @@ class AttendanceSystem {
 
             return `
                 <article class="attendance-photo-card">
-                    <div class="attendance-photo-card-label">${this.escapeHtml(entry.label || 'Attendance Photo')}</div>
-                    <button type="button" class="attendance-photo-card-image" data-photo-url="${this.escapeHtml(photoUrl)}" data-photo-label="${this.escapeHtml(entry.label || 'Attendance Photo')}" title="Open full-size photo">
-                        <img src="${this.escapeHtml(photoUrl)}" alt="${this.escapeHtml(entry.label || 'Attendance photo')}" class="attendance-photo-detail">
+                    <div class="attendance-photo-card-label">${this.escapeHtml(this.formatAttendanceDisplayLabel(entry.label || entry.attendance_type || 'Attendance Photo'))}</div>
+                    <button type="button" class="attendance-photo-card-image" data-photo-url="${this.escapeHtml(photoUrl)}" data-photo-label="${this.escapeHtml(this.formatAttendanceDisplayLabel(entry.label || entry.attendance_type || 'Attendance Photo'))}" title="Open full-size photo">
+                        <img src="${this.escapeHtml(photoUrl)}" alt="${this.escapeHtml(this.formatAttendanceDisplayLabel(entry.label || entry.attendance_type || 'Attendance photo'))}" class="attendance-photo-detail">
                     </button>
                     <div class="attendance-photo-card-meta">Captured: ${this.escapeHtml(timeLabel)}</div>
                 </article>
@@ -866,10 +893,10 @@ class AttendanceSystem {
         const lunchOut = String(record.Lunch_Out || '');
         const timeIn = String(record.Time_In || '');
 
-        if (timeOut && timeOut !== '00:00:00') return 'Clock Out';
-        if (lunchIn && lunchIn !== '00:00:00') return 'PM Time In';
-        if (lunchOut && lunchOut !== '00:00:00') return 'Lunch Out';
-        if (timeIn && timeIn !== '00:00:00') return 'Clock In';
+        if (timeOut && timeOut !== '00:00:00') return 'PM OUT';
+        if (lunchIn && lunchIn !== '00:00:00') return 'PM IN';
+        if (lunchOut && lunchOut !== '00:00:00') return 'AM OUT';
+        if (timeIn && timeIn !== '00:00:00') return 'AM IN';
         return record.AttendanceStatus || 'Not Started';
     }
 
@@ -917,10 +944,10 @@ class AttendanceSystem {
             const timeLabel = entry.event_time ? this.formatAttendanceTime(entry.event_time) : '';
             return `
                 <div class="attendance-photo-gallery-item">
-                    <div class="attendance-photo-gallery-label">${this.escapeHtml(entry.label || 'Attendance Photo')}</div>
+                    <div class="attendance-photo-gallery-label">${this.escapeHtml(this.formatAttendanceDisplayLabel(entry.label || entry.attendance_type || 'Attendance Photo'))}</div>
                     ${timeLabel ? `<div class="attendance-photo-gallery-meta">Captured: ${this.escapeHtml(timeLabel)}</div>` : ''}
-                    <button type="button" class="attendance-photo-card-image" data-photo-url="${this.escapeHtml(photoUrl)}" data-photo-label="${this.escapeHtml(entry.label || 'Attendance Photo')}" title="Open full-size photo">
-                        <img src="${this.escapeHtml(photoUrl)}" alt="${this.escapeHtml(entry.label || 'Attendance photo')}" class="attendance-photo-detail">
+                    <button type="button" class="attendance-photo-card-image" data-photo-url="${this.escapeHtml(photoUrl)}" data-photo-label="${this.escapeHtml(this.formatAttendanceDisplayLabel(entry.label || entry.attendance_type || 'Attendance Photo'))}" title="Open full-size photo">
+                        <img src="${this.escapeHtml(photoUrl)}" alt="${this.escapeHtml(this.formatAttendanceDisplayLabel(entry.label || entry.attendance_type || 'Attendance photo'))}" class="attendance-photo-detail">
                     </button>
                 </div>
             `;
@@ -950,14 +977,15 @@ class AttendanceSystem {
                     <div><strong>Site</strong><div>${this.escapeHtml(record.Site_Name || '-')}</div></div>
                     <div><strong>Attendance Type</strong><div>${this.escapeHtml(this.resolveAttendanceType(record))}</div></div>
                     <div><strong>Date and Time</strong><div>${this.escapeHtml(this.formatAttendanceTimestamp(record))}</div></div>
-                    <div><strong>Time In</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Time_In))}</div></div>
-                    <div><strong>Lunch Out</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Lunch_Out))}</div></div>
-                    <div><strong>PM Time In</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Lunch_In))}</div></div>
-                    <div><strong>Time Out</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Time_Out))}</div></div>
+                    <div><strong>AM IN</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Time_In))}</div></div>
+                    <div><strong>AM OUT</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Lunch_Out))}</div></div>
+                    <div><strong>PM IN</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Lunch_In))}</div></div>
+                    <div><strong>PM OUT</strong><div>${this.escapeHtml(this.formatAttendanceTime(record.Time_Out))}</div></div>
                     <div><strong>Status</strong><div>${this.escapeHtml((record.AttendanceStatus || 'Not Started') + (Number(record.IsLate) === 1 ? ' (Late)' : ''))}</div></div>
                     <div><strong>Position</strong><div>${this.escapeHtml(record.position || 'Construction Worker')}</div></div>
                     <div><strong>Site Manager</strong><div>${this.escapeHtml(record.site_manager || 'Not assigned')}</div></div>
                     <div><strong>Hours Worked</strong><div>${this.escapeHtml(record.Hours_Worked || 0)}</div></div>
+                    <div><strong>Approved Overtime (hours)</strong><div>${Number(record.Approved_Overtime_Hours || 0).toFixed(2)}</div></div>
                     <div><strong>GPS Coordinates</strong><div>${this.escapeHtml(this.formatGpsCoordinates(record))}</div></div>
                     <div><strong>Distance From Site</strong><div>${this.escapeHtml(this.formatDistanceFromSite(record.DistanceFromSite))}</div></div>
                 </div>
@@ -979,26 +1007,30 @@ class AttendanceSystem {
                 <form id="attendanceEditForm" data-attendance-id="${Number(record.AttendanceID) || 0}">
                     <div class="attendance-modal-grid">
                         <label>
-                            <strong>Time In</strong>
-                            <input type="time" name="time_in" value="${record.Time_In && record.Time_In !== '00:00:00' ? this.escapeHtml(String(record.Time_In).slice(0, 5)) : ''}">
+                            <strong>AM IN</strong>
+                            <input type="time" name="time_in" data-attendance-time value="${record.Time_In && record.Time_In !== '00:00:00' ? this.escapeHtml(String(record.Time_In).slice(0, 5)) : ''}">
                         </label>
                         <label>
-                            <strong>Lunch Out</strong>
-                            <input type="time" name="lunch_out" value="${record.Lunch_Out && record.Lunch_Out !== '00:00:00' ? this.escapeHtml(String(record.Lunch_Out).slice(0, 5)) : ''}">
+                            <strong>AM OUT</strong>
+                            <input type="time" name="lunch_out" data-attendance-time value="${record.Lunch_Out && record.Lunch_Out !== '00:00:00' ? this.escapeHtml(String(record.Lunch_Out).slice(0, 5)) : ''}">
                         </label>
                         <label>
-                            <strong>PM Time In</strong>
-                            <input type="time" name="lunch_in" value="${record.Lunch_In && record.Lunch_In !== '00:00:00' ? this.escapeHtml(String(record.Lunch_In).slice(0, 5)) : ''}">
+                            <strong>PM IN</strong>
+                            <input type="time" name="lunch_in" data-attendance-time value="${record.Lunch_In && record.Lunch_In !== '00:00:00' ? this.escapeHtml(String(record.Lunch_In).slice(0, 5)) : ''}">
                         </label>
                         <label>
-                            <strong>Time Out</strong>
-                            <input type="time" name="time_out" value="${record.Time_Out && record.Time_Out !== '00:00:00' ? this.escapeHtml(String(record.Time_Out).slice(0, 5)) : ''}">
+                            <strong>PM OUT</strong>
+                            <input type="time" name="time_out" data-attendance-time value="${record.Time_Out && record.Time_Out !== '00:00:00' ? this.escapeHtml(String(record.Time_Out).slice(0, 5)) : ''}">
                         </label>
                         <label>
                             <strong>Status</strong>
-                            <input type="text" value="Automatically calculated" disabled>
+                            <select name="attendance_status">
+                                <option value="auto"${String(record.AttendanceStatus || '').toLowerCase() !== 'absent' ? ' selected' : ''}>Automatically calculated</option>
+                                <option value="absent"${String(record.AttendanceStatus || '').toLowerCase() === 'absent' ? ' selected' : ''}>Absent</option>
+                            </select>
                         </label>
                     </div>
+                    <p class="attendance-edit-absent-note" data-attendance-absent-note hidden>Marking this record Absent clears its recorded work times and sets worked and overtime hours to zero. The photo evidence is kept for review.</p>
                     <div class="attendance-modal-actions">
                         <button type="button" data-attendance-close="true">Cancel</button>
                         <button type="submit">Save Changes</button>
@@ -1033,6 +1065,18 @@ class AttendanceSystem {
                 event.preventDefault();
                 this.saveAttendanceEdit(form);
             });
+
+            const statusSelect = form.querySelector('select[name="attendance_status"]');
+            const absentNote = form.querySelector('[data-attendance-absent-note]');
+            const syncAbsentSelection = () => {
+                const isAbsent = statusSelect?.value === 'absent';
+                form.querySelectorAll('[data-attendance-time]').forEach((input) => {
+                    input.disabled = isAbsent;
+                });
+                if (absentNote) absentNote.hidden = !isAbsent;
+            };
+            statusSelect?.addEventListener('change', syncAbsentSelection);
+            syncAbsentSelection();
         }
     }
 
@@ -1057,7 +1101,8 @@ class AttendanceSystem {
             Time_In: formData.get('time_in') ? `${formData.get('time_in')}:00` : null,
             Lunch_Out: formData.get('lunch_out') ? `${formData.get('lunch_out')}:00` : null,
             Lunch_In: formData.get('lunch_in') ? `${formData.get('lunch_in')}:00` : null,
-            Time_Out: formData.get('time_out') ? `${formData.get('time_out')}:00` : null
+            Time_Out: formData.get('time_out') ? `${formData.get('time_out')}:00` : null,
+            Mark_Absent: formData.get('attendance_status') === 'absent'
         };
 
         try {

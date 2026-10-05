@@ -151,14 +151,7 @@ function openOvertimeDetails(item) {
         <p><strong>Total Hours:</strong> ${Number(item.total_hours || 0).toFixed(2)}</p>
         <p><strong>Reason:</strong> ${escapeOvertimeHtml(item.reason)}</p>
         <p><strong>Submitted By:</strong> ${escapeOvertimeHtml(item.submitted_by_name || '-')}</p>
-        ${canReviewOvertime() ? `
-        <label class="overtime-status-field" for="overtimeDetailsStatus">
-            <strong>Status</strong>
-            <select id="overtimeDetailsStatus">
-                <option value="Approved"${item.status === 'Approved' ? ' selected' : ''}>Approved</option>
-                <option value="Rejected"${item.status === 'Rejected' ? ' selected' : ''}>Rejected</option>
-            </select>
-        </label>` : `<p><strong>Status:</strong> ${escapeOvertimeHtml(item.status)}</p>`}
+        <p><strong>Status:</strong> <span class="overtime-status ${escapeOvertimeHtml(String(item.status || '').toLowerCase())}">${escapeOvertimeHtml(item.status || 'Pending')}</span></p>
         ${item.approved_by_name ? `<p><strong>Reviewed By:</strong> ${escapeOvertimeHtml(item.approved_by_name)}</p>` : ''}
         ${lunchNote}
     `;
@@ -348,24 +341,6 @@ async function runOvertimeAction(action, overtimeId) {
     );
 }
 
-async function updateOvertimeStatusFromModal() {
-    const item = overtimeState.selectedItem;
-    const status = document.getElementById('overtimeDetailsStatus')?.value;
-    if (!item || !['Approved', 'Rejected'].includes(status)) return;
-
-    const action = status === 'Approved' ? 'approve' : 'reject';
-    const confirmed = await window.showConfirmModal(`${status === 'Approved' ? 'Approve' : 'Reject'} this overtime request?`, {
-        title: 'Confirm Overtime Status',
-        confirmText: status,
-        type: status === 'Approved' ? 'success' : 'error'
-    });
-    if (!confirmed) return;
-
-    const overtimeId = Number(item.id);
-    closeOvertimeDetails();
-    await runOvertimeAction(action, overtimeId);
-}
-
 function bindOvertimeEvents() {
     document.getElementById('overtimeSearchInput')?.addEventListener('input', (event) => {
         overtimeState.search = event.target.value.trim();
@@ -403,7 +378,6 @@ function bindOvertimeEvents() {
 
     document.getElementById('cancelOvertimeFormBtn')?.addEventListener('click', closeOvertimeFormModal);
     document.getElementById('closeOvertimeDetailsBtn')?.addEventListener('click', closeOvertimeDetails);
-    document.getElementById('updateOvertimeStatusBtn')?.addEventListener('click', updateOvertimeStatusFromModal);
     document.getElementById('overtimeRequestForm')?.addEventListener('submit', submitOvertimeRequest);
 
     document.getElementById('overtimeStart')?.addEventListener('change', calculatePreviewHours);

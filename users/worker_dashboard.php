@@ -56,6 +56,12 @@ $fullName = trim(
 
 /* Get attendance records */
 $attendance = [];
+require_once __DIR__ . '/../api/overtime_helpers.php';
+$approvedOvertimeSelect = overtime_table_exists($conn)
+    ? "(SELECT COALESCE(SUM(ot.TotalHours), 0) FROM overtime_requests ot
+        WHERE ot.WorkerID = a.WorkerID AND ot.SiteID = a.SiteID
+          AND ot.RequestDate = a.Date AND ot.Status = 'Approved')"
+    : '0';
 
 $attendanceStmt = $conn->prepare("
     SELECT
@@ -64,8 +70,9 @@ $attendanceStmt = $conn->prepare("
         Time_Out,
         Hours_Worked,
         Overtime_Hours,
+        {$approvedOvertimeSelect} AS Approved_Overtime_Hours,
         AttendanceStatus, IsLate
-    FROM attendance
+    FROM attendance a
     WHERE WorkerID = ?
     ORDER BY Date DESC
     LIMIT 60
@@ -151,7 +158,7 @@ function wt($value)
 
     <link
         rel="stylesheet"
-        href="../css/worker_dashboard.css?v=20260806-1"
+        href="../css/worker_dashboard.css?v=20261001-layout-1"
     >
     <style>
         .worker-header-right{margin-left:auto;display:flex;align-items:center;gap:18px}.worker-date-time{text-align:right;color:#667085;font-size:12px;line-height:1.35}.worker-date-time strong{display:block;color:#d66c00;font-size:12px}.worker-header-popover{position:relative}.worker-main header .worker-header-icon{display:grid!important;place-items:center;border:0;background:#f3f5f8;color:#526174;width:42px;height:42px;border-radius:12px;margin:0;cursor:pointer}.worker-main header .worker-profile-toggle{display:flex!important;align-items:center;gap:10px;border:0;background:transparent;color:#182234;width:auto;height:auto;border-radius:8px;margin:0;padding:4px;cursor:pointer}.worker-avatar{display:grid;place-items:center;width:42px;height:42px;border-radius:50%;overflow:hidden;background:#edf0f4;color:#697586}.worker-avatar img{width:100%;height:100%;object-fit:cover}.worker-user-copy{display:flex;flex-direction:column;align-items:flex-start;min-width:90px}.worker-user-copy strong{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}.worker-user-copy small{color:#667085}.worker-profile-chevron{font-size:11px;color:#667085}.worker-header-menu{position:absolute;z-index:30;right:0;top:calc(100% + 12px);width:220px;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 12px 30px #0002}.worker-header-menu[hidden]{display:none}.worker-notification-menu p{margin:12px 0 2px;color:#667085;font-size:13px}.worker-profile-menu{padding:7px}.worker-profile-menu a{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:7px;color:#27364a;text-decoration:none;font-size:14px}.worker-profile-menu a:hover{background:#f5f6f8}@media(max-width:650px){.worker-date-time{display:none}.worker-header-right{gap:8px}.worker-user-copy,.worker-profile-chevron{display:none}}
@@ -166,7 +173,7 @@ function wt($value)
         <nav>
             <a
                 class="<?= $page === 'dashboard' ? 'active' : '' ?>"
-                href="/capstone/worker/dashboard"
+                href="../users/worker_dashboard.php"
             >
                 <i class="fas fa-grip"></i>
                 Dashboard
@@ -174,7 +181,7 @@ function wt($value)
 
             <a
                 class="<?= $page === 'attendance' ? 'active' : '' ?>"
-                href="/capstone/worker/attendance"
+                href="../users/worker_dashboard.php?page=attendance"
             >
                 <i class="far fa-clipboard"></i>
                 Attendance
@@ -182,7 +189,7 @@ function wt($value)
 
             <a
                 class="<?= $page === 'payslip' ? 'active' : '' ?>"
-                href="/capstone/worker/payslip"
+                href="../users/worker_dashboard.php?page=payslip"
             >
                 <i class="fas fa-peso-sign"></i>
                 Payslip
@@ -222,7 +229,7 @@ function wt($value)
                         <i class="fas fa-chevron-down worker-profile-chevron"></i>
                     </button>
                     <div class="worker-header-menu worker-profile-menu" id="workerProfileMenu" hidden>
-                        <a href="/capstone/worker/dashboard"><i class="far fa-user"></i> My Dashboard</a>
+                        <a href="../users/worker_dashboard.php"><i class="far fa-user"></i> My Dashboard</a>
                         <a href="../api/logout.php"><i class="fas fa-arrow-right-from-bracket"></i> Logout</a>
                     </div>
                 </div>
@@ -288,7 +295,7 @@ function wt($value)
                         </span>
                     </div>
 
-                    <a href="/capstone/worker/payslip">
+                    <a href="../users/worker_dashboard.php?page=payslip">
                         <i class="far fa-file-lines yellow"></i>
 
                         <span>
@@ -334,7 +341,7 @@ function wt($value)
                         <p>Your recorded attendance history</p>
                     </div>
 
-                    <a href="/capstone/worker/dashboard">
+                    <a href="../users/worker_dashboard.php">
                         My QR Code
                     </a>
                 </div>
@@ -344,9 +351,10 @@ function wt($value)
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Time In</th>
-                                <th>Time Out</th>
+                                <th>AM IN</th>
+                                <th>PM OUT</th>
                                 <th>Hours</th>
+                                <th>Approved OT (hrs)</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -355,7 +363,7 @@ function wt($value)
 
                             <?php if (!$attendance): ?>
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="6">
                                         No attendance records yet.
                                     </td>
                                 </tr>
@@ -384,6 +392,7 @@ function wt($value)
                                     <td>
                                         <?= wh($row['Hours_Worked']) ?>
                                     </td>
+                                    <td><?= wh(number_format((float) ($row['Approved_Overtime_Hours'] ?? 0), 2)) ?></td>
 
                                     <td>
                                         <span class="worker-status">

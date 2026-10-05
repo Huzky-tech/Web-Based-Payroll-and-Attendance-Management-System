@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 
 include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
-require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff']);
+require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 
 $siteName = trim((string) ($_GET['site_name'] ?? ''));
 $location = trim((string) ($_GET['location'] ?? ''));

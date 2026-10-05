@@ -11,11 +11,11 @@ require_once __DIR__ . '/site_schedule_helpers.php';
 require_once __DIR__ . '/site_activation_helpers.php';
 require_once __DIR__ . '/site_manager_helpers.php';
 
-$currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff']);
+$currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 
 // Helper function for audit logging
 function logAudit($conn, $userId, $action, $details) {
-    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())");
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
     $stmt->close();
@@ -149,12 +149,7 @@ if ($method === 'POST') {
         exit;
     }
 
-    if ($currentRole === 'Payroll Staff') {
-        echo json_encode(['success' => false, 'message' => 'Payroll staff can only view assigned site details']);
-        exit;
-    }
-
-    if (!in_array($currentRole, ['Admin', 'Assistant Admin'], true)) {
+    if (!in_array($currentRole, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR'], true)) {
         echo json_encode(['success' => false, 'message' => 'You are not allowed to update sites']);
         exit;
     }
@@ -213,6 +208,28 @@ if ($method === 'POST') {
     
     $oldSiteName = $checkResult->fetch_assoc()['Site_Name'];
     $checkStmt->close();
+
+    // Site details become a historical record as soon as work attendance starts.
+    // Keep this on the server so the rule cannot be bypassed from the browser.
+    $attendanceStmt = $conn->prepare("SELECT 1 FROM attendance WHERE SiteID = ? LIMIT 1");
+    if (!$attendanceStmt) {
+        error_log('Unable to verify site attendance before update: ' . $conn->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Unable to verify whether this site can be edited. Please try again.']);
+        exit;
+    }
+    $attendanceStmt->bind_param('i', $siteId);
+    $attendanceStmt->execute();
+    $attendanceExists = $attendanceStmt->get_result()->num_rows > 0;
+    $attendanceStmt->close();
+
+    if ($attendanceExists) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'This site can no longer be edited because attendance has already been recorded.'
+        ]);
+        exit;
+    }
 
     if ($siteName !== '') {
         $duplicateSiteStmt = $conn->prepare("

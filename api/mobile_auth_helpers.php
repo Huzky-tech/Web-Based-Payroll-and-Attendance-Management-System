@@ -225,6 +225,17 @@ if (!function_exists('mobile_resolve_attendance_status')) {
     }
 }
 
+if (!function_exists('mobile_get_assigned_site')) {
+    function mobile_get_assigned_site(mysqli $conn, int $userId): ?array
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        return get_active_timekeeper_assignment($conn, $userId);
+    }
+}
+
 if (!function_exists('worker_assigned_to_site')) {
     function worker_assigned_to_site(mysqli $conn, int $workerId, int $siteId): bool
     {

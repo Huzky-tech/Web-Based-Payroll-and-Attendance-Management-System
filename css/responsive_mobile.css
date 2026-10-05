@@ -279,3 +279,63 @@ textarea.field-live-valid {
     }
     .main-content > .top-header .user-profile-toggle > .fa-chevron-down { display: none; }
 }
+
+/* Shared safeguards for every module shown inside a dashboard. */
+@media (max-width: 800px) {
+    .dashboard-content :is(.page-header, .positions-heading, .attendance-header, .reports-header, .history-header, .archive-header, .settings-header, .employee-header),
+    .dashboard-content :is(.filter-row, .filter-bar, .filters, .toolbar, .table-actions, .report-table-filters, .page-actions, .form-actions, .modal-actions, .modal-footer, .dialog-actions) {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex-wrap: wrap !important;
+    }
+
+    .dashboard-content :is(.filter-row, .filter-bar, .filters, .toolbar, .table-actions, .report-table-filters, .page-actions, .form-actions, .modal-actions, .modal-footer, .dialog-actions) {
+        gap: 10px !important;
+    }
+
+    .dashboard-content :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+        max-width: 100% !important;
+    }
+
+    .dashboard-content :is(.filter-row, .filter-bar, .filters, .toolbar, .report-table-filters) > :is(input, select, button, .btn, .button) {
+        flex: 1 1 160px;
+        min-width: 0 !important;
+    }
+
+    .dashboard-content :is(.form-actions, .modal-actions, .modal-footer, .dialog-actions) > :is(button, .btn, .button, a) {
+        flex: 1 1 140px;
+        min-width: 0 !important;
+    }
+
+    .dashboard-content :is(.card, .panel, .content-card, .table-container, .table-responsive, .attendance-table-wrapper, .payroll-table-wrapper) {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    :is(.modal-overlay, .details-modal-overlay, .edit-site-overlay, .assign-workers-overlay, .action-modal-overlay, .project-modal-overlay, .attendance-modal-overlay, .payroll-modal-overlay, .overtime-modal-overlay) :is(.modal-header, .modal-footer, .modal-actions, .form-actions, .dialog-actions) {
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+    }
+
+    :is(.modal-overlay, .details-modal-overlay, .edit-site-overlay, .assign-workers-overlay, .action-modal-overlay, .project-modal-overlay, .attendance-modal-overlay, .payroll-modal-overlay, .overtime-modal-overlay) :is(input, select, textarea, button) {
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-content :is(.page-header, .positions-heading, .attendance-header, .reports-header, .history-header, .archive-header, .settings-header, .employee-header) {
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+
+    .dashboard-content :is(.filter-row, .filter-bar, .filters, .toolbar, .report-table-filters) > :is(input, select, button, .btn, .button),
+    .dashboard-content :is(.form-actions, .modal-actions, .modal-footer, .dialog-actions) > :is(button, .btn, .button, a) {
+        flex-basis: 100% !important;
+        width: 100% !important;
+    }
+
+    :is(.modal-overlay, .details-modal-overlay, .edit-site-overlay, .assign-workers-overlay, .action-modal-overlay, .project-modal-overlay, .attendance-modal-overlay, .payroll-modal-overlay, .overtime-modal-overlay) {
+        padding: 8px !important;
+    }
+}

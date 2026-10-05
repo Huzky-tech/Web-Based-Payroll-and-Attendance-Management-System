@@ -133,6 +133,24 @@
             font-size: 14px;
         }
 
+        .report-gps-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #2563eb;
+            font-weight: 600;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .report-gps-link:hover {
+            color: #1d4ed8;
+        }
+
+        .report-gps-link i {
+            color: #d97706;
+        }
+
         /* Content Area */
         .content-area {
             padding: 24px 28px 32px;

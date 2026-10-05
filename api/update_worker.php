@@ -6,7 +6,7 @@ require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR', 'Timekee
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 function logAudit($conn, $userId, $action, $details) {
-    $sql = "INSERT INTO Audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
+    $sql = "INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // First, find the site_id based on site name
-    $siteQuery = "SELECT SiteID FROM ProjectSite WHERE Site_Name = ?";
+    $siteQuery = "SELECT SiteID FROM projectsite WHERE Site_Name = ?";
     $siteStmt = $conn->prepare($siteQuery);
     $siteStmt->bind_param("s", $site);
     $siteStmt->execute();
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $siteId = $siteRow['SiteID'];
 
     // Update the worker
-    $updateQuery = "UPDATE Worker SET WorkerStatusID = 1 WHERE WorkerID = ?"; // Assuming update to active status or similar
+    $updateQuery = "UPDATE worker SET WorkerStatusID = 1 WHERE WorkerID = ?"; // Assuming update to active status or similar
     $updateStmt = $conn->prepare($updateQuery);
     $updateStmt->bind_param("i", $id);
 

@@ -18,13 +18,13 @@ if (!in_array($selectedReport, $validReports, true)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reports - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-      <link rel="stylesheet" href="../css/reports.css?v=20260907-5">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+      <link rel="stylesheet" href="../css/reports.css?v=20260930-gps-links-1">
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
       <?php if ($selectedReport === 'overtime'): ?>
       <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>
       <?php endif; ?>
-<script src="../js/reports.js?v=20260907-5" defer></script>
+<script src="../js/reports.js?v=20260921-hosting-1" defer></script>
 </head>
 <body>
 <?php endif; ?>

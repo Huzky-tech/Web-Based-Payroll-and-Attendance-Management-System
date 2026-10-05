@@ -11,6 +11,6 @@ if (!position_catalog_ensure_table($conn)) {
     exit;
 }
 
-$result = $conn->query('SELECT id, position_name, hourly_rate, salary_rate FROM employee_position_catalog ORDER BY position_name');
+$result = $conn->query('SELECT id, position_name, hourly_rate, salary_rate FROM employee_position_catalog ORDER BY id DESC');
 $positions = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
 echo json_encode(['success' => true, 'positions' => $positions]);

@@ -273,12 +273,39 @@
         .status-pill.present { background: var(--status-present-bg); color: var(--status-present); }
         .status-pill.late { background: var(--status-late-bg); color: var(--status-late); }
         .status-pill.absent { background: var(--status-absent-bg); color: var(--status-absent); }
+
+        .attendance-edit-absent-note {
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+            font-size: 13px;
+            line-height: 1.45;
+        }
         .status-pill.not-started { background: #f1f5f9; color: #64748b; }
 
-        .action-btns i {
-            margin-left: 10px;
+        #attendance-body .action-btns {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        #attendance-body .action-btns i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            margin: 0;
+            vertical-align: middle;
+            line-height: 1;
             color: var(--text-muted);
             cursor: pointer;
+        }
+
+        #attendance-body .action-btns i + i {
+            margin-left: 4px;
         }
 
         .attendance-modal-overlay {
@@ -290,6 +317,8 @@
             justify-content: center;
             padding: 20px;
             z-index: 4000;
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
         .attendance-modal-card {
@@ -298,6 +327,9 @@
             border-radius: 14px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
             overflow: hidden;
+            max-height: calc(100dvh - 40px);
+            display: flex;
+            flex-direction: column;
         }
 
         .attendance-modal-header {
@@ -306,6 +338,7 @@
             justify-content: space-between;
             padding: 16px 18px;
             border-bottom: 1px solid var(--border-color);
+            flex: 0 0 auto;
         }
 
         .attendance-modal-header h3 {
@@ -324,6 +357,9 @@
 
         .attendance-modal-body {
             padding: 18px;
+            overflow-y: auto;
+            min-height: 0;
+            overscroll-behavior: contain;
         }
 
         .attendance-modal-grid {
@@ -614,6 +650,21 @@
         }
 
         @media (max-width: 768px) {
+            .attendance-modal-overlay {
+                align-items: flex-start;
+                padding: 12px;
+            }
+
+            .attendance-modal-card {
+                width: 100%;
+                max-height: calc(100dvh - 24px);
+            }
+
+            .attendance-modal-header,
+            .attendance-modal-body {
+                padding: 14px;
+            }
+
             .dashboard-content > .main-content {
                 width: 100%;
                 min-width: 0;

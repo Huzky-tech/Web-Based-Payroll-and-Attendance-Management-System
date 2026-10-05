@@ -93,10 +93,17 @@ if (!function_exists('attendance_display_status')) {
      */
     function attendance_display_status(?string $storedStatus, ?string $timeIn, string $attendanceDate, ?string $shiftEnd): string
     {
+        // A reviewer may explicitly mark an existing scan as Absent after
+        // checking its photo evidence. Keep that decision visible immediately,
+        // even before the current day's shift has ended.
+        $storedStatus = ucfirst(strtolower(trim((string) $storedStatus)));
+        if ($storedStatus === 'Absent') {
+            return 'Absent';
+        }
+
         $hasTimeIn = trim((string) $timeIn) !== '' && trim((string) $timeIn) !== '00:00:00';
         if ($hasTimeIn) {
-            $status = ucfirst(strtolower(trim((string) $storedStatus)));
-            return in_array($status, ['Present', 'Late'], true) ? $status : 'Present';
+            return in_array($storedStatus, ['Present', 'Late'], true) ? $storedStatus : 'Present';
         }
 
         $timezone = new DateTimeZone('Asia/Manila');

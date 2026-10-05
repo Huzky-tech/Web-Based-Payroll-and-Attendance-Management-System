@@ -20,7 +20,7 @@
         "
     >
         <div class="modal-header">
-            <h2>Add New Employee</h2>
+            <h2>Add New Worker</h2>
             <button type="button" class="close-modal" aria-label="Close" onclick="closeModal(); return false;">&times;</button>
         </div>
         <div
@@ -123,8 +123,8 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="employeeSalary">Pay Rate (PHP)</label>
-                        <input type="number" id="employeeSalary" name="salary" step="0.01" min="0.01" placeholder="Select a position or enter an amount" required>
-                        <small class="salary-suggestion-hint">A suggested amount is filled automatically and can be edited.</small>
+                        <input type="number" id="employeeSalary" name="salary" step="0.01" min="0.01" placeholder="Select a position first" readonly required>
+                        <small class="salary-suggestion-hint">Set by the selected position. Change it only when editing the worker later.</small>
                     </div>
                     <div class="form-group">
                         <label>Date of Birth</label>
@@ -232,17 +232,17 @@
     </div>
 </div>
 
-<!-- Archive Employee Confirmation Modal -->
+<!-- Archive Worker Confirmation Modal -->
 <div id="archiveEmployeeModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="archiveEmployeeTitle" aria-hidden="true">
     <div class="modal-content archive-employee-dialog">
         <div class="archive-employee-icon" aria-hidden="true"><i class="fas fa-box-archive"></i></div>
-        <h2 id="archiveEmployeeTitle">Archive Employee?</h2>
-        <p>Are you sure you want to archive this employee?</p>
-        <p class="archive-employee-note">You can restore the employee later from the Archive page.</p>
+        <h2 id="archiveEmployeeTitle">Archive Worker?</h2>
+        <p>Are you sure you want to archive this worker?</p>
+        <p class="archive-employee-note">You can restore the worker later from the Archive page.</p>
         <div class="archive-employee-actions">
             <button type="button" class="archive-employee-cancel" id="cancelArchiveEmployee">Cancel</button>
             <button type="button" class="archive-employee-confirm" id="confirmArchiveEmployee">
-                <i class="fas fa-box-archive"></i> Archive Employee
+                <i class="fas fa-box-archive"></i> Archive Worker
             </button>
         </div>
     </div>

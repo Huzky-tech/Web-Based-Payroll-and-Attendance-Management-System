@@ -39,7 +39,7 @@ if (count($rows) > 10000) {
 }
 
 $headers = [
-    'Employee', 'Site', 'Date', 'Time In', 'Time Out', 'Status', 'Position',
+    'Employee', 'Site', 'Date', 'AM IN', 'PM OUT', 'Status', 'Position',
     'Site Manager', 'Hours Worked', 'Photo Evidence', 'Attendance Timestamp',
     'GPS Coordinates', 'Distance From Site (m)', 'GPS Verification'
 ];

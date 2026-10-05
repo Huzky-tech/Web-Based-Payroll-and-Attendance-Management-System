@@ -11,6 +11,9 @@
         const separator = url.includes('?') ? '&' : '?';
         const response = await fetch(`${url}${separator}_t=${Date.now()}`, {
             credentials: 'same-origin',
+            // Save and remove explicitly use the shared lifecycle below so the
+            // resulting message remains specific to the position action.
+            showProcessing: false,
             ...options
         });
         const data = await response.json().catch(() => ({ success: false, message: 'Invalid server response.' }));
@@ -148,23 +151,28 @@
             const submitButton = document.getElementById('positionCatalogSubmit');
             submitButton.disabled = true;
             try {
-                const result = await fetchJson('../api/save_position_catalog.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: Number(document.getElementById('catalog_position_id').value || 0),
-                        position_name: document.getElementById('catalog_position_name').value.trim(),
-                        hourly_rate: document.getElementById('catalog_hourly_rate').value,
-                        salary_rate: document.getElementById('catalog_salary_rate').value
-                    })
-                });
-                showResult(Boolean(result.success), result.message);
+                const result = await window.runWithProcessingModal(
+                    () => fetchJson('../api/save_position_catalog.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: Number(document.getElementById('catalog_position_id').value || 0),
+                            position_name: document.getElementById('catalog_position_name').value.trim(),
+                            hourly_rate: document.getElementById('catalog_hourly_rate').value,
+                            salary_rate: document.getElementById('catalog_salary_rate').value
+                        })
+                    }),
+                    {
+                        button: submitButton,
+                        loadingMessage: 'Please wait while we save the position.'
+                    }
+                );
                 if (result.success) {
                     closeModal();
                     await loadPositions();
                 }
             } catch (error) {
-                showResult(false, error.message || 'Unable to save the position.');
+                // The shared processing modal already shows the actual error.
             } finally {
                 submitButton.disabled = false;
             }
@@ -183,14 +191,31 @@
             }
 
             const deleteButton = event.target.closest('.position-catalog-delete');
-            if (!deleteButton || !window.confirm('Remove this position from the employee position list?')) return;
-            const result = await fetchJson('../api/delete_position_catalog.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: Number(deleteButton.dataset.positionId) })
+            if (!deleteButton) return;
+            const confirmed = await window.showConfirmModal?.('Remove this position from the employee position list?', {
+                title: 'Remove Position',
+                confirmText: 'Remove',
+                cancelText: 'Cancel',
+                type: 'error'
             });
-            showResult(Boolean(result.success), result.message);
-            if (result.success) await loadPositions();
+            if (!confirmed) return;
+
+            try {
+                const result = await window.runWithProcessingModal(
+                    () => fetchJson('../api/delete_position_catalog.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: Number(deleteButton.dataset.positionId) })
+                    }),
+                    {
+                        button: deleteButton,
+                        loadingMessage: 'Please wait while we remove the position.'
+                    }
+                );
+                if (result.success) await loadPositions();
+            } catch (error) {
+                // The shared processing modal already shows the actual error.
+            }
         });
     });
 })();

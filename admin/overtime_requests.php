@@ -78,14 +78,13 @@ $embeddedDashboard = $embeddedDashboard ?? false;
         <div class="overtime-modal-body" id="overtimeDetailsBody"></div>
         <div class="overtime-modal-footer">
             <button type="button" class="overtime-action-btn view" id="closeOvertimeDetailsBtn">Close</button>
-            <button type="button" class="overtime-action-btn approve" id="updateOvertimeStatusBtn">Update Status</button>
         </div>
     </div>
 </div>
 
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
 <?php if (!$embeddedDashboard): ?>
-<script src="../js/overtime_requests.js?v=20260907-3" defer></script>
+<script src="../js/overtime_requests.js?v=20261001-actions-only-status-1" defer></script>
 </body>
 </html>
 <?php endif; ?>

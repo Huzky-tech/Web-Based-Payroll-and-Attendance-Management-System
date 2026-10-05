@@ -13,7 +13,7 @@ if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 // Helper function for audit logging
 function logAudit($conn, $userId, $action, $details) {
-    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())");
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
     $stmt->close();
@@ -40,8 +40,32 @@ if ($method === 'POST') {
         exit;
     }
     
-    // A site can have only one Payroll Staff member. A Payroll Staff member
-    // can still be responsible for multiple different sites.
+    // A Payroll Staff member can be assigned to only one site. Check this on
+    // the server so the rule cannot be bypassed from the browser.
+    $staffAssignmentSql = "SELECT psa.SiteID, ps.Site_Name
+                           FROM payrollstaffassignment psa
+                           INNER JOIN projectsite ps ON ps.SiteID = psa.SiteID
+                           WHERE psa.PayrollStaff_ID = ?
+                           LIMIT 1";
+    $staffAssignmentStmt = $conn->prepare($staffAssignmentSql);
+    if (!$staffAssignmentStmt) {
+        echo json_encode(['success' => false, 'message' => 'Unable to check the payroll staff assignment.']);
+        exit;
+    }
+    $staffAssignmentStmt->bind_param("i", $staffId);
+    $staffAssignmentStmt->execute();
+    $staffAssignment = $staffAssignmentStmt->get_result()->fetch_assoc();
+    $staffAssignmentStmt->close();
+    if ($staffAssignment && (int) $staffAssignment['SiteID'] !== (int) $siteId) {
+        $assignedSiteName = trim((string) ($staffAssignment['Site_Name'] ?? 'another site'));
+        echo json_encode([
+            'success' => false,
+            'message' => "This Payroll Staff member is already assigned to {$assignedSiteName}. Remove that assignment before selecting another site."
+        ]);
+        exit;
+    }
+
+    // A site can also have only one Payroll Staff member.
     $checkSql = "SELECT psa.staffAssignID, psa.PayrollStaff_ID, u.full_name
                  FROM payrollstaffassignment psa
                  LEFT JOIN payrollstaff ps ON ps.PayrollStaff_ID = psa.PayrollStaff_ID

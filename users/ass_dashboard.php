@@ -5,7 +5,9 @@ require_once __DIR__ . '/../includes/user_profile_photo.php';
 
 require_auth($conn, ['Assistant Admin']);
 ensure_user_profile_photo_column($conn);
-$assistantDashboardUrl = '/capstone/assistant/dashboard';
+// Resolve from either /users/ass_dashboard.php or /assistant/<module>,
+// preserving the installation folder on local and hosted deployments.
+$assistantDashboardUrl = '../users/ass_dashboard.php';
 
 $assistantProfilePhoto = '';
 if (!empty($_SESSION['user_id'])) {
@@ -64,44 +66,44 @@ $pageTitles = [
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/ass_dashboard.css?v=20260821-1">
     <link rel="stylesheet" href="../css/dashboard_shell.css?v=20260908-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'site_assign'): ?>
     <link rel="stylesheet" href="../css/site_assign.css?v=20260906-1">
-<script src="../js/site_assign.js?v=20260913-security-1" defer></script>
+<script src="../js/site_assign.js?v=20261001-one-site-per-payroll-staff-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'worker'): ?>
-    <link rel="stylesheet" href="../css/worker.css?v=20260921-manager-1">
-<script src="../js/worker.js?v=20260921-manager-2" defer></script>
+    <link rel="stylesheet" href="../css/worker.css?v=20260930-add-button-space-1">
+<script src="../js/worker.js?v=20260930-position-rate-edit-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'attendance'): ?>
-    <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
-<script src="../js/attendance.js?v=20260913-security-1" defer></script>
+    <link rel="stylesheet" href="../css/attendance.css?v=20260930-view-modal-scroll-1">
+<script src="../js/attendance.js?v=20261001-mark-absent-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'active_site'): ?>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="../js/active_site.js?v=20260907-2" defer></script>
+<script src="../js/active_site.js?v=20261001-lock-site-after-attendance-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'reports'): ?>
-    <link rel="stylesheet" href="../css/reports.css?v=20260907-5">
+    <link rel="stylesheet" href="../css/reports.css?v=20260930-gps-links-1">
     <?php if (($_GET['report'] ?? '') === 'overtime'): ?>
     <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>
     <?php endif; ?>
-<script src="../js/reports.js?v=20260907-5" defer></script>
+<script src="../js/reports.js?v=20260921-hosting-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
-<script src="../js/setting.js?v=20260921-admin-1" defer></script>
+<script src="../js/setting.js?v=20261001-assistant-notification-settings-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'positions'): ?>
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">
-<script src="../js/positions.js?v=20260913-2" defer></script>
+<script src="../js/positions.js?v=20260930-processing-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'audit'): ?>
     <link rel="stylesheet" href="../css/audit.css?v=20260906-1">
-<script src="../js/audit.js?v=20260913-security-1" defer></script>
+<script src="../js/audit.js?v=20260930-utc-manila-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'history'): ?>
     <link rel="stylesheet" href="../css/history.css?v=20260523-4">
@@ -109,7 +111,7 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'archive'): ?>
     <link rel="stylesheet" href="../css/archive.css?v=20260814-2">
-<script src="../js/archive.js?v=20260814-2" defer></script>
+<script src="../js/archive.js?v=20261004-worker-user-filter-2" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll'): ?>
     <link rel="stylesheet" href="../css/payroll.css?v=20260906-2">
@@ -117,22 +119,22 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll_status'): ?>
     <link rel="stylesheet" href="../css/payroll_approval.css?v=20260906-3">
-<script src="../js/payroll_approval.js?v=20260908-1" defer></script>
+<script src="../js/payroll_approval.js?v=20260930-export-download-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'overtime_requests'): ?>
     <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
-<script src="../js/overtime_requests.js?v=20260907-3" defer></script>
+<script src="../js/overtime_requests.js?v=20261001-actions-only-status-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'timekeeper_reports'): ?>
     <link rel="stylesheet" href="../css/timekeeper_reports.css?v=20260904-2">
 <script src="../js/timekeeper_reports.js?v=20260913-security-1" defer></script>
     <?php endif; ?>
 <link rel="stylesheet" href="../css/assistant_admin_refresh.css?v=20260814-2">
-<script src="../js/dashboard.js?v=20260901-3" defer></script>
+<script src="../js/dashboard.js?v=20260922-assistant-hosting-1" defer></script>
 <script src="../js/ass_dashboard.js?v=20260715-1" defer></script>
-<script src="../js/admin_notifications.js?v=20260913-security-1" defer></script>
+<script src="../js/admin_notifications.js?v=20260922-notification-panel-1" defer></script>
 <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<link rel="stylesheet" href="../css/responsive_mobile.css?v=20260905-1">
+<link rel="stylesheet" href="../css/responsive_mobile.css?v=20261001-layout-1">
 <link rel="stylesheet" href="../css/dashboard_shell_stability.css?v=20260814-1">
 </head>
 <body data-dashboard-role="assistant" class="<?php echo !isset($_GET['page']) ? 'assistant-dashboard-home' : 'assistant-module-page'; ?>">

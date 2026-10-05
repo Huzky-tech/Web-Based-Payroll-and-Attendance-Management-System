@@ -14,8 +14,8 @@ if (empty($_SESSION['user_id'])) {
 
 $currentRole = $_SESSION['role'] ?? auth_get_user_role($conn, (int) $_SESSION['user_id']);
 // HR needs this list to display the site's current Timekeeper inside the
-// worker-assignment modal. Mutation remains protected separately by
-// assign_site_timekeeper.php (Admin/Assistant Admin only).
+// worker-assignment modal. Timekeeper assignment remains restricted to
+// Admin and Assistant Admin in assign_site_timekeeper.php.
 $allowedRoles = ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR'];
 if (!in_array($currentRole, $allowedRoles, true)) {
     echo json_encode(['success' => false, 'message' => 'Access denied', 'timekeepers' => []]);

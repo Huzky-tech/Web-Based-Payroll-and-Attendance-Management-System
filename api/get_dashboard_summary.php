@@ -20,6 +20,20 @@ function dashboard_json_error(string $message, int $statusCode = 500): void
     exit;
 }
 
+/**
+ * Dashboard widgets must not prevent the entire home page from loading when
+ * an optional legacy table or column is unavailable on a hosted database.
+ */
+function dashboard_optional(callable $callback, $fallback)
+{
+    try {
+        return $callback();
+    } catch (Throwable $error) {
+        error_log('Optional dashboard widget skipped: ' . $error->getMessage());
+        return $fallback;
+    }
+}
+
 function dashboard_scalar(mysqli $conn, string $sql, string $types = '', array $params = [])
 {
     $stmt = $conn->prepare($sql);
@@ -882,8 +896,14 @@ try {
     $userRow = $userResult ? $userResult->fetch_assoc() : null;
     $userStmt->close();
 
-    $sites = get_scoped_sites($conn, $role, $userId, $today);
-    $sites = enrich_sites_with_timekeeper($conn, $sites);
+    $sites = dashboard_optional(
+        static fn() => get_scoped_sites($conn, $role, $userId, $today),
+        []
+    );
+    $sites = dashboard_optional(
+        static fn() => enrich_sites_with_timekeeper($conn, $sites),
+        $sites
+    );
     $siteIds = array_map(static fn($site) => (int) $site['SiteID'], $sites);
 
     $payrollSettings = null;
@@ -918,20 +938,32 @@ try {
     ];
     $payrollTotals = $role === 'HR'
         ? $emptyPayrollTotals
-        : get_payroll_totals($conn, $sites, $payPeriod, $deductionRate, $overtimeRate);
+        : dashboard_optional(
+            static fn() => get_payroll_totals($conn, $sites, $payPeriod, $deductionRate, $overtimeRate),
+            $emptyPayrollTotals
+        );
     $weekPeriod = derive_week_period();
     $payrollWeek = $role === 'HR'
         ? $emptyPayrollTotals
-        : get_payroll_totals($conn, $sites, $weekPeriod, $deductionRate, $overtimeRate);
+        : dashboard_optional(
+            static fn() => get_payroll_totals($conn, $sites, $weekPeriod, $deductionRate, $overtimeRate),
+            $emptyPayrollTotals
+        );
     $payrollApprovalSubmittedBy = ($role === 'Payroll Staff' && payroll_approval_columns_ready($conn)) ? $userId : null;
-    $payrollApprovalCounts = payroll_approval_get_summary_counts($conn, $payrollApprovalSubmittedBy);
-    $reports = get_recent_reports($conn, $siteIds);
-    $timekeeperReportStats = get_timekeeper_report_stats($conn, $siteIds);
-    $pendingOvertime = get_pending_overtime_summary($conn);
-    $activeTimekeepers = get_active_timekeepers_count($conn);
-    $todayAttendance = get_today_attendance_records($conn, $today, $siteIds);
-    $offlineAttendance = get_offline_attendance_count($conn, $today, $siteIds);
-    $activityTimeline = get_activity_timeline($conn, 10);
+    $payrollApprovalCounts = dashboard_optional(
+        static fn() => payroll_approval_get_summary_counts($conn, $payrollApprovalSubmittedBy),
+        ['pending' => 0, 'approved' => 0, 'rejected' => 0, 'total' => 0]
+    );
+    $reports = dashboard_optional(static fn() => get_recent_reports($conn, $siteIds), []);
+    $timekeeperReportStats = dashboard_optional(
+        static fn() => get_timekeeper_report_stats($conn, $siteIds),
+        ['total' => 0, 'pending' => 0, 'reviewed' => 0, 'resolved' => 0, 'submitted_today' => 0]
+    );
+    $pendingOvertime = dashboard_optional(static fn() => get_pending_overtime_summary($conn), ['count' => 0, 'items' => []]);
+    $activeTimekeepers = dashboard_optional(static fn() => get_active_timekeepers_count($conn), 0);
+    $todayAttendance = dashboard_optional(static fn() => get_today_attendance_records($conn, $today, $siteIds), []);
+    $offlineAttendance = dashboard_optional(static fn() => get_offline_attendance_count($conn, $today, $siteIds), 0);
+    $activityTimeline = dashboard_optional(static fn() => get_activity_timeline($conn, 10), []);
 
     $totalUsers = (int) (dashboard_scalar($conn, "SELECT COUNT(*) FROM users") ?? 0);
     $activeUsers = (int) (dashboard_scalar($conn, "SELECT COUNT(*) FROM users WHERE status = 'Active'") ?? 0);
@@ -1003,10 +1035,13 @@ try {
     $activeSitesOnly = array_values(array_filter($sites, static fn($site) => !empty($site['is_active'])));
     $assignedWorkers = (int) (dashboard_scalar($conn, "SELECT COUNT(DISTINCT WorkerID) FROM workerassignment") ?? 0);
     $unassignedWorkers = max(0, $totalWorkers - $assignedWorkers);
-    $pendingEmployeeApprovals = get_pending_employee_approvals_count($conn);
-    $employeeStatusBreakdown = get_employee_status_breakdown($conn);
-    $recentEmployees = get_recent_employees($conn, 6);
-    $hrUpdates = get_hr_updates($conn, 6);
+    $pendingEmployeeApprovals = dashboard_optional(static fn() => get_pending_employee_approvals_count($conn), 0);
+    $employeeStatusBreakdown = dashboard_optional(
+        static fn() => get_employee_status_breakdown($conn),
+        ['active' => 0, 'inactive' => 0, 'archived' => 0]
+    );
+    $recentEmployees = dashboard_optional(static fn() => get_recent_employees($conn, 6), []);
+    $hrUpdates = dashboard_optional(static fn() => get_hr_updates($conn, 6), []);
 
     echo json_encode([
         'success' => true,

@@ -13,7 +13,7 @@ $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff',
 
 // Helper function for audit logging
 function logAudit($conn, $userId, $action, $details) {
-    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())");
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
     $stmt->close();
@@ -73,11 +73,6 @@ if ($method === 'POST') {
     $siteName = $assignment['Site_Name'];
     $stmt->close();
 
-    if ($currentRole === 'Payroll Staff') {
-        echo json_encode(['success' => false, 'message' => 'Payroll staff can only view assigned site details']);
-        exit;
-    }
-    
     // Get worker name
     $workerSql = "SELECT CONCAT(First_Name, ' ', Last_Name) AS full_name FROM worker 
                  WHERE WorkerID = ?";

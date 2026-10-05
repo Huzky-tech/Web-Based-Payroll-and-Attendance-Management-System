@@ -2,13 +2,13 @@
 header('Content-Type: application/json');
 include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
-require_auth($conn, ['Admin', 'Assistant Admin']);
+require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 require_once __DIR__ . '/site_schedule_helpers.php';
 require_once __DIR__ . '/site_manager_helpers.php';
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 function logAudit($conn, $userId, $action, $details) {
-    $sql = "INSERT INTO Audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
+    $sql = "INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
@@ -43,7 +43,8 @@ $lunchStart = normalize_site_time_input($data['lunchStart'] ?? '12:00');
 $lunchEnd = normalize_site_time_input($data['lunchEnd'] ?? '13:00');
 $shiftEnd = normalize_site_time_input($data['shiftEnd'] ?? ($data['endTime'] ?? '17:00'));
 $siteManager = trim($data['siteManager'] ?? '');
-// A site becomes active only after at least one worker is assigned.
+// New sites always start inactive and become active only after three workers
+// are assigned through the site-assignment workflow.
 $status = 'Inactive';
 $locationID = 1;
 $userId = (int) ($_SESSION['user_id'] ?? ($data['userId'] ?? 0));
@@ -178,7 +179,7 @@ $conn->begin_transaction();
 try {
     if (site_schedule_columns_exist($conn)) {
         // Persist geofence fields (DB must have these columns)
-        $sql = "INSERT INTO ProjectSite (Site_Name, Location, Coordinates, Required_Workers, Start_Date, Site_Manager, Status, LocationID, ShiftStart, LunchStart, LunchEnd, ShiftEnd, Geofence_Radius_M, Geofence_Lat, Geofence_Lng)
+        $sql = "INSERT INTO projectsite (Site_Name, Location, Coordinates, Required_Workers, Start_Date, Site_Manager, Status, LocationID, ShiftStart, LunchStart, LunchEnd, ShiftEnd, Geofence_Radius_M, Geofence_Lat, Geofence_Lng)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
@@ -205,7 +206,7 @@ try {
         );
 
     } else {
-        $sql = "INSERT INTO ProjectSite (Site_Name, Location, Coordinates, Required_Workers, Start_Date, Site_Manager, Status, LocationID, Geofence_Radius_M, Geofence_Lat, Geofence_Lng)
+        $sql = "INSERT INTO projectsite (Site_Name, Location, Coordinates, Required_Workers, Start_Date, Site_Manager, Status, LocationID, Geofence_Radius_M, Geofence_Lat, Geofence_Lng)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
@@ -242,7 +243,12 @@ $stmt = $conn->prepare($sql);
     logAudit($conn, $userId, 'Site Created', "Created site: $siteName");
     $conn->commit();
 
-    echo json_encode(['status' => 'success', 'siteId' => $siteId]);
+    echo json_encode([
+        'status' => 'success',
+        'siteId' => $siteId,
+        'site_status' => 'Inactive',
+        'message' => 'Site created as Inactive. It will become Active after 3 workers are assigned.'
+    ]);
 } catch (Exception $exception) {
     $conn->rollback();
     echo json_encode(['status' => 'error', 'message' => $exception->getMessage()]);

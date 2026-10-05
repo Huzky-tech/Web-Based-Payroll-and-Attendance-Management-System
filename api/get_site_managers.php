@@ -4,11 +4,23 @@ header('Content-Type: application/json');
 include 'connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/worker_position_helpers.php';
+require_once __DIR__ . '/../includes/manager_role.php';
 
 require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 worker_position_ensure_column($conn);
+manager_role_ensure_table($conn);
 
 $sql = "
+    SELECT
+        0 AS WorkerID,
+        TRIM(COALESCE(u.full_name, CONCAT(COALESCE(u.first_name, ''), ' ', COALESCE(u.last_name, '')))) AS full_name,
+        'Manager' AS position
+    FROM managers manager_role
+    INNER JOIN users u ON u.id = manager_role.UserID
+    WHERE LOWER(COALESCE(u.status, 'active')) = 'active'
+
+    UNION ALL
+
     SELECT
         w.WorkerID,
         TRIM(CONCAT(COALESCE(w.First_Name, ''), ' ', COALESCE(w.Last_Name, ''))) AS full_name,

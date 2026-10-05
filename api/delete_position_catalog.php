@@ -13,6 +13,18 @@ if ($id <= 0) {
     exit;
 }
 $stmt = $conn->prepare('DELETE FROM employee_position_catalog WHERE id = ?');
+if (!$stmt) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Unable to prepare position removal.']);
+    exit;
+}
 $stmt->bind_param('i', $id);
 $ok = $stmt->execute();
-echo json_encode(['success' => $ok, 'message' => $ok ? 'Position removed.' : 'Unable to remove position.']);
+$removed = $ok && $stmt->affected_rows > 0;
+$stmt->close();
+if (!$removed) {
+    http_response_code($ok ? 404 : 500);
+    echo json_encode(['success' => false, 'message' => $ok ? 'Position was not found or was already removed.' : 'Unable to remove position.']);
+    exit;
+}
+echo json_encode(['success' => true, 'message' => 'Position removed successfully.']);

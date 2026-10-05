@@ -57,7 +57,6 @@ if (!function_exists('tk_report_ensure_schema')) {
     {
         if (!timekeeper_report_table_exists($conn)) {
             timekeeper_report_ensure_table($conn);
-            return;
         }
 
         $required = [
@@ -604,19 +603,19 @@ if (!function_exists('tk_report_format_row')) {
                 : '../' . ltrim($attachmentPath, '/');
         }
 
-        $reportId = (int) ($row['TK_ReportsID'] ?? $row['ReportID'] ?? $row['report_id'] ?? 0);
+        $reportId = (int) ($row['id'] ?? $row['TK_ReportsID'] ?? $row['ReportID'] ?? $row['report_id'] ?? 0);
 
         return [
             'id' => $reportId,
             'report_id' => $reportId,
-            'user_id' => (int) ($row['UserID'] ?? $row['TimekeeperID'] ?? $row['timekeeper_id'] ?? 0),
-            'site_id' => (int) ($row['SiteID'] ?? $row['site_id'] ?? 0),
-            'site_name' => (string) ($row['Site_Name'] ?? $row['SiteName'] ?? $row['site_name'] ?? ''),
+            'user_id' => (int) ($row['user_id'] ?? $row['UserID'] ?? $row['TimekeeperID'] ?? $row['timekeeper_id'] ?? 0),
+            'site_id' => (int) ($row['site_id'] ?? $row['SiteID'] ?? 0),
+            'site_name' => (string) ($row['site_name'] ?? $row['Site_Name'] ?? $row['SiteName'] ?? ''),
             'site_location' => (string) ($row['Location'] ?? ''),
             'timekeeper_name' => (string) ($row['timekeeper_name'] ?? 'Unknown Timekeeper'),
             'timekeeper_email' => (string) ($row['timekeeper_email'] ?? ''),
             'report_type' => $reportType,
-            'subject' => trim((string) ($row['Subject'] ?? $row['subject'] ?? '')),
+            'subject' => trim((string) ($row['subject'] ?? $row['Subject'] ?? '')),
             'description' => $description,
             'status' => $status,
             'date_submitted' => $dateSubmitted,

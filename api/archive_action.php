@@ -114,6 +114,53 @@ if (preg_match('/^employee-(\d+)$/', $itemId, $matches) === 1) {
     exit;
 }
 
+if (preg_match('/^user-(\d+)$/', $itemId, $matches) === 1) {
+    if ($currentRole !== 'Admin') {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Only Admin can restore a deactivated account.']);
+        exit;
+    }
+    if ($action !== 'restore') {
+        echo json_encode(['success' => false, 'message' => 'Permanent delete is not enabled for archived accounts.']);
+        exit;
+    }
+
+    $accountStmt = $conn->prepare("SELECT full_name, email, status FROM users WHERE id = ? LIMIT 1");
+    if (!$accountStmt) {
+        echo json_encode(['success' => false, 'message' => 'Unable to load account details.']);
+        exit;
+    }
+    $accountId = (int) $matches[1];
+    $accountStmt->bind_param('i', $accountId);
+    $accountStmt->execute();
+    $accountRow = $accountStmt->get_result()->fetch_assoc();
+    $accountStmt->close();
+
+    if (!$accountRow || strtolower(trim((string) ($accountRow['status'] ?? ''))) !== 'inactive') {
+        echo json_encode(['success' => false, 'message' => 'The archived account was not found.']);
+        exit;
+    }
+
+    $restoreStmt = $conn->prepare("UPDATE users SET status = 'Active' WHERE id = ?");
+    if (!$restoreStmt) {
+        echo json_encode(['success' => false, 'message' => 'Unable to restore account.']);
+        exit;
+    }
+    $restoreStmt->bind_param('i', $accountId);
+    $restored = $restoreStmt->execute();
+    $restoreStmt->close();
+
+    if (!$restored) {
+        echo json_encode(['success' => false, 'message' => 'Failed to restore account.']);
+        exit;
+    }
+
+    $accountName = trim((string) ($accountRow['full_name'] ?? '')) ?: (string) ($accountRow['email'] ?? ('User #' . $accountId));
+    $logArchiveAction($conn, $userId, 'Account Restored', "Restored deactivated account: {$accountName}");
+    echo json_encode(['success' => true, 'message' => 'Account restored successfully.']);
+    exit;
+}
+
 if (preg_match('/^site-(\d+)$/', $itemId, $matches) === 1) {
     $siteId = (int) $matches[1];
 
@@ -139,7 +186,7 @@ if (preg_match('/^site-(\d+)$/', $itemId, $matches) === 1) {
     }
 
     $siteStatus = strtolower(trim((string) ($siteRow['Status'] ?? '')));
-    if (!in_array($siteStatus, ['archived', 'inactive'], true)) {
+    if ($siteStatus !== 'archived') {
         echo json_encode(['success' => false, 'message' => 'Site is not archived']);
         exit;
     }

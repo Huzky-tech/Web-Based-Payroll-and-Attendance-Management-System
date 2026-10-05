@@ -8,6 +8,10 @@ require_once __DIR__ . '/payroll_approval_helpers.php';
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 $adminUserId = (int) ($_SESSION['user_id'] ?? 0);
 tk_report_ensure_schema($conn);
+$conn->query("CREATE TABLE IF NOT EXISTS notification_read_cutoffs (
+    RecipientUserID INT NOT NULL PRIMARY KEY,
+    ReadThrough DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
 // Turn Assistant Admin and Payroll Staff audit activity into persistent Admin notifications.
 $categoryActions = [
@@ -57,6 +61,12 @@ $auditResult = $conn->query("SELECT al.Audit_logsID, al.UserID, al.Action, al.De
         WHERE n.NotificationType = 'User Activity' AND n.ReferenceID = al.Audit_logsID
           AND (n.RecipientUserID = {$adminUserId} OR n.RecipientUserID IS NULL)
     ) AND al.Action IN ({$actionListSql})
+      AND al.Date > COALESCE((
+          SELECT cutoff.ReadThrough
+          FROM notification_read_cutoffs cutoff
+          WHERE cutoff.RecipientUserID = {$adminUserId}
+          LIMIT 1
+      ), '1970-01-01 00:00:00')
     ORDER BY al.Audit_logsID DESC LIMIT 100");
 if ($auditResult) {
     $insertActivity = $conn->prepare("INSERT INTO admin_notifications
@@ -84,6 +94,24 @@ $result = $conn->query("SHOW TABLES LIKE 'admin_notifications'");
 if ($result === false || $result->num_rows === 0) {
     echo json_encode(['success' => true, 'items' => [], 'unread_count' => 0]);
     exit;
+}
+
+$assistantNotificationSettings = null;
+if ($currentRole === 'Assistant Admin') {
+    $settingsTable = $conn->query("SHOW TABLES LIKE 'assistant_notification_settings'");
+    if ($settingsTable && $settingsTable->num_rows > 0) {
+        $assistantSettingsStmt = $conn->prepare('SELECT in_system_notifications, payroll_processing, attendance_issues, site_assignments, overtime_requests FROM assistant_notification_settings WHERE UserID = ? LIMIT 1');
+        if ($assistantSettingsStmt) {
+            $assistantSettingsStmt->bind_param('i', $adminUserId);
+            $assistantSettingsStmt->execute();
+            $assistantNotificationSettings = $assistantSettingsStmt->get_result()->fetch_assoc() ?: null;
+            $assistantSettingsStmt->close();
+        }
+    }
+    if ($assistantNotificationSettings && (int) $assistantNotificationSettings['in_system_notifications'] !== 1) {
+        echo json_encode(['success' => true, 'items' => [], 'unread_count' => 0]);
+        exit;
+    }
 }
 
 // Backfill notifications for pending payroll batches created before direct
@@ -259,10 +287,26 @@ if ($currentRole === 'HR') {
               AND NotificationType <> 'Payroll Rejected'
               AND Message NOT LIKE '%Payroll%'";
 }
+if ($currentRole === 'Assistant Admin' && $assistantNotificationSettings) {
+    if ((int) $assistantNotificationSettings['payroll_processing'] !== 1) {
+        $sql .= " AND NotificationType NOT LIKE 'Payroll %'";
+    }
+    if ((int) $assistantNotificationSettings['site_assignments'] !== 1) {
+        $sql .= " AND NotificationType NOT IN ('Site Assignment', 'Site Assignment Removed')";
+    }
+    if ((int) $assistantNotificationSettings['attendance_issues'] !== 1) {
+        $sql .= " AND NotificationType NOT LIKE '%Attendance%' AND Title NOT LIKE '%Attendance%' AND Message NOT LIKE '%Attendance%'";
+    }
+    if ((int) $assistantNotificationSettings['overtime_requests'] !== 1) {
+        $sql .= " AND NotificationType NOT LIKE '%Overtime%' AND Title NOT LIKE '%Overtime%' AND Message NOT LIKE '%Overtime%'";
+    }
+}
 if ($unreadOnly) {
     $sql .= " AND IsRead = 0";
 }
-$sql .= " ORDER BY NotificationID DESC LIMIT ?";
+// Keep unread alerts at the top. Within each group, the newest notification
+// is shown first even when records were imported or copied between accounts.
+$sql .= " ORDER BY IsRead ASC, CreatedAt DESC, NotificationID DESC LIMIT ?";
 
 $stmt = $conn->prepare($sql);
 if (!$stmt) {
@@ -298,6 +342,20 @@ if ($currentRole === 'HR') {
                     AND NotificationType <> 'Payroll Approved'
                     AND NotificationType <> 'Payroll Rejected'
                     AND Message NOT LIKE '%Payroll%'";
+}
+if ($currentRole === 'Assistant Admin' && $assistantNotificationSettings) {
+    if ((int) $assistantNotificationSettings['payroll_processing'] !== 1) {
+        $unreadSql .= " AND NotificationType NOT LIKE 'Payroll %'";
+    }
+    if ((int) $assistantNotificationSettings['site_assignments'] !== 1) {
+        $unreadSql .= " AND NotificationType NOT IN ('Site Assignment', 'Site Assignment Removed')";
+    }
+    if ((int) $assistantNotificationSettings['attendance_issues'] !== 1) {
+        $unreadSql .= " AND NotificationType NOT LIKE '%Attendance%' AND Title NOT LIKE '%Attendance%' AND Message NOT LIKE '%Attendance%'";
+    }
+    if ((int) $assistantNotificationSettings['overtime_requests'] !== 1) {
+        $unreadSql .= " AND NotificationType NOT LIKE '%Overtime%' AND Title NOT LIKE '%Overtime%' AND Message NOT LIKE '%Overtime%'";
+    }
 }
 $unreadStmt = $conn->prepare($unreadSql);
 $unreadCount = 0;

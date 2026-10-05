@@ -7,15 +7,15 @@ $currentRole = require_auth($conn, ['Payroll Staff', 'HR']);
 $hrDashboardMode = !empty($hrDashboardMode);
 if ($currentRole === 'HR' && !$hrDashboardMode) {
     $query = $_SERVER['QUERY_STRING'] ?? '';
-    header('Location: /capstone/hr/dashboard' . ($query !== '' ? '?' . $query : ''));
+    header('Location: ../users/hr_dashboard.php' . ($query !== '' ? '?' . $query : ''));
     exit;
 }
 if ($currentRole !== 'HR' && $hrDashboardMode) {
-    header('Location: /capstone/payroll/dashboard');
+    header('Location: ../users/payroll_dashboard.php');
     exit;
 }
 $isHr = $currentRole === 'HR';
-$dashboardFile = $isHr ? '/capstone/hr/dashboard' : '/capstone/payroll/dashboard';
+$dashboardFile = $isHr ? '../users/hr_dashboard.php' : '../users/payroll_dashboard.php';
 ensure_user_profile_photo_column($conn);
 
 $payrollProfilePhoto = '';
@@ -64,38 +64,38 @@ if ($displayName === '') {
     <link rel="icon" type="image/png" href="../images/company-building-logo.png?v=20260907-1">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/payroll_dashboard.css?v=20260901-2">
+    <link rel="stylesheet" href="../css/payroll_dashboard.css?v=20261003-hr-compact-sites-1">
     <link rel="stylesheet" href="../css/dashboard_shell.css?v=20260908-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'attendance'): ?>
-    <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
-<script src="../js/attendance.js?v=20260913-security-1" defer></script>
+    <link rel="stylesheet" href="../css/attendance.css?v=20260930-view-modal-scroll-1">
+<script src="../js/attendance.js?v=20261001-mark-absent-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'worker'): ?>
-    <link rel="stylesheet" href="../css/worker.css?v=20260921-manager-1">
-<script src="../js/worker.js?v=20260921-manager-2" defer></script>
+    <link rel="stylesheet" href="../css/worker.css?v=20260930-add-button-space-1">
+<script src="../js/worker.js?v=20260930-position-rate-edit-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'site_assign'): ?>
     <link rel="stylesheet" href="../css/site_assign.css?v=20260906-1">
-<script src="../js/site_assign.js?v=20260913-security-1" defer></script>
+<script src="../js/site_assign.js?v=20261001-one-site-per-payroll-staff-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'active_site'): ?>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="../js/active_site.js?v=20260913-hr-access-1" defer></script>
+<script src="../js/active_site.js?v=20261001-lock-site-after-attendance-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'reports'): ?>
-    <link rel="stylesheet" href="../css/reports.css?v=20260907-6">
+    <link rel="stylesheet" href="../css/reports.css?v=20260930-gps-links-1">
     <?php if (($_GET['report'] ?? '') === 'overtime'): ?>
     <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>
     <?php endif; ?>
-<script src="../js/reports.js?v=20260907-5" defer></script>
+<script src="../js/reports.js?v=20260921-hosting-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
-<script src="../js/setting.js?v=20260921-admin-1" defer></script>
+<script src="../js/setting.js?v=20261001-assistant-notification-settings-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll'): ?>
     <link rel="stylesheet" href="../css/payroll.css?v=20260908-1">
@@ -103,21 +103,21 @@ if ($displayName === '') {
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll_status'): ?>
     <link rel="stylesheet" href="../css/payroll_approval.css?v=20260906-3">
-<script src="../js/payroll_approval.js?v=20260908-1" defer></script>
+<script src="../js/payroll_approval.js?v=20260930-export-download-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'overtime_requests'): ?>
     <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
-<script src="../js/overtime_requests.js?v=20260907-3" defer></script>
+<script src="../js/overtime_requests.js?v=20261001-actions-only-status-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'timekeeper_reports'): ?>
     <link rel="stylesheet" href="../css/timekeeper_reports.css?v=20260904-2">
 <script src="../js/timekeeper_reports.js?v=20260913-security-1" defer></script>
     <?php endif; ?>
-    <script src="../js/dashboard.js?v=20260901-2" defer></script>
+    <script src="../js/dashboard.js?v=20261003-hr-compact-sites-1" defer></script>
 <script src="../js/payroll_dashboard.js?v=20260715-1" defer></script>
-<script src="../js/admin_notifications.js?v=20260913-security-1" defer></script>
+<script src="../js/admin_notifications.js?v=20260922-notification-panel-1" defer></script>
 <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<link rel="stylesheet" href="../css/responsive_mobile.css?v=20260905-1">
+<link rel="stylesheet" href="../css/responsive_mobile.css?v=20261001-layout-1">
 </head>
 <body data-dashboard-role="<?php echo $isHr ? 'hr' : 'payroll'; ?>" class="<?php echo !isset($_GET['page']) ? 'payroll-dashboard-home' : 'payroll-module-page'; ?>">
 
@@ -144,8 +144,8 @@ if ($displayName === '') {
             <?php endif; ?>
             <?php if ($isHr): ?>
             <div class="nav-section">PAYROLL</div>
-            <a href="/capstone/hr/payroll" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll') ? 'active' : ''; ?>"><i class="fas fa-file-invoice-dollar"></i><span>Payroll Processing</span></a>
             <a href="<?php echo $dashboardFile; ?>?page=payroll_status" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll_status') ? 'active' : ''; ?>"><i class="fas fa-check-circle"></i><span>My Submissions</span></a>
+            <a href="../users/hr_dashboard.php?page=payroll" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'payroll') ? 'active' : ''; ?>"><i class="fas fa-file-invoice-dollar"></i><span>Payroll Processing</span></a>
             <?php endif; ?>
             <div class="nav-section">REPORTS & SETTINGS</div>
             <a href="<?php echo $dashboardFile; ?>?page=reports" class="nav-item <?php echo (isset($_GET['page']) && $_GET['page'] == 'reports') ? 'active' : ''; ?>"><i class="far fa-chart-bar"></i><span>Reports</span></a>
@@ -412,17 +412,12 @@ if ($displayName === '') {
                         <span class="action-copy"><strong>Update Employee Information</strong><small>Edit workforce profile details</small></span>
                         <i class="fas fa-arrow-right action-arrow" aria-hidden="true"></i>
                     </a>
-                    <a class="action-card green" href="/capstone/hr/payroll">
+                    <a class="action-card green" href="../users/hr_dashboard.php?page=payroll">
                         <span class="action-icon"><i class="fas fa-file-invoice-dollar"></i></span>
                         <span class="action-copy"><strong>Process Payroll</strong><small>Prepare payroll for a site and submit it for approval</small></span>
                         <i class="fas fa-arrow-right action-arrow" aria-hidden="true"></i>
                     </a>
                     <?php else: ?>
-                    <a class="action-card blue" href="<?php echo $dashboardFile; ?>?page=site_assign">
-                        <span class="action-icon"><i class="fas fa-map-location-dot"></i></span>
-                        <span class="action-copy"><strong>My Site Assignments</strong><small>Review your assigned projects and coverage</small></span>
-                        <i class="fas fa-arrow-right action-arrow" aria-hidden="true"></i>
-                    </a>
                     <a class="action-card green" href="<?php echo $dashboardFile; ?>?page=payroll">
                         <span class="action-icon"><i class="fas fa-file-invoice-dollar"></i></span>
                         <span class="action-copy"><strong>Process Payroll</strong><small>Prepare and submit the current payroll</small></span>

@@ -2,8 +2,13 @@
 include '../api/connection/db_config.php';
 include '../includes/auth.php';
 
-require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 $embeddedDashboard = $embeddedDashboard ?? false;
+// The parent dashboard has already authenticated and authorized this embedded
+// module. Rechecking it here can redirect a valid Admin request on hosted
+// clean URLs. A direct request remains protected below.
+if (!$embeddedDashboard) {
+    require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
+}
 ?>
 <?php if (!$embeddedDashboard): ?>
 <!DOCTYPE html>
@@ -14,9 +19,9 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <title>Philippians CDO - Attendance Tracking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-     <link rel="stylesheet" href="../css/attendance.css?v=20260907-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
-<script src="../js/attendance.js?v=20260915-schedule-refresh-1" defer></script>
+     <link rel="stylesheet" href="../css/attendance.css?v=20260930-view-modal-scroll-1">
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
+<script src="../js/attendance.js?v=20261001-mark-absent-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -80,15 +85,16 @@ $embeddedDashboard = $embeddedDashboard ?? false;
                     <tr>
                         <th><button class="sort-btn" type="button" data-sort-by="employee">Employee</button></th>
                         <th>Date</th>
-                        <th><button class="sort-btn" type="button" data-sort-by="time_in">Time In</button></th>
-                        <th>Lunch Out</th>
-                        <th>PM In</th>
-                        <th><button class="sort-btn" type="button" data-sort-by="time_out">Time Out</button></th>
+                        <th><button class="sort-btn" type="button" data-sort-by="time_in">AM IN</button></th>
+                        <th>AM OUT</th>
+                        <th>PM IN</th>
+                        <th><button class="sort-btn" type="button" data-sort-by="time_out">PM OUT</button></th>
                         <th><button class="sort-btn" type="button" data-sort-by="status">Status</button></th>
                         <th><button class="sort-btn" type="button" data-sort-by="position">Position</button></th>
                         <th>Scanned By</th>
                         <th>Scan Coordinates</th>
                         <th>Photo Evidence</th>
+                        <th>Approved OT (hrs)</th>
                         <th>Actions</th>
                     </tr>
                 </thead>

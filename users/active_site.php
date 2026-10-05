@@ -15,10 +15,10 @@ $canManageSites = $currentRole === 'Assistant Admin';
     <title>Active Sites - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
-    <link rel="stylesheet" href="../css/responsive_mobile.css?v=20260903-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <link rel="stylesheet" href="../css/responsive_mobile.css?v=20261001-layout-1">
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<script src="../js/active_site.js?v=20260921-manager-1" defer></script>
+<script src="../js/active_site.js?v=20261001-lock-site-after-attendance-1" defer></script>
 </head>
 <body data-dashboard-role="<?php echo ($_SESSION['role'] ?? '') === 'Assistant Admin' ? 'assistant' : (($_SESSION['role'] ?? '') === 'Admin' ? 'admin' : 'payroll'); ?>">
 <?php endif; ?>
@@ -144,17 +144,8 @@ $canManageSites = $currentRole === 'Assistant Admin';
                             </div>
 
                             <div class="form-group form-group-full">
-                                <label>Status</label>
-                                <div class="radio-group modern-radio-group">
-                                    <label class="radio-option modern-radio-option" for="statusActive">
-                                        <input type="radio" id="statusActive" name="status" value="active" checked>
-                                        <span>Active</span>
-                                    </label>
-                                    <label class="radio-option modern-radio-option" for="statusInactive">
-                                        <input type="radio" id="statusInactive" name="status" value="inactive">
-                                        <span>Inactive</span>
-                                    </label>
-                                </div>
+                                <label>Site Status</label>
+                                <div class="site-status-note"><i class="fas fa-info-circle"></i> New sites start as <strong>Inactive</strong> and automatically become active after <strong>3 workers</strong> are assigned.</div>
                             </div>
                         </div>
                     </section>
@@ -273,7 +264,7 @@ $canManageSites = $currentRole === 'Assistant Admin';
                             </div>
                             <div class="summary-group">
                                 <label>STATUS</label>
-                                <span class="badge-active" id="confirmSiteStatus">Active</span>
+                                <span class="badge-active badge-inactive" id="confirmSiteStatus">Inactive until 3 workers are assigned</span>
                             </div>
                             <div class="summary-group full-width">
                                 <label>LOCATION</label>

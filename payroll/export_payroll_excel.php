@@ -1,6 +1,11 @@
 <?php
 ob_start();
 
+// Tell the shared authentication layer that this is a protected binary
+// response. It still performs the normal role and session checks, but must not
+// attach HTML page helpers to an .xlsx download.
+define('AUTH_BINARY_DOWNLOAD', true);
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../api/connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
@@ -13,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 function payroll_export_build_period_dates(string $start, string $end): array
 {
@@ -227,6 +233,7 @@ $summaryColumnCount = 11;
 $dayColumnCount = count($periodDates);
 $totalColumnCount = $fixedColumnCount + $dayColumnCount + $summaryColumnCount;
 $lastCol = Coordinate::stringFromColumnIndex($totalColumnCount);
+$signatureCol = Coordinate::stringFromColumnIndex($totalColumnCount + 1);
 
 $summaryStartCol = $fixedColumnCount + $dayColumnCount + 1;
 $summaryHeaders = [
@@ -312,9 +319,10 @@ foreach ($summaryHeaders as $index => $headerLabel) {
     $col = Coordinate::stringFromColumnIndex($summaryStartCol + $index);
     $sheet->setCellValue($col . $row, $headerLabel);
 }
+$sheet->setCellValue($signatureCol . $row, 'SIGNATURE OF THE WORKER');
 
-$sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true);
-$sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+$sheet->getStyle("A{$row}:{$signatureCol}{$row}")->getFont()->setBold(true);
+$sheet->getStyle("A{$row}:{$signatureCol}{$row}")->getFill()
     ->setFillType(Fill::FILL_SOLID)
     ->getStartColor()->setARGB('FFF3F4F6');
 $sheet->getRowDimension($row)->setRowHeight(32);
@@ -425,7 +433,7 @@ $moneyTotalEndCol = Coordinate::stringFromColumnIndex($summaryStartCol + 10);
 $sheet->getStyle("{$moneyTotalStartCol}{$totalRow}:{$moneyTotalEndCol}{$totalRow}")->getNumberFormat()->setFormatCode($currencyFormat);
 $sheet->getStyle("{$grossTotalCol}{$totalRow}:{$netTotalCol}{$totalRow}")->getNumberFormat()->setFormatCode($currencyFormat);
 
-$tableRange = "A{$tableHeaderRow}:{$lastCol}{$totalRow}";
+$tableRange = "A{$tableHeaderRow}:{$signatureCol}{$totalRow}";
 $sheet->getStyle($tableRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
 $row += 2;
@@ -478,7 +486,28 @@ $sheet->getStyle("A{$row}")->getFont()->setBold(true);
 $row++;
 $sheet->setCellValue("A{$row}", $record['approved_by_name'] ?: 'Administrator');
 
-foreach (range(1, $totalColumnCount) as $columnIndex) {
+// Keep the approved payroll report together when it is printed. Legal
+// landscape provides the needed width for the attendance and payroll columns;
+// Excel scales the defined print area to one legal sheet in each direction.
+$sheet->getPageSetup()
+    ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+    ->setPaperSize(PageSetup::PAPERSIZE_LEGAL)
+    ->setFitToWidth(1)
+    ->setFitToHeight(1);
+$sheet->getSheetView()->setZoomScale(75);
+$sheet->getPageMargins()
+    ->setTop(0.25)
+    ->setRight(0.2)
+    ->setBottom(0.25)
+    ->setLeft(0.2)
+    ->setHeader(0.1)
+    ->setFooter(0.1);
+$sheet->getPageSetup()
+    ->setFitToPage(true)
+    ->setHorizontalCentered(true)
+    ->setPrintArea("A1:{$signatureCol}{$row}");
+
+foreach (range(1, $totalColumnCount + 1) as $columnIndex) {
     $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($columnIndex))->setAutoSize(true);
 }
 

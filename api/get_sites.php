@@ -3,11 +3,23 @@ header('Content-Type: application/json');
 include 'connection/db_config.php';
 require_once __DIR__ . '/site_schedule_helpers.php';
 require_once __DIR__ . '/../includes/site_priority_helpers.php';
+require_once __DIR__ . '/site_activation_helpers.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method == 'GET') {
     site_priority_ensure_user_table($conn);
+
+    // Bring existing site records in line with the three-worker activation rule
+    // before filters such as active_only are applied.
+    $siteIdsResult = $conn->query("SELECT SiteID FROM projectsite WHERE LOWER(COALESCE(Status, '')) <> 'archived'");
+    if ($siteIdsResult) {
+        while ($siteIdRow = $siteIdsResult->fetch_assoc()) {
+            site_sync_activation_status($conn, (int) $siteIdRow['SiteID']);
+        }
+        $siteIdsResult->free();
+    }
+
     $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
     $timekeeperSelect = "NULL AS Timekeeper_UserID, NULL AS Timekeeper";
     $timekeeperJoin = '';
@@ -35,7 +47,10 @@ if ($method == 'GET') {
         $geofenceSelect = 's.Geofence_Radius_M, s.Geofence_Lat, s.Geofence_Lng';
     }
     $activeOnly = isset($_GET['active_only']) && (string) $_GET['active_only'] === '1';
-    $whereClause = $activeOnly ? "WHERE LOWER(COALESCE(s.Status, '')) = 'active'" : '';
+    $excludeArchived = isset($_GET['exclude_archived']) && (string) $_GET['exclude_archived'] === '1';
+    $whereClause = $activeOnly
+        ? "WHERE LOWER(COALESCE(s.Status, '')) = 'active'"
+        : ($excludeArchived ? "WHERE LOWER(COALESCE(s.Status, '')) <> 'archived'" : '');
 
     $sql = "SELECT
                 s.SiteID,
@@ -50,13 +65,18 @@ if ($method == 'GET') {
                 s.Status,
                 EXISTS(
                     SELECT 1
+                    FROM attendance a
+                    WHERE a.SiteID = s.SiteID
+                ) AS Has_Attendance,
+                EXISTS(
+                    SELECT 1
                     FROM user_site_priorities usp
                     WHERE usp.UserID = {$currentUserId} AND usp.SiteID = s.SiteID
                 ) AS Is_Priority,
                 {$geofenceSelect},
                 {$scheduleSelect},
-                (SELECT COUNT(*) FROM WorkerAssignment wa WHERE wa.SiteID = s.SiteID) AS Current_Workers
-            FROM ProjectSite s
+                (SELECT COUNT(*) FROM workerassignment wa WHERE wa.SiteID = s.SiteID) AS Current_Workers
+            FROM projectsite s
             {$timekeeperJoin}
             LEFT JOIN (
                 SELECT ss.SiteID, ss.ShiftStart, ss.ShiftEnd
@@ -72,6 +92,12 @@ if ($method == 'GET') {
             ORDER BY s.SiteID DESC, Is_Priority DESC";
 
     $result = $conn->query($sql);
+    if (!$result) {
+        error_log('get_sites query failed: ' . $conn->error);
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => 'Unable to load sites. Please contact the administrator.']);
+        exit;
+    }
 
     $sites = [];
     while ($row = $result->fetch_assoc()) {
