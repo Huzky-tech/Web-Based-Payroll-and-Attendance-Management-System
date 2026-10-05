@@ -8,8 +8,8 @@
     </div>
     <div class="table-container">
         <table>
-            <thead><tr><th>Position</th><th>Hourly Rate</th><th>Monthly Salary</th><th>Action</th></tr></thead>
-            <tbody id="positionCatalogTableBody"><tr><td colspan="4">Loading positions...</td></tr></tbody>
+            <thead><tr><th>Position</th><th>Hourly Rate</th><th>Weekly Salary</th><th>Monthly Salary</th><th>Action</th></tr></thead>
+            <tbody id="positionCatalogTableBody"><tr><td colspan="5">Loading positions...</td></tr></tbody>
         </table>
     </div>
 </div>
@@ -32,6 +32,11 @@
                     <label for="catalog_hourly_rate">Hourly Rate (PHP)</label>
                     <input type="number" id="catalog_hourly_rate" min="0.01" step="0.01" placeholder="0.00" required>
                     <div class="position-field-error" id="catalog_hourly_rate_error" aria-live="polite"></div>
+                </div>
+                <div class="position-form-field">
+                    <label for="catalog_weekly_rate">Weekly Salary (PHP, optional)</label>
+                    <input type="number" id="catalog_weekly_rate" min="0.01" max="99999999.99" step="0.01" placeholder="Not set">
+                    <div class="position-field-error" id="catalog_weekly_rate_error" aria-live="polite"></div>
                 </div>
                 <div class="position-form-field">
                     <label for="catalog_salary_rate">Monthly Salary (PHP)</label>

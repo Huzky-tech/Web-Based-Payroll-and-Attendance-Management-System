@@ -17,7 +17,7 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">
     <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
-    <script src="../js/positions.js?v=20260930-processing-1" defer></script>
+    <script src="../js/positions.js?v=20261005-weekly-salary-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -26,7 +26,7 @@ $embeddedDashboard = $embeddedDashboard ?? false;
         <div class="positions-heading">
             <div>
                 <h1>Positions &amp; Salaries</h1>
-                <p>Manage employee positions and their suggested hourly and monthly rates.</p>
+                <p>Manage employee positions and their suggested hourly, weekly, and monthly rates.</p>
             </div>
             <span class="positions-access-badge"><i class="fas fa-user-shield"></i><?php echo htmlspecialchars($currentRole); ?></span>
         </div>

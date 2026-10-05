@@ -12,12 +12,20 @@ function position_catalog_ensure_table(mysqli $conn): bool
         position_name VARCHAR(100) NOT NULL,
         hourly_rate DECIMAL(10,2) NOT NULL DEFAULT 0,
         salary_rate DECIMAL(10,2) NOT NULL DEFAULT 0,
+        weekly_rate DECIMAL(10,2) NULL DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY uq_employee_position_name (position_name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     if (!$conn->query($sql)) return false;
-    if ($tableAlreadyExists) return true;
+    if ($tableAlreadyExists) {
+        $weeklyColumn = $conn->query("SHOW COLUMNS FROM employee_position_catalog LIKE 'weekly_rate'");
+        if (!$weeklyColumn) return false;
+        if ($weeklyColumn->num_rows === 0 && !$conn->query('ALTER TABLE employee_position_catalog ADD COLUMN weekly_rate DECIMAL(10,2) NULL DEFAULT NULL')) {
+            return false;
+        }
+        return true;
+    }
 
     $defaults = [
         ['Construction Worker', 125, 22000], ['Laborer', 110, 19000],

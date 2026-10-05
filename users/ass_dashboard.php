@@ -99,7 +99,7 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'positions'): ?>
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">
-<script src="../js/positions.js?v=20260930-processing-1" defer></script>
+<script src="../js/positions.js?v=20261005-weekly-salary-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'audit'): ?>
     <link rel="stylesheet" href="../css/audit.css?v=20260906-1">

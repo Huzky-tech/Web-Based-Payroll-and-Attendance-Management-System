@@ -51,6 +51,14 @@
         const nameInput = document.getElementById('catalog_position_name');
         const hourlyInput = document.getElementById('catalog_hourly_rate');
         const salaryInput = document.getElementById('catalog_salary_rate');
+        const weeklyInput = document.getElementById('catalog_weekly_rate');
+        const weekly = Number(weeklyInput.value);
+        const validWeekly = validateField(
+            weeklyInput,
+            document.getElementById('catalog_weekly_rate_error'),
+            weeklyInput.value !== '' && (!Number.isFinite(weekly) || weekly <= 0 || weekly > 99999999.99)
+                ? 'Enter a weekly salary between PHP 0.01 and 99,999,999.99.' : ''
+        );
         const name = nameInput.value.trim().replace(/\s+/g, ' ');
         const validName = validateField(
             nameInput,
@@ -68,7 +76,7 @@
             Number(salaryInput.value) <= 0 ? 'Enter a monthly salary greater than zero.' : ''
         );
         nameInput.value = name;
-        return validName && validHourly && validSalary;
+        return validName && validHourly && validSalary && validWeekly;
     }
 
     async function loadPositions() {
@@ -82,18 +90,20 @@
                 <tr>
                     <td>${escapeHtml(position.position_name)}</td>
                     <td>PHP ${Number(position.hourly_rate).toFixed(2)}</td>
+                    <td>${position.weekly_rate == null ? 'Not set' : `PHP ${Number(position.weekly_rate).toFixed(2)}`}</td>
                     <td>PHP ${Number(position.salary_rate).toFixed(2)}</td>
                     <td>
                         <button type="button" class="btn-secondary position-catalog-edit"
                             data-position-id="${Number(position.id)}"
                             data-position-name="${escapeHtml(position.position_name)}"
                             data-hourly-rate="${Number(position.hourly_rate)}"
+                            data-weekly-rate="${position.weekly_rate == null ? '' : Number(position.weekly_rate)}"
                             data-salary-rate="${Number(position.salary_rate)}"><i class="fas fa-pen"></i>Edit</button>
                         <button type="button" class="btn-danger position-catalog-delete" data-position-id="${Number(position.id)}"><i class="fas fa-trash"></i>Remove</button>
                     </td>
-                </tr>`).join('') : '<tr><td colspan="4">No positions added yet.</td></tr>';
+                </tr>`).join('') : '<tr><td colspan="5">No positions added yet.</td></tr>';
         } catch (error) {
-            body.innerHTML = `<tr><td colspan="4">${escapeHtml(error.message || 'Unable to load positions. Please reload the page.')}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message || 'Unable to load positions. Please reload the page.')}</td></tr>`;
         }
     }
 
@@ -138,7 +148,7 @@
             nameInput.value = filtered;
             validateField(nameInput, document.getElementById('catalog_position_name_error'), removedCharacters ? 'Special characters and numbers are not allowed.' : '');
         });
-        [hourlyInput, salaryInput].forEach((input) => input.addEventListener('input', () => {
+        [hourlyInput, salaryInput, document.getElementById('catalog_weekly_rate')].forEach((input) => input.addEventListener('input', () => {
             if (Number(input.value) < 0) input.value = '';
             const error = document.getElementById(`${input.id}_error`);
             validateField(input, error, input.value !== '' && Number(input.value) <= 0 ? 'Enter an amount greater than zero.' : '');
@@ -159,6 +169,7 @@
                             id: Number(document.getElementById('catalog_position_id').value || 0),
                             position_name: document.getElementById('catalog_position_name').value.trim(),
                             hourly_rate: document.getElementById('catalog_hourly_rate').value,
+                            weekly_rate: document.getElementById('catalog_weekly_rate').value,
                             salary_rate: document.getElementById('catalog_salary_rate').value
                         })
                     }),
@@ -184,6 +195,7 @@
                 document.getElementById('catalog_position_id').value = editButton.dataset.positionId;
                 document.getElementById('catalog_position_name').value = editButton.dataset.positionName;
                 document.getElementById('catalog_hourly_rate').value = editButton.dataset.hourlyRate;
+                document.getElementById('catalog_weekly_rate').value = editButton.dataset.weeklyRate || '';
                 document.getElementById('catalog_salary_rate').value = editButton.dataset.salaryRate;
                 document.getElementById('positionCatalogSubmit').innerHTML = '<i class="fas fa-save"></i>Update Position';
                 openModal(true);
