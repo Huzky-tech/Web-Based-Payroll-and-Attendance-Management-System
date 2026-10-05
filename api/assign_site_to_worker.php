@@ -102,13 +102,25 @@ if ($method === 'POST') {
     $siteName = $siteResult->fetch_assoc()['Site_Name'];
     $siteStmt->close();
     
+    require_once __DIR__ . '/worker_capacity_helpers.php';
+    try {
+        if (!$conn->begin_transaction()) {
+            throw new RuntimeException('Unable to start assignment transaction.');
+        }
+        worker_assignment_require_capacity($conn, (int) $siteId);
+    } catch (Throwable $error) {
+        $conn->rollback();
+        echo json_encode(['success' => false, 'message' => $error->getMessage()]);
+        exit;
+    }
+
     // Create assignment
     $sql = "INSERT INTO workerassignment (WorkerID, SiteID, Created_at) 
             VALUES (?, ?, NOW())";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ii", $workerId, $siteId);
     
-    if ($stmt->execute()) {
+    if ($stmt->execute() && $conn->commit()) {
         $assignmentId = $stmt->insert_id;
         $activation = site_sync_activation_status($conn, (int) $siteId);
         
@@ -123,6 +135,7 @@ if ($method === 'POST') {
             'activation' => $activation
         ]);
     } else {
+        $conn->rollback();
         echo json_encode(['success' => false, 'message' => 'Failed to assign site to worker']);
     }
     

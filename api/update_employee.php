@@ -349,6 +349,7 @@ if ($method === 'POST') {
     }
     
     // Handle site assignment
+    require_once __DIR__ . '/worker_capacity_helpers.php';
     if ($siteId !== null) {
         if ((int) $siteId > 0 && !isEmployeeApprovedForAssignment($conn, (int) $employeeId)) {
             throw new RuntimeException('This employee is pending approval and cannot be assigned to a site yet.');
@@ -365,6 +366,9 @@ if ($method === 'POST') {
             $existingAssignment = $assignCheckResult->fetch_assoc();
             if ((int) ($existingAssignment['SiteID'] ?? 0) !== (int) $siteId) {
                 // Only move the assignment when the selected site actually changed.
+                if ((int) $siteId > 0) {
+                    worker_assignment_require_capacity($conn, (int) $siteId);
+                }
                 $updateAssignSql = "UPDATE workerassignment SET SiteID = ? WHERE WorkerID = ?";
                 $updateAssignStmt = $conn->prepare($updateAssignSql);
                 $updateAssignStmt->bind_param("ii", $siteId, $employeeId);
@@ -373,6 +377,7 @@ if ($method === 'POST') {
             }
         } else if ($siteId > 0) {
             // Create new assignment
+            worker_assignment_require_capacity($conn, (int) $siteId);
             $insertAssignSql = "INSERT INTO workerassignment (WorkerID, SiteID, Assigned_Date) VALUES (?, ?, NOW())";
             $insertAssignStmt = $conn->prepare($insertAssignSql);
             $insertAssignStmt->bind_param("ii", $employeeId, $siteId);

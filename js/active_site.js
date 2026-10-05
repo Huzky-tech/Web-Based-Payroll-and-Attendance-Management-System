@@ -3537,6 +3537,11 @@ document.addEventListener('click', (e) => {
                 activeSiteState.assignmentModal.selectedWorkerIds.delete(workerId);
                 setAssignmentFeedback(`${worker.name} will be unassigned when you save assignments.`, 'info');
             } else {
+                const capacity = Number(getSelectedSite()?.Required_Workers || 0);
+                if (activeSiteState.assignmentModal.selectedWorkerIds.size >= capacity) {
+                    setAssignmentFeedback(`This site has reached its capacity of ${capacity} workers. Unassign a worker before adding another.`, 'error');
+                    return;
+                }
                 activeSiteState.assignmentModal.selectedWorkerIds.add(workerId);
                 if (!activeSiteState.assignmentModal.roleByWorkerId.has(workerId)) {
                     activeSiteState.assignmentModal.roleByWorkerId.set(workerId, getWorkerAssignmentLabel(worker, activeSiteState.assignmentModal.siteId));
@@ -3645,7 +3650,7 @@ if (assignSiteTimekeeperSelect) {
         }
 
         activeSiteState.assignmentModal.timekeeperUserId = value > 0 ? value : null;
-        setAssignmentFeedback(value > 0 ? '' : 'Please select a timekeeper before saving assignments.', value > 0 ? '' : 'error');
+        setAssignmentFeedback('');
     });
 }
 
@@ -3694,9 +3699,10 @@ async function saveAssignments() {
         return;
     }
 
-    if (activeSiteCanAssignTimekeepers && Number(activeSiteState.assignmentModal.timekeeperUserId || 0) <= 0) {
-        setAssignmentFeedback('Please select a timekeeper before saving assignments.', 'error');
-        assignSiteTimekeeperSelect?.focus();
+    const modal = activeSiteState.assignmentModal;
+    const hasAdditions = Array.from(modal.selectedWorkerIds).some((id) => !modal.initialWorkerIds.has(id));
+    if (hasAdditions && modal.selectedWorkerIds.size > Number(site.Required_Workers || 0)) {
+        setAssignmentFeedback('The selected workers exceed this site capacity. Unassign a worker before adding another.', 'error');
         return;
     }
 
@@ -3736,6 +3742,21 @@ async function saveAssignments() {
             }
         }
 
+        for (const workerId of toRemove) {
+            const result = await fetchJson('../api/remove_worker_assignment.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    worker_id: workerId,
+                    site_id: Number(site.SiteID)
+                })
+            });
+
+            if (!result.success) {
+                throw new Error(result.message || `Failed to remove worker ${workerId}`);
+            }
+        }
+
         for (const workerId of toAdd) {
             const result = await fetchJson('../api/assign_worker.php', {
                 method: 'POST',
@@ -3762,21 +3783,6 @@ async function saveAssignments() {
 
             if (!result.success) {
                 throw new Error(result.message || `Failed to update role for worker ${workerId}`);
-            }
-        }
-
-        for (const workerId of toRemove) {
-            const result = await fetchJson('../api/remove_worker_assignment.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    worker_id: workerId,
-                    site_id: Number(site.SiteID)
-                })
-            });
-
-            if (!result.success) {
-                throw new Error(result.message || `Failed to remove worker ${workerId}`);
             }
         }
 

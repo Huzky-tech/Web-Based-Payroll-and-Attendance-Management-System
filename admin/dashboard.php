@@ -60,7 +60,7 @@ if ($companyRow = $companyResult->fetch_assoc()) {
     <?php if (isset($_GET['page']) && $_GET['page'] == 'active_site'): ?>
     <link rel="stylesheet" href="../css/active_site.css?v=20260921-manager-1">
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="../js/active_site.js?v=20261001-lock-site-after-attendance-1" defer></script>
+<script src="../js/active_site.js?v=20261005-worker-capacity-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'reports'): ?>
     <link rel="stylesheet" href="../css/reports.css?v=20260930-gps-links-1">

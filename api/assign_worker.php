@@ -83,6 +83,18 @@ if ($workerStmt) {
     $workerStmt->close();
 }
 
+require_once __DIR__ . '/worker_capacity_helpers.php';
+try {
+    if (!$conn->begin_transaction()) {
+        throw new RuntimeException('Unable to start assignment transaction.');
+    }
+    worker_assignment_require_capacity($conn, (int) $siteId);
+} catch (Throwable $error) {
+    $conn->rollback();
+    echo json_encode(['success' => false, 'message' => $error->getMessage()]);
+    exit;
+}
+
 // Insert assignment
 $insertSql = "INSERT INTO workerassignment (WorkerID, SiteID, Assigned_Date, Role_On_Site) VALUES (?, ?, CURDATE(), '')";
 $stmt = $conn->prepare($insertSql);
@@ -94,13 +106,14 @@ if (!$stmt) {
 }
 $stmt->bind_param("ii", $workerId, $siteId);
 
-if ($stmt->execute()) {
+if ($stmt->execute() && $conn->commit()) {
     $activation = site_sync_activation_status($conn, (int) $siteId);
     if ($userId > 0) {
         record_audit_log($userId, 'Assign Worker to Site', "{$currentRole} assigned {$workerName} to {$siteName}");
     }
     echo json_encode(['success' => true, 'activation' => $activation]);
 } else {
+    $conn->rollback();
     echo json_encode(['success' => false, 'message' => $stmt->error]);
 }
 $stmt->close();

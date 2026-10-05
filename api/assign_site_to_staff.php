@@ -5,10 +5,10 @@
  */
 
 header('Content-Type: application/json');
-include 'connection/db_config.php';
+require_once __DIR__ . '/connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/timekeeper_report_helpers.php';
-require_auth($conn, ['Admin']);
+require_auth($conn, ['Admin', 'Assistant Admin']);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 // Helper function for audit logging

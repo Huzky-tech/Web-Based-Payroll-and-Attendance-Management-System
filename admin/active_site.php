@@ -22,7 +22,7 @@ $googleMapsApiKey = htmlspecialchars(getenv('GOOGLE_MAPS_API_KEY') ?: '', ENT_QU
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
     <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<script src="../js/active_site.js?v=20261004-site-management-roles-1" defer></script>
+<script src="../js/active_site.js?v=20261005-worker-capacity-1" defer></script>
 
 </head>
 <body data-dashboard-role="<?php

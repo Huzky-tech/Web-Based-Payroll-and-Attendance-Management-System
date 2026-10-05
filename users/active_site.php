@@ -18,7 +18,7 @@ $canManageSites = $currentRole === 'Assistant Admin';
     <link rel="stylesheet" href="../css/responsive_mobile.css?v=20261001-layout-1">
     <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <script src="../js/responsive_mobile.js?v=20260913-1" defer></script>
-<script src="../js/active_site.js?v=20261001-lock-site-after-attendance-1" defer></script>
+<script src="../js/active_site.js?v=20261005-worker-capacity-1" defer></script>
 </head>
 <body data-dashboard-role="<?php echo ($_SESSION['role'] ?? '') === 'Assistant Admin' ? 'assistant' : (($_SESSION['role'] ?? '') === 'Admin' ? 'admin' : 'payroll'); ?>">
 <?php endif; ?>

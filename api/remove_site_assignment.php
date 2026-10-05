@@ -5,9 +5,9 @@
  */
 
 header('Content-Type: application/json');
-include 'connection/db_config.php';
+require_once __DIR__ . '/connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
-require_auth($conn, ['Admin']);
+require_auth($conn, ['Admin', 'Assistant Admin']);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 // Helper function for audit logging
@@ -43,7 +43,7 @@ if ($method === 'POST') {
     // Build the WHERE clause based on what's provided
     if (!empty($assignmentId)) {
         // Get assignment details before deletion
-        $getSql = "SELECT psa.PayrollStaff_ID, psa.SiteID, ps.UserID AS staff_user_id, ps.Site_Name
+        $getSql = "SELECT psa.staffAssignID, psa.PayrollStaff_ID, psa.SiteID, ps.Site_Name
                    FROM payrollstaffassignment psa
                    JOIN projectsite ps ON psa.SiteID = ps.SiteID
                    WHERE psa.staffAssignID = ?";

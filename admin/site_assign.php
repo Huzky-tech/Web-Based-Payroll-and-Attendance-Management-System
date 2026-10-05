@@ -1,8 +1,8 @@
 <?php
-include '../api/connection/db_config.php';
-include '../includes/auth.php';
+require_once __DIR__ . '/../api/connection/db_config.php';
+require_once __DIR__ . '/../includes/auth.php';
 
-require_auth($conn, ['Admin']);
+require_auth($conn, ['Admin', 'Assistant Admin']);
 
 $user_id = $_SESSION['user_id'];
 ?>
