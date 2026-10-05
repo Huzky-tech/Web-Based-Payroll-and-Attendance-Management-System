@@ -106,6 +106,12 @@ function get_scoped_sites(mysqli $conn, string $role, int $userId, string $today
     $types = 's';
     $params = [$today];
 
+    // The Assistant Admin overview shows current, active site operations only.
+    // Filter before aggregation so staffing and attendance KPIs match the cards.
+    if ($role === 'Assistant Admin') {
+        $where[] = "LOWER(TRIM(ps.Status)) = 'active'";
+    }
+
     if ($role === 'Payroll Staff') {
         $payrollStaffId = get_payroll_staff_id($conn, $userId);
         if ($payrollStaffId <= 0) {
