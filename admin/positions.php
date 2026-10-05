@@ -15,13 +15,13 @@ $embeddedDashboard = $embeddedDashboard ?? false;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Positions &amp; Salaries - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/positions.css?v=20260913-3">
+    <link rel="stylesheet" href="../css/positions.css?v=20261006-validation-scroll-1">
     <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
-    <script src="../js/positions.js?v=20261005-weekly-salary-1" defer></script>
+    <script src="../js/positions.js?v=20261006-weekly-required-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
-<div class="main-content positions-page">
+<div class="positions-page">
     <div class="positions-content">
         <div class="positions-heading">
             <div>

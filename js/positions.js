@@ -1,5 +1,6 @@
 (function () {
     'use strict';
+    let catalogPositions = [];
 
     const escapeHtml = (value) => {
         const element = document.createElement('div');
@@ -20,6 +21,12 @@
         if (!response.ok && data.success !== false) {
             data.success = false;
         }
+        if (data.errors && url.includes('save_position_catalog.php')) {
+            Object.entries(data.errors).forEach(([field, message]) => {
+                const input = document.getElementById(`catalog_${field}`);
+                if (input) validateField(input, document.getElementById(`${input.id}_error`), message);
+            });
+        }
         return data;
     }
 
@@ -37,48 +44,43 @@
         document.getElementById('catalog_position_id').value = '';
         document.getElementById('positionCatalogSubmit').innerHTML = '<i class="fas fa-plus"></i>Add Position';
         document.querySelectorAll('.position-field-error').forEach((element) => { element.textContent = ''; });
-        document.querySelectorAll('.position-form-field input').forEach((input) => input.classList.remove('field-invalid'));
+        document.querySelectorAll('.position-form-field input').forEach((input) => { input.classList.remove('field-invalid'); input.removeAttribute('aria-invalid'); });
     }
 
     function validateField(input, errorElement, message) {
         const invalid = Boolean(message);
         input.classList.toggle('field-invalid', invalid);
+        input.setAttribute('aria-invalid', String(invalid));
+        input.setAttribute('aria-describedby', errorElement.id);
         errorElement.textContent = message || '';
         return !invalid;
     }
 
-    function validateForm() {
-        const nameInput = document.getElementById('catalog_position_name');
-        const hourlyInput = document.getElementById('catalog_hourly_rate');
-        const salaryInput = document.getElementById('catalog_salary_rate');
-        const weeklyInput = document.getElementById('catalog_weekly_rate');
-        const weekly = Number(weeklyInput.value);
-        const validWeekly = validateField(
-            weeklyInput,
-            document.getElementById('catalog_weekly_rate_error'),
-            weeklyInput.value !== '' && (!Number.isFinite(weekly) || weekly <= 0 || weekly > 99999999.99)
-                ? 'Enter a weekly salary between PHP 0.01 and 99,999,999.99.' : ''
-        );
-        const name = nameInput.value.trim().replace(/\s+/g, ' ');
-        const validName = validateField(
-            nameInput,
-            document.getElementById('catalog_position_name_error'),
-            !name ? 'Position name is required.' : (!/^[\p{L} ]+$/u.test(name) ? 'Letters and spaces only.' : '')
-        );
-        const validHourly = validateField(
-            hourlyInput,
-            document.getElementById('catalog_hourly_rate_error'),
-            Number(hourlyInput.value) <= 0 ? 'Enter an hourly rate greater than zero.' : ''
-        );
-        const validSalary = validateField(
-            salaryInput,
-            document.getElementById('catalog_salary_rate_error'),
-            Number(salaryInput.value) <= 0 ? 'Enter a monthly salary greater than zero.' : ''
-        );
-        nameInput.value = name;
-        return validName && validHourly && validSalary && validWeekly;
+    function validateInput(input) {
+        let message = '';
+        const value = input.value;
+        if (input.id === 'catalog_position_name') {
+            const name = value.trim().replace(/\s+/g, ' ');
+            const id = Number(document.getElementById('catalog_position_id').value || 0);
+            if (!name) message = 'Position name is required.';
+            else if (!/^[\p{L} ]{1,100}$/u.test(name)) message = 'Use 1–100 letters and spaces only.';
+            else if (catalogPositions.some((position) => Number(position.id) !== id && position.position_name.trim().replace(/\s+/g, ' ').toLowerCase() === name.toLowerCase())) {
+                message = 'A position with that name already exists.';
+            }
+        } else {
+            if (input.validity.badInput || !/^\d+(?:\.\d{1,2})?$/.test(value) || Number(value) < 0.01 || Number(value) > 99999999.99) {
+                message = 'Enter PHP 0.01–99,999,999.99, with up to two decimal places.';
+            }
+        }
+        return validateField(input, document.getElementById(`${input.id}_error`), message);
     }
 
+    function validateForm() {
+        const inputs = Array.from(document.querySelectorAll('#positionCatalogForm .position-form-field input'));
+        const valid = inputs.map(validateInput).every(Boolean);
+        if (!valid) inputs.find((input) => input.classList.contains('field-invalid'))?.focus();
+        return valid;
+    }
     async function loadPositions() {
         const body = document.getElementById('positionCatalogTableBody');
         if (!body) return;
@@ -86,6 +88,7 @@
             const data = await fetchJson('../api/get_position_catalog.php');
             if (!data.success) throw new Error(data.message || 'Unable to load positions.');
             const positions = Array.isArray(data.positions) ? data.positions : [];
+            catalogPositions = positions;
             body.innerHTML = positions.length ? positions.map((position) => `
                 <tr>
                     <td>${escapeHtml(position.position_name)}</td>
@@ -142,18 +145,10 @@
             if (event.key === 'Escape' && modal?.classList.contains('active')) closeModal();
         });
 
-        nameInput.addEventListener('input', () => {
-            const filtered = nameInput.value.replace(/[^\p{L} ]/gu, '');
-            const removedCharacters = filtered !== nameInput.value;
-            nameInput.value = filtered;
-            validateField(nameInput, document.getElementById('catalog_position_name_error'), removedCharacters ? 'Special characters and numbers are not allowed.' : '');
+        form.querySelectorAll('.position-form-field input').forEach((input) => {
+            input.addEventListener('input', () => validateInput(input));
+            input.addEventListener('blur', () => validateInput(input));
         });
-        [hourlyInput, salaryInput, document.getElementById('catalog_weekly_rate')].forEach((input) => input.addEventListener('input', () => {
-            if (Number(input.value) < 0) input.value = '';
-            const error = document.getElementById(`${input.id}_error`);
-            validateField(input, error, input.value !== '' && Number(input.value) <= 0 ? 'Enter an amount greater than zero.' : '');
-        }));
-
         loadPositions();
         form.addEventListener('submit', async (event) => {
             event.preventDefault();

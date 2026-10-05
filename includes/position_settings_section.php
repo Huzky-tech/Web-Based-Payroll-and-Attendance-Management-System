@@ -34,8 +34,8 @@
                     <div class="position-field-error" id="catalog_hourly_rate_error" aria-live="polite"></div>
                 </div>
                 <div class="position-form-field">
-                    <label for="catalog_weekly_rate">Weekly Salary (PHP, optional)</label>
-                    <input type="number" id="catalog_weekly_rate" min="0.01" max="99999999.99" step="0.01" placeholder="Not set">
+                    <label for="catalog_weekly_rate">Weekly Salary (PHP)</label>
+                    <input type="number" id="catalog_weekly_rate" min="0.01" max="99999999.99" step="0.01" placeholder="0.00" required>
                     <div class="position-field-error" id="catalog_weekly_rate_error" aria-live="polite"></div>
                 </div>
                 <div class="position-form-field">

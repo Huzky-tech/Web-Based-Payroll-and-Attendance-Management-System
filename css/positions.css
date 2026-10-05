@@ -1,4 +1,4 @@
-.positions-page { width: 100%; min-width: 0; }
+.positions-page { width: 100%; min-width: 0; flex: 0 0 auto; overflow: visible; }
 .positions-content { padding: 24px 28px 36px; }
 .positions-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .positions-heading h1 { margin: 0 0 5px; color: #182235; font-size: 26px; }
@@ -20,7 +20,7 @@
 .position-settings-section th { background: #f8fafc; color: #64748b; font-weight: 700; }
 .position-settings-section tbody tr:nth-child(even) { background: #f8fafc; }
 .position-settings-section td:last-child { white-space: nowrap; }
-.position-modal-overlay { position: fixed; inset: 0; z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 23, 42, .58); }
+.position-modal-overlay { position: fixed; inset: 0; z-index: 10000; display: none; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; overflow-y: auto; background: rgba(15, 23, 42, .58); }
 .position-modal-overlay.active { display: flex; }
 .position-modal { width: min(560px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; border-radius: 16px; background: #fff; box-shadow: 0 24px 70px rgba(15, 23, 42, .3); }
 .position-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid #e5e7eb; }

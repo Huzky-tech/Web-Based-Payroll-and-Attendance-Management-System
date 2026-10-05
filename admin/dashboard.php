@@ -80,8 +80,8 @@ if ($companyRow = $companyResult->fetch_assoc()) {
 <script src="../js/employee.js?v=20260921-admin-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'positions'): ?>
-    <link rel="stylesheet" href="../css/positions.css?v=20260913-3">
-<script src="../js/positions.js?v=20261005-weekly-salary-1" defer></script>
+    <link rel="stylesheet" href="../css/positions.css?v=20261006-validation-scroll-1">
+<script src="../js/positions.js?v=20261006-weekly-required-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'audit'): ?>
     <link rel="stylesheet" href="../css/audit.css?v=20260906-1">
