@@ -8,6 +8,7 @@ require_once __DIR__ . '/overtime_helpers.php';
 require_once __DIR__ . '/payroll_approval_helpers.php';
 require_once __DIR__ . '/payroll_deduction_helpers.php';
 require_once __DIR__ . '/payroll_snapshot_helpers.php';
+require_once __DIR__ . '/payslip_helpers.php';
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
 
 function get_current_payroll_staff_id(mysqli $conn, int $userId): int {
@@ -160,6 +161,11 @@ $governmentDeductionSelect = $hasGovernmentDeductionColumn
     ? "COALESCE(w.GovernmentDeductionStatus, 'With Deductions') AS GovernmentDeductionStatus"
     : "'With Deductions' AS GovernmentDeductionStatus";
 $governmentDeductionGroupBy = $hasGovernmentDeductionColumn ? ', w.GovernmentDeductionStatus' : '';
+$hasGovernmentDeductionTypesColumn = worker_government_deduction_types_column_exists($conn);
+$governmentDeductionTypesSelect = $hasGovernmentDeductionTypesColumn
+    ? 'w.GovernmentDeductionTypes'
+    : 'NULL AS GovernmentDeductionTypes';
+$governmentDeductionTypesGroupBy = $hasGovernmentDeductionTypesColumn ? ', w.GovernmentDeductionTypes' : '';
 
 $workerStmt = $conn->prepare("
     SELECT 
@@ -170,6 +176,7 @@ $workerStmt = $conn->prepare("
         w.RateType,
         w.RateAmount,
         {$governmentDeductionSelect},
+        {$governmentDeductionTypesSelect},
         COALESCE(SUM(CASE
             WHEN a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
              AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
@@ -181,7 +188,8 @@ $workerStmt = $conn->prepare("
             THEN a.Overtime_Hours ELSE 0
         END), 0) AS attendance_overtime_hours,
         SUM(CASE
-            WHEN a.AttendanceStatus = 'Late'
+            WHEN (a.AttendanceStatus = 'Late'
+              OR (a.AttendanceStatus = 'Present' AND COALESCE(a.IsLate, 0) = 1))
              AND a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
              AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
             THEN 1 ELSE 0
@@ -195,7 +203,7 @@ $workerStmt = $conn->prepare("
         AND a.Date BETWEEN ? AND ?
     {$approvedOvertimeJoin}
     WHERE wa.SiteID = ?
-    GROUP BY w.WorkerID, w.First_Name, w.Last_Name, wa.Role_On_Site, w.RateType, w.RateAmount{$governmentDeductionGroupBy}" .
+    GROUP BY w.WorkerID, w.First_Name, w.Last_Name, wa.Role_On_Site, w.RateType, w.RateAmount{$governmentDeductionGroupBy}{$governmentDeductionTypesGroupBy}" .
     (overtime_table_exists($conn) ? ', ot.approved_overtime_hours' : '') . "
     ORDER BY w.Last_Name, w.First_Name
 ");
@@ -296,7 +304,8 @@ try {
         $deductionBreakdown = compute_worker_payroll_deductions(
             $grossPay,
             (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
-            $settings
+            $settings,
+            $worker['GovernmentDeductionTypes'] ?? null
         );
         $fixedDeductionBreakdown = compute_fixed_payroll_deductions($roleOnSite, $lateDays, $settings);
         $deductions = round($deductionBreakdown['total'] + $fixedDeductionBreakdown['total'], 2);
@@ -532,6 +541,12 @@ try {
         'workers' => $snapshotWorkers,
         'attendance' => array_intersect_key($snapshotAttendance, array_flip(array_column($snapshotWorkers, 'WorkerID'))),
     ]);
+
+    // An administrator's submission is approved immediately, so make the
+    // individual worker payslips available at the same time.
+    if ($status === 'Approved') {
+        payslip_release_for_record($conn, (int) $recordId);
+    }
 
     // A site payroll batch requires review when Payroll Staff or HR submits it.
     // Store a workflow notification immediately so Admin and Assistant Admin

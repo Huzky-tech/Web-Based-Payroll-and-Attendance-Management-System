@@ -52,7 +52,7 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
      <link rel="stylesheet" href="../css/setting.css?v=20260916-payroll-validation-1">
     <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
 <script src="../js/user_email_validation.js?v=20260920-availability-3" defer></script>
-<script src="../js/setting.js?v=20261008-remove-tax-1" defer></script>
+<script src="../js/setting.js?v=20261011-weekly-only-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -161,8 +161,6 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                     <div>
                         <label>Pay Periods</label>
                         <select id="pay_periods">
-                            <option value="Semi-monthly (1-15, 16-end)">Semi-monthly (1-15, 16-end)</option>
-                            <option value="Monthly">Monthly</option>
                             <option value="Weekly">Weekly</option>
                         </select>
                     </div>

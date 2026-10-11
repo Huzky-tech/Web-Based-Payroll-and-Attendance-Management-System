@@ -800,6 +800,9 @@ if (!function_exists('sample_data_process_site_payroll')) {
             ? "COALESCE(w.GovernmentDeductionStatus, 'With Deductions') AS GovernmentDeductionStatus"
             : "'With Deductions' AS GovernmentDeductionStatus";
         $governmentDeductionGroupBy = $hasGovernmentDeductionColumn ? ', w.GovernmentDeductionStatus' : '';
+        $hasGovernmentDeductionTypesColumn = worker_government_deduction_types_column_exists($conn);
+        $governmentDeductionTypesSelect = $hasGovernmentDeductionTypesColumn ? 'w.GovernmentDeductionTypes' : 'NULL AS GovernmentDeductionTypes';
+        $governmentDeductionTypesGroupBy = $hasGovernmentDeductionTypesColumn ? ', w.GovernmentDeductionTypes' : '';
 
         $approvedOvertimeJoin = overtime_table_exists($conn)
             ? "LEFT JOIN (
@@ -820,6 +823,7 @@ if (!function_exists('sample_data_process_site_payroll')) {
                 w.RateType,
                 w.RateAmount,
                 {$governmentDeductionSelect},
+                {$governmentDeductionTypesSelect},
                 COALESCE(NULLIF(TRIM(wa.Role_On_Site), ''), 'Construction Worker') AS role_on_site,
                 COALESCE(SUM(a.Hours_Worked), 0) AS total_hours,
                 COALESCE(SUM(a.Overtime_Hours), 0) AS attendance_overtime_hours,
@@ -833,7 +837,7 @@ if (!function_exists('sample_data_process_site_payroll')) {
                AND a.Date BETWEEN ? AND ?
             {$approvedOvertimeJoin}
             WHERE wa.SiteID = ?
-            GROUP BY w.WorkerID, w.RateType, w.RateAmount, wa.Role_On_Site{$governmentDeductionGroupBy}
+            GROUP BY w.WorkerID, w.RateType, w.RateAmount, wa.Role_On_Site{$governmentDeductionGroupBy}{$governmentDeductionTypesGroupBy}
         ";
 
         $workerStmt = $conn->prepare($workerSql);
@@ -902,7 +906,8 @@ if (!function_exists('sample_data_process_site_payroll')) {
             $deductionBreakdown = compute_worker_payroll_deductions(
                 $grossPay,
                 (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
-                $settings
+                $settings,
+                $worker['GovernmentDeductionTypes'] ?? null
             );
             $fixedDeductionBreakdown = compute_fixed_payroll_deductions($roleOnSite, $lateDays, $settings);
             $deductions = round($deductionBreakdown['total'] + $fixedDeductionBreakdown['total'], 2);

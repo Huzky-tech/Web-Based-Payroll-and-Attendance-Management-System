@@ -94,8 +94,16 @@ $payrollStmt = $conn->prepare("
     SELECT
         p.*,
         ps.PayslipID,
-        ps.Payslip_Number
+        ps.Payslip_Number,
+        released.SiteID AS Payslip_SiteID
     FROM payroll p
+    INNER JOIN payroll_records released
+        ON released.Period_start = p.Pay_Period_Start
+        AND released.Period_end = p.Pay_Period_End
+        AND released.Status = 'Approved'
+    INNER JOIN workerassignment wa
+        ON wa.WorkerID = p.WorkerID
+        AND wa.SiteID = released.SiteID
     LEFT JOIN payslip ps
         ON ps.PayrollID = p.PayrollID
     WHERE p.WorkerID = ?
@@ -427,6 +435,7 @@ function wt($value)
                                 <th>Deductions</th>
                                 <th>Net Pay</th>
                                 <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
 
@@ -434,7 +443,7 @@ function wt($value)
 
                             <?php if (!$payroll): ?>
                                 <tr>
-                                    <td colspan="6">
+                                    <td colspan="7">
                                         No payslips available yet.
                                     </td>
                                 </tr>
@@ -496,8 +505,13 @@ function wt($value)
 
                                     <td>
                                         <span class="worker-status">
-                                            Processed
+                                            Released
                                         </span>
+                                    </td>
+                                    <td>
+                                        <a class="worker-status" href="../payroll/download_payslip.php?payroll_id=<?= (int) $row['PayrollID'] ?>&amp;site_id=<?= (int) $row['Payslip_SiteID'] ?>" download>
+                                            Download PDF
+                                        </a>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

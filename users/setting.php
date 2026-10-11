@@ -54,7 +54,7 @@ if (!$isAccountOnlySettings) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
     <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
-<script src="../js/setting.js?v=20261008-remove-tax-1" defer></script>
+<script src="../js/setting.js?v=20261011-weekly-only-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -292,8 +292,6 @@ if (!$isAccountOnlySettings) {
                     <div>
                         <label>Pay Periods</label>
                         <select id="pay_periods">
-                            <option value="Semi-monthly (1-15, 16-end)">Semi-monthly (1-15, 16-end)</option>
-                            <option value="Monthly">Monthly</option>
                             <option value="Weekly">Weekly</option>
                         </select>
                     </div>

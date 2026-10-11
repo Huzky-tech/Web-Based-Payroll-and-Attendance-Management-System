@@ -34,27 +34,8 @@ function build_pay_period(DateTime $start, DateTime $end): array {
 
 function derive_pay_period(string $payPeriods): array {
     $today = new DateTime('today');
-    $normalized = strtolower($payPeriods);
-
-    if (strpos($normalized, 'weekly') !== false || trim($normalized) === 'week') {
-        $year = (int) $today->format('o');
-        $week = (int) $today->format('W');
-        $start = new DateTime();
-        $start->setISODate($year, $week, 1);
-        $end = new DateTime();
-        $end->setISODate($year, $week, 6);
-    } elseif (strpos($normalized, 'semi') !== false) {
-        if ((int) $today->format('d') <= 15) {
-            $start = new DateTime($today->format('Y-m-01'));
-            $end = new DateTime($today->format('Y-m-15'));
-        } else {
-            $start = new DateTime($today->format('Y-m-16'));
-            $end = new DateTime($today->format('Y-m-t'));
-        }
-    } else {
-        $start = new DateTime($today->format('Y-m-01'));
-        $end = new DateTime($today->format('Y-m-t'));
-    }
+    $start = (clone $today)->modify('-' . $today->format('w') . ' days');
+    $end = (clone $start)->modify('+6 days');
 
     return build_pay_period($start, $end);
 }
@@ -64,6 +45,23 @@ function payroll_effective_start(string $periodStart, ?string $siteStart): strin
     return ($siteStart !== '' && $siteStart > $periodStart) ? $siteStart : $periodStart;
 }
 
+function site_pay_period(?string $siteStart): array {
+    $today = new DateTime('today');
+    $anchor = $siteStart ? new DateTime($siteStart) : clone $today;
+    if ($anchor > $today) {
+        $anchor = clone $today;
+    }
+
+    $daysSinceStart = (int) $anchor->diff($today)->format('%a');
+    $start = (clone $anchor)->modify('+' . (intdiv($daysSinceStart, 7) * 7) . ' days');
+    $end = (clone $start)->modify('+6 days');
+    if ($end > $today) {
+        $end = clone $today;
+    }
+
+    return build_pay_period($start, $end);
+}
+
 function payroll_period_label(string $periodStart, string $periodEnd): string {
     return date('M d', strtotime($periodStart)) . ' - ' . date('M d, Y', strtotime($periodEnd));
 }
@@ -71,7 +69,7 @@ function payroll_period_label(string $periodStart, string $periodEnd): string {
 $settingsResult = $conn->query("SELECT * FROM payroll_settings WHERE id = 1 LIMIT 1");
 $payrollSettings = $settingsResult ? $settingsResult->fetch_assoc() : null;
 $payrollSettings = $payrollSettings ?: [
-    'pay_periods' => 'Semi-monthly (1-15, 16-end)',
+    'pay_periods' => 'Weekly',
     'sss_rate' => 0,
     'philhealth_rate' => 3,
     'pagibig_rate' => 2,
@@ -87,6 +85,11 @@ $governmentDeductionSelect = $hasGovernmentDeductionColumn
     ? "COALESCE(w.GovernmentDeductionStatus, 'With Deductions') AS GovernmentDeductionStatus"
     : "'With Deductions' AS GovernmentDeductionStatus";
 $governmentDeductionGroupBy = $hasGovernmentDeductionColumn ? ', w.GovernmentDeductionStatus' : '';
+$hasGovernmentDeductionTypesColumn = worker_government_deduction_types_column_exists($conn);
+$governmentDeductionTypesSelect = $hasGovernmentDeductionTypesColumn
+    ? 'w.GovernmentDeductionTypes'
+    : 'NULL AS GovernmentDeductionTypes';
+$governmentDeductionTypesGroupBy = $hasGovernmentDeductionTypesColumn ? ', w.GovernmentDeductionTypes' : '';
 $validPayrollRecordClause = payroll_approval_columns_ready($conn)
     ? " AND COALESCE(pr.worker_count, 0) > 0"
     : "";
@@ -163,6 +166,7 @@ $workerStmt = $conn->prepare("
         w.RateType,
         w.RateAmount,
         {$governmentDeductionSelect},
+        {$governmentDeductionTypesSelect},
         COALESCE(SUM(CASE
             WHEN a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
              AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
@@ -180,7 +184,8 @@ $workerStmt = $conn->prepare("
             THEN 1 ELSE 0
         END) AS present_days,
         SUM(CASE
-            WHEN a.AttendanceStatus = 'Late'
+            WHEN (a.AttendanceStatus = 'Late'
+              OR (a.AttendanceStatus = 'Present' AND COALESCE(a.IsLate, 0) = 1))
              AND a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
              AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
             THEN 1 ELSE 0
@@ -192,12 +197,12 @@ $workerStmt = $conn->prepare("
         AND a.SiteID = wa.SiteID
         AND a.Date BETWEEN ? AND ?
     WHERE wa.SiteID = ?
-    GROUP BY w.WorkerID, w.First_Name, w.Last_Name, wa.Role_On_Site, w.RateType, w.RateAmount{$governmentDeductionGroupBy}
+    GROUP BY w.WorkerID, w.First_Name, w.Last_Name, wa.Role_On_Site, w.RateType, w.RateAmount{$governmentDeductionGroupBy}{$governmentDeductionTypesGroupBy}
     ORDER BY w.Last_Name, w.First_Name
 ");
 
 $attendanceStmt = $conn->prepare("
-    SELECT Date, AttendanceStatus
+    SELECT Date, CASE WHEN AttendanceStatus = 'Present' AND COALESCE(IsLate, 0) = 1 THEN 'Late' ELSE AttendanceStatus END AS AttendanceStatus
     FROM attendance
     WHERE WorkerID = ? AND SiteID = ? AND Date BETWEEN ? AND ?
     ORDER BY Date ASC
@@ -218,8 +223,9 @@ while ($site = $sitesQuery->fetch_assoc()) {
     $siteNet = 0;
     $siteDeductions = 0;
 
-    $sitePeriodStart = payroll_effective_start($payPeriod['start'], $site['Start_Date'] ?? null);
-    $sitePeriodEnd = $payPeriod['end'];
+    $sitePeriod = site_pay_period($site['Start_Date'] ?? null);
+    $sitePeriodStart = $sitePeriod['start'];
+    $sitePeriodEnd = $sitePeriod['end'];
     $sitePeriodLabel = payroll_period_label($sitePeriodStart, $sitePeriodEnd);
 
     // Mirror final payroll processing: approved overtime requests are paid
@@ -267,7 +273,8 @@ while ($site = $sitesQuery->fetch_assoc()) {
         $deductionBreakdown = compute_worker_payroll_deductions(
             round($grossPay, 2),
             (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
-            $payrollSettings
+            $payrollSettings,
+            $worker['GovernmentDeductionTypes'] ?? null
         );
         $fixedDeductionBreakdown = compute_fixed_payroll_deductions($roleOnSite, $lateDays, $payrollSettings);
         $deductions = round($deductionBreakdown['total'] + $fixedDeductionBreakdown['total'], 2);
@@ -316,6 +323,24 @@ while ($site = $sitesQuery->fetch_assoc()) {
 
     $periodRecord = $recordsMap[$siteId . '|' . $sitePeriodStart . '|' . $sitePeriodEnd] ?? null;
     $processed = $periodRecord && strcasecmp((string) ($periodRecord['Status'] ?? ''), 'Rejected') !== 0;
+    $payslipReleased = $periodRecord && strcasecmp((string) ($periodRecord['Status'] ?? ''), 'Approved') === 0;
+    if ($payslipReleased) {
+        $payslipRowsStmt = $conn->prepare(
+            'SELECT p.WorkerID, p.PayrollID FROM payroll p INNER JOIN workerassignment wa ON wa.WorkerID = p.WorkerID AND wa.SiteID = ? WHERE p.Pay_Period_Start = ? AND p.Pay_Period_End = ?'
+        );
+        $payslipRowsStmt->bind_param('iss', $siteId, $sitePeriodStart, $sitePeriodEnd);
+        $payslipRowsStmt->execute();
+        $payslipRows = [];
+        $payslipRowsResult = $payslipRowsStmt->get_result();
+        while ($payslipRow = $payslipRowsResult->fetch_assoc()) {
+            $payslipRows[(int) $payslipRow['WorkerID']] = (int) $payslipRow['PayrollID'];
+        }
+        $payslipRowsStmt->close();
+        foreach ($siteWorkers as &$siteWorker) {
+            $siteWorker['payroll_id'] = $payslipRows[(int) $siteWorker['WorkerID']] ?? 0;
+        }
+        unset($siteWorker);
+    }
 
     $sitePayrollCards[] = [
         'SiteID' => $siteId,
@@ -331,6 +356,7 @@ while ($site = $sitesQuery->fetch_assoc()) {
         'deductions' => round($siteDeductions, 2),
         'net_pay' => round($siteNet, 2),
         'processed' => $processed,
+        'payslip_released' => $payslipReleased,
         'workers' => $siteWorkers
     ];
 
@@ -513,6 +539,12 @@ $attendanceStmt->close();
             </div>
             <div class="payroll-modal-body" id="payrollWorkerBreakdownBody"></div>
             <div class="payroll-modal-footer">
+                <a class="payroll-modal-btn" id="payrollPayslipDownloadBtn" href="#" hidden>
+                    <i class="fa-solid fa-download"></i> Download Payslip
+                </a>
+                <button type="button" class="payroll-modal-btn" id="payrollPayslipPendingBtn" disabled hidden>
+                    Payslip available after release
+                </button>
                 <button type="button" class="payroll-modal-btn" id="payrollWorkerBreakdownCloseBtn2">Close</button>
             </div>
         </div>

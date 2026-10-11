@@ -4,6 +4,7 @@ include 'connection/db_config.php';
 include '../includes/auth.php';
 require_once __DIR__ . '/record_audit_log.php';
 require_once __DIR__ . '/payroll_approval_helpers.php';
+require_once __DIR__ . '/payslip_helpers.php';
 
 // HR may prepare and submit payroll, but must not approve or reject payroll
 // batches (including their own). Approval remains an independent
@@ -98,6 +99,10 @@ $updateStmt->close();
 if (!$success) {
     echo json_encode(['success' => false, 'message' => 'Failed to update payroll record']);
     exit;
+}
+
+if ($action === 'approve') {
+    payslip_release_for_record($conn, $recordId);
 }
 
 $reviewerLabel = trim((string) ($_SESSION['full_name'] ?? $currentRole));

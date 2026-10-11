@@ -95,11 +95,11 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
-<script src="../js/setting.js?v=20261008-remove-tax-1" defer></script>
+<script src="../js/setting.js?v=20261011-weekly-only-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'positions'): ?>
     <link rel="stylesheet" href="../css/positions.css?v=20260913-3">
-<script src="../js/positions.js?v=20261008-weekly-salary-1" defer></script>
+<script src="../js/positions.js?v=20261011-remove-monthly-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'audit'): ?>
     <link rel="stylesheet" href="../css/audit.css?v=20260906-1">
@@ -115,7 +115,7 @@ $pageTitles = [
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll'): ?>
     <link rel="stylesheet" href="../css/payroll.css?v=20260906-2">
-<script src="../js/payroll.js?v=20261008-remove-tax-1" defer></script>
+<script src="../js/payroll.js?v=20261012-payslip-preview-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll_status'): ?>
     <link rel="stylesheet" href="../css/payroll_approval.css?v=20260906-3">

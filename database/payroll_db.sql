@@ -762,7 +762,7 @@ INSERT INTO `payroll_records` (`Payroll_RecordsID`, `PayrollID`, `SiteID`, `Peri
 
 CREATE TABLE `payroll_settings` (
   `id` int(11) NOT NULL,
-  `pay_periods` varchar(50) DEFAULT 'Semi-monthly (1-15, 16-end)',
+  `pay_periods` varchar(50) DEFAULT 'Weekly',
   `sss_rate` decimal(5,2) DEFAULT 0.00,
   `philhealth_rate` decimal(5,2) DEFAULT 3.00,
   `pagibig_rate` decimal(5,2) DEFAULT 2.00,
@@ -778,7 +778,7 @@ CREATE TABLE `payroll_settings` (
 --
 
 INSERT INTO `payroll_settings` (`id`, `pay_periods`, `sss_rate`, `philhealth_rate`, `pagibig_rate`, `tax_table`, `allow_overtime`, `allow_night_diff`, `overtime_rate`, `night_diff_rate`) VALUES
-(1, 'Semi-monthly (1-15, 16-end)', 0.00, 3.00, 2.00, 'Latest BIR Tax Table', 1, 1, 1.25, 1.10);
+(1, 'Weekly', 0.00, 3.00, 2.00, 'Latest BIR Tax Table', 1, 1, 1.25, 1.10);
 
 -- --------------------------------------------------------
 

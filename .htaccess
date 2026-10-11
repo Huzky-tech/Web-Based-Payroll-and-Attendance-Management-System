@@ -36,6 +36,9 @@
     # Payroll Excel download
     RewriteRule ^payroll/export_payroll_excel\.htm$ payroll/export_payroll_excel.php [END,QSA,NC]
     RewriteRule ^payroll/export_payroll_excel\.php$ - [END]
+    # Individual payslip PDF download must not be interpreted as the payroll
+    # dashboard's /payroll/{page} route.
+    RewriteRule ^payroll/download_payslip\.php$ - [END]
 
     RewriteRule ^assistant/reports/([^/]+)/?$ users/ass_dashboard.php?page=reports&report=$1 [END,QSA]
     RewriteRule ^admin/reports/([^/]+)/?$ admin/dashboard.php?page=reports&report=$1 [END,QSA]

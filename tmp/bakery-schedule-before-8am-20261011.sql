@@ -1,0 +1,43 @@
+-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
+--
+-- Host: localhost    Database: payroll_db
+-- ------------------------------------------------------
+-- Server version	10.4.32-MariaDB
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Dumping data for table `projectsite`
+--
+-- WHERE:  SiteID=13
+
+/*!40000 ALTER TABLE `projectsite` DISABLE KEYS */;
+INSERT INTO `projectsite` VALUES (13,'Bakery','Lirio Street, Burgos, Barangay 13, Carmen, Cagayan de Oro, Northern Mindanao, 9000, Philippines','8.483265, 124.635361',50.00,8.4832650,124.6353610,NULL,'2026-10-08',NULL,1,5,'Johnny Calunsag',72,'Active','10:55:00','11:00:00','11:05:00','11:10:00',NULL,0);
+/*!40000 ALTER TABLE `projectsite` ENABLE KEYS */;
+
+--
+-- Dumping data for table `site_schedule`
+--
+-- WHERE:  SiteID=13
+
+/*!40000 ALTER TABLE `site_schedule` DISABLE KEYS */;
+INSERT INTO `site_schedule` VALUES (13,13,'Monday','10:55:00','11:10:00',5);
+/*!40000 ALTER TABLE `site_schedule` ENABLE KEYS */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-10-11 16:03:01

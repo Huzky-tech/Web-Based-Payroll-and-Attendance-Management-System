@@ -134,21 +134,7 @@ function validatePayrollSettings() {
 }
 
 function normalizePayPeriod(value) {
-    const normalized = String(value || '').trim().toLowerCase();
-
-    if (normalized === 'weekly' || normalized === 'week') {
-        return 'Weekly';
-    }
-
-    if (normalized === 'monthly' || normalized === 'month') {
-        return 'Monthly';
-    }
-
-    if (normalized.includes('semi') || normalized.includes('1-15') || normalized.includes('16-end')) {
-        return 'Semi-monthly (1-15, 16-end)';
-    }
-
-    return 'Semi-monthly (1-15, 16-end)';
+    return 'Weekly';
 }
 
 function validateNotificationSettings() {

@@ -9,7 +9,7 @@ function position_validate(array $data): array
         $errors['position_name'] = 'Enter a position name of 1–100 letters and spaces.';
     }
     $values = ['position_name' => $name];
-    foreach (['hourly_rate' => 'Hourly rate', 'weekly_rate' => 'Weekly salary', 'salary_rate' => 'Monthly salary'] as $key => $label) {
+    foreach (['hourly_rate' => 'Hourly rate', 'weekly_rate' => 'Daily salary', 'salary_rate' => 'Monthly salary'] as $key => $label) {
         $raw = $data[$key] ?? '';
         if ((!is_string($raw) && !is_int($raw) && !is_float($raw))
             || !preg_match('/^\d+(?:\.\d{1,2})?$/D', (string) $raw)

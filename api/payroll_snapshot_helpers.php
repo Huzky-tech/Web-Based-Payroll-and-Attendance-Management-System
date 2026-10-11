@@ -59,7 +59,7 @@ function payroll_snapshot_load(mysqli $conn, int $recordId): ?array
 
 function payroll_snapshot_attendance(mysqli $conn, int $siteId, string $start, string $end): array
 {
-    $stmt = $conn->prepare('SELECT WorkerID, Date, Time_In, Time_Out, Hours_Worked, AttendanceStatus FROM attendance WHERE SiteID = ? AND Date BETWEEN ? AND ? ORDER BY Date');
+    $stmt = $conn->prepare("SELECT WorkerID, Date, Time_In, Time_Out, Hours_Worked, CASE WHEN AttendanceStatus = 'Present' AND COALESCE(IsLate, 0) = 1 THEN 'Late' ELSE AttendanceStatus END AS AttendanceStatus FROM attendance WHERE SiteID = ? AND Date BETWEEN ? AND ? ORDER BY Date");
     if (!$stmt) {
         throw new RuntimeException('Unable to prepare payroll attendance snapshot.');
     }

@@ -4,6 +4,7 @@ header('Content-Type: application/json');
 include 'connection/db_config.php';
 include '../includes/auth.php';
 require_once __DIR__ . '/payroll_approval_helpers.php';
+require_once __DIR__ . '/payroll_deduction_helpers.php';
 
 $role = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR']);
 $userId = (int) ($_SESSION['user_id'] ?? 0);
@@ -60,27 +61,8 @@ function dashboard_scalar(mysqli $conn, string $sql, string $types = '', array $
 function derive_pay_period(string $payPeriods): array
 {
     $today = new DateTime('today');
-    $normalized = strtolower($payPeriods);
-
-    if (strpos($normalized, 'weekly') !== false || trim($normalized) === 'week') {
-        $year = (int) $today->format('o');
-        $week = (int) $today->format('W');
-        $start = new DateTime();
-        $start->setISODate($year, $week, 1);
-        $end = new DateTime();
-        $end->setISODate($year, $week, 7);
-    } elseif (strpos($normalized, 'semi') !== false) {
-        if ((int) $today->format('d') <= 15) {
-            $start = new DateTime($today->format('Y-m-01'));
-            $end = new DateTime($today->format('Y-m-15'));
-        } else {
-            $start = new DateTime($today->format('Y-m-16'));
-            $end = new DateTime($today->format('Y-m-t'));
-        }
-    } else {
-        $start = new DateTime($today->format('Y-m-01'));
-        $end = new DateTime($today->format('Y-m-t'));
-    }
+    $start = (clone $today)->modify('-' . $today->format('w') . ' days');
+    $end = (clone $start)->modify('+6 days');
 
     return [
         'start' => $start->format('Y-m-d'),
@@ -242,7 +224,7 @@ function derive_week_period(): array
     ];
 }
 
-function get_payroll_totals(mysqli $conn, array $sites, array $payPeriod, float $governmentDeductionAmount, float $overtimeRate): array
+function get_payroll_totals(mysqli $conn, array $sites, array $payPeriod, array $payrollSettings, float $overtimeRate): array
 {
     if (empty($sites)) {
         return [
@@ -282,6 +264,7 @@ function get_payroll_totals(mysqli $conn, array $sites, array $payPeriod, float 
             w.RateType,
             w.RateAmount,
             w.GovernmentDeductionStatus,
+            w.GovernmentDeductionTypes,
             COALESCE(SUM(CASE
                 WHEN a.Time_In IS NOT NULL AND a.Time_In <> '' AND a.Time_In <> '00:00:00'
                  AND a.Time_Out IS NOT NULL AND a.Time_Out <> '' AND a.Time_Out <> '00:00:00'
@@ -299,7 +282,7 @@ function get_payroll_totals(mysqli $conn, array $sites, array $payPeriod, float 
             AND a.SiteID = wa.SiteID
             AND a.Date BETWEEN ? AND ?
         WHERE wa.SiteID = ?
-        GROUP BY w.WorkerID, w.RateType, w.RateAmount, w.GovernmentDeductionStatus
+        GROUP BY w.WorkerID, w.RateType, w.RateAmount, w.GovernmentDeductionStatus, w.GovernmentDeductionTypes
     ");
 
     $gross = 0.0;
@@ -331,11 +314,13 @@ function get_payroll_totals(mysqli $conn, array $sites, array $payPeriod, float 
                 }
 
                 $grossPay = $workerRegular + $workerOvertime;
-                $hasGovernmentDeductions = strcasecmp(
-                    (string) ($worker['GovernmentDeductionStatus'] ?? 'With Deductions'),
-                    'No Deductions'
-                ) !== 0;
-                $workerDeductions = $hasGovernmentDeductions ? $governmentDeductionAmount : 0.0;
+                $deductionBreakdown = compute_worker_payroll_deductions(
+                    $grossPay,
+                    (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
+                    $payrollSettings,
+                    $worker['GovernmentDeductionTypes'] ?? null
+                );
+                $workerDeductions = $deductionBreakdown['total'];
                 $workerNet = round($grossPay - $workerDeductions, 2);
 
                 $gross += $grossPay;
@@ -917,7 +902,7 @@ try {
         $payrollSettings = $settingsResult ? $settingsResult->fetch_assoc() : null;
     }
     $payrollSettings = $payrollSettings ?: [
-        'pay_periods' => 'Semi-monthly (1-15, 16-end)',
+        'pay_periods' => 'Weekly',
         'sss_rate' => 0,
         'philhealth_rate' => 0,
         'pagibig_rate' => 0,
@@ -925,11 +910,6 @@ try {
     ];
 
     $payPeriod = derive_pay_period((string) $payrollSettings['pay_periods']);
-    $governmentDeductionAmount = (
-        (float) ($payrollSettings['sss_rate'] ?? 0) +
-        (float) ($payrollSettings['philhealth_rate'] ?? 0) +
-        (float) ($payrollSettings['pagibig_rate'] ?? 0)
-    );
     $overtimeRate = (float) ($payrollSettings['overtime_rate'] ?? 1.25);
 
     $emptyPayrollTotals = [
@@ -944,14 +924,14 @@ try {
     $payrollTotals = $role === 'HR'
         ? $emptyPayrollTotals
         : dashboard_optional(
-            static fn() => get_payroll_totals($conn, $sites, $payPeriod, $governmentDeductionAmount, $overtimeRate),
+            static fn() => get_payroll_totals($conn, $sites, $payPeriod, $payrollSettings, $overtimeRate),
             $emptyPayrollTotals
         );
     $weekPeriod = derive_week_period();
     $payrollWeek = $role === 'HR'
         ? $emptyPayrollTotals
         : dashboard_optional(
-            static fn() => get_payroll_totals($conn, $sites, $weekPeriod, $governmentDeductionAmount, $overtimeRate),
+            static fn() => get_payroll_totals($conn, $sites, $weekPeriod, $payrollSettings, $overtimeRate),
             $emptyPayrollTotals
         );
     $payrollApprovalSubmittedBy = ($role === 'Payroll Staff' && payroll_approval_columns_ready($conn)) ? $userId : null;

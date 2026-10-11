@@ -612,6 +612,8 @@ function showWorkerSummary(workerId) {
 
     const modal = document.getElementById('payrollWorkerBreakdownModal');
     const body = document.getElementById('payrollWorkerBreakdownBody');
+    const payslipDownloadBtn = document.getElementById('payrollPayslipDownloadBtn');
+    const payslipPendingBtn = document.getElementById('payrollPayslipPendingBtn');
     if (!modal || !body) {
         return;
     }
@@ -639,6 +641,19 @@ function showWorkerSummary(workerId) {
         </div>
     `;
 
+    const hasReleasedPayslip = Boolean(site?.payslip_released && Number(worker.payroll_id) > 0);
+    const payslipUrl = hasReleasedPayslip
+        ? `../payroll/download_payslip.php?payroll_id=${encodeURIComponent(worker.payroll_id)}&site_id=${encodeURIComponent(site.SiteID)}`
+        : `../payroll/download_payslip.php?preview=1&worker_id=${encodeURIComponent(worker.WorkerID)}&site_id=${encodeURIComponent(site.SiteID)}&period_start=${encodeURIComponent(site.period_start || payrollState.period?.start || '')}&period_end=${encodeURIComponent(site.period_end || payrollState.period?.end || '')}`;
+    if (payslipDownloadBtn) {
+        payslipDownloadBtn.hidden = false;
+        payslipDownloadBtn.innerHTML = '<i class="fa-solid fa-download"></i> Download Payslip';
+        payslipDownloadBtn.href = payslipUrl;
+    }
+    if (payslipPendingBtn) {
+        payslipPendingBtn.hidden = true;
+    }
+
     modal.setAttribute('aria-hidden', 'false');
     modal.classList.add('active');
 
@@ -650,6 +665,13 @@ function showWorkerSummary(workerId) {
         modal.setAttribute('aria-hidden', 'true');
         modal.classList.remove('active');
         body.innerHTML = '';
+        if (payslipDownloadBtn) {
+            payslipDownloadBtn.hidden = true;
+            payslipDownloadBtn.href = '#';
+        }
+        if (payslipPendingBtn) {
+            payslipPendingBtn.hidden = true;
+        }
     };
 
     if (closeBtn && !closeBtn.dataset.bound) {

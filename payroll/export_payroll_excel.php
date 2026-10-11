@@ -342,7 +342,8 @@ foreach ($workers as $worker) {
     $deductionBreakdown = compute_worker_payroll_deductions(
         $grossPay,
         (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
-        $settings
+        $settings,
+        $worker['GovernmentDeductionTypes'] ?? null
     );
     $deductions = round((float) ($worker['Total_Deductions'] ?? $deductionBreakdown['total']), 2);
     $netPay = round((float) ($worker['Net_Pay'] ?? 0), 2);

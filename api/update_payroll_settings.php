@@ -19,21 +19,7 @@ function ensure_payroll_deduction_columns(mysqli $conn): void {
 }
 
 function normalize_pay_period(string $value): string {
-    $normalized = strtolower(trim($value));
-
-    if ($normalized === 'weekly' || $normalized === 'week') {
-        return 'Weekly';
-    }
-
-    if ($normalized === 'monthly' || $normalized === 'month') {
-        return 'Monthly';
-    }
-
-    if (strpos($normalized, 'semi') !== false || strpos($normalized, '1-15') !== false || strpos($normalized, '16-end') !== false) {
-        return 'Semi-monthly (1-15, 16-end)';
-    }
-
-    return 'Semi-monthly (1-15, 16-end)';
+    return 'Weekly';
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

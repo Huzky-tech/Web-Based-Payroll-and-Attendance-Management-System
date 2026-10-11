@@ -95,11 +95,11 @@ if ($displayName === '') {
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] == 'setting'): ?>
     <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
-<script src="../js/setting.js?v=20261008-remove-tax-1" defer></script>
+<script src="../js/setting.js?v=20261011-weekly-only-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll'): ?>
     <link rel="stylesheet" href="../css/payroll.css?v=20260908-1">
-<script src="../js/payroll.js?v=20261008-remove-tax-1" defer></script>
+<script src="../js/payroll.js?v=20261012-payslip-preview-1" defer></script>
     <?php endif; ?>
     <?php if (isset($_GET['page']) && $_GET['page'] === 'payroll_status'): ?>
     <link rel="stylesheet" href="../css/payroll_approval.css?v=20260906-3">

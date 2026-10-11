@@ -19,6 +19,38 @@ if (!function_exists('worker_government_deduction_column_exists')) {
     }
 }
 
+if (!function_exists('worker_government_deduction_types_column_exists')) {
+    function worker_government_deduction_types_column_exists(mysqli $conn): bool
+    {
+        $result = $conn->query("SHOW COLUMNS FROM worker LIKE 'GovernmentDeductionTypes'");
+        return $result !== false && $result->num_rows > 0;
+    }
+}
+
+if (!function_exists('normalize_government_deduction_types')) {
+    /** @return string[] */
+    function normalize_government_deduction_types($value): array
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            $value = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        $types = array_values(array_unique(array_intersect(
+            ['sss', 'philhealth', 'pagibig'],
+            array_map(static fn($type) => strtolower(trim((string) $type)), $value)
+        )));
+
+        // Existing employees did not store individual selections. Retain their
+        // original behavior by treating an empty stored value as all three.
+        return $types ?: ['sss', 'philhealth', 'pagibig'];
+    }
+}
+
 if (!function_exists('normalize_government_deduction_status')) {
     function normalize_government_deduction_status(?string $value): string
     {
@@ -58,7 +90,7 @@ if (!function_exists('compute_worker_payroll_deductions')) {
      *   government_deduction_label: string
      * }
      */
-    function compute_worker_payroll_deductions(float $grossPay, ?string $governmentStatus, array $settings): array
+    function compute_worker_payroll_deductions(float $grossPay, ?string $governmentStatus, array $settings, $governmentTypes = null): array
     {
         $status = normalize_government_deduction_status($governmentStatus);
 
@@ -75,9 +107,10 @@ if (!function_exists('compute_worker_payroll_deductions')) {
 
         // These settings are fixed peso deductions per payroll, not rates.
         // Column names are retained so existing installations need no migration.
-        $sss = round(max(0, (float) ($settings['sss_rate'] ?? 0)), 2);
-        $philhealth = round(max(0, (float) ($settings['philhealth_rate'] ?? 0)), 2);
-        $pagibig = round(max(0, (float) ($settings['pagibig_rate'] ?? 0)), 2);
+        $selectedTypes = normalize_government_deduction_types($governmentTypes);
+        $sss = in_array('sss', $selectedTypes, true) ? round(max(0, (float) ($settings['sss_rate'] ?? 0)), 2) : 0.0;
+        $philhealth = in_array('philhealth', $selectedTypes, true) ? round(max(0, (float) ($settings['philhealth_rate'] ?? 0)), 2) : 0.0;
+        $pagibig = in_array('pagibig', $selectedTypes, true) ? round(max(0, (float) ($settings['pagibig_rate'] ?? 0)), 2) : 0.0;
         $total = round($sss + $philhealth + $pagibig, 2);
 
         return [
@@ -86,7 +119,10 @@ if (!function_exists('compute_worker_payroll_deductions')) {
             'pagibig' => $pagibig,
             'total' => $total,
             'government_deduction_status' => GOVERNMENT_DEDUCTION_WITH,
-            'government_deduction_label' => government_deduction_status_label(GOVERNMENT_DEDUCTION_WITH),
+            'government_deduction_label' => 'With Government Deductions (' . implode(', ', array_map(
+                static fn($type) => $type === 'philhealth' ? 'PhilHealth' : ($type === 'pagibig' ? 'Pag-IBIG' : 'SSS'),
+                $selectedTypes
+            )) . ')',
         ];
     }
 }
