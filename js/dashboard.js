@@ -2289,11 +2289,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentPath = window.location.pathname || '';
             const dashboardFile = currentPath.split('/').pop() || '';
             if (dashboardRole === 'assistant') {
-                window.location.href = '/capstone/assistant/dashboard?page=worker';
+                window.location.href = '../users/ass_dashboard.php?page=worker';
                 return;
             }
             if (dashboardRole === 'payroll') {
-                window.location.href = '/capstone/payroll/worker';
+                window.location.href = '../users/payroll_dashboard.php?page=worker';
                 return;
             }
             if (dashboardRole === 'hr') {
@@ -2305,7 +2305,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             if (dashboardFile === 'ass_dashboard.php') {
-                window.location.href = '/capstone/assistant/dashboard?page=worker';
+                window.location.href = '../users/ass_dashboard.php?page=worker';
                 return;
             }
             window.location.href = 'dashboard.php?page=worker';
@@ -2363,6 +2363,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
+        }
+
+        // HR needs a compact site overview: staffing details remain available
+        // through View Details instead of occupying a full-height card.
+        if (dashboardRole === 'hr') {
+            return sites.map((site) => {
+                const siteId = Number(site.SiteID || 0);
+                const requiredWorkers = Number(site.Required_Workers || 0);
+                const currentWorkers = Number(site.Current_Workers || 0);
+                const status = String(site.Status || 'Active');
+                const statusClass = status.toLowerCase() === 'active' ? 'active' : 'inactive';
+                return `
+                    <div class="site-card hr-compact-site-card">
+                        <div class="site-card-header">
+                            <div>
+                                <div class="site-card-title">${escapeHtml(site.Site_Name)}</div>
+                                <span class="site-status-badge ${statusClass}">${escapeHtml(status)}</span>
+                            </div>
+                        </div>
+                        <div class="site-location"><i class="fas fa-map-marker-alt"></i><span>${escapeHtml(site.Location || 'No location')}</span></div>
+                        <div class="hr-site-staffing">
+                            <span><strong>${currentWorkers}</strong> Current Workers</span>
+                            <span><strong>${requiredWorkers}</strong> Target Capacity</span>
+                        </div>
+                        <div class="site-card-actions">
+                            <button class="btn-view-details" type="button" data-site-id="${siteId}" data-site-name="${escapeHtml(site.Site_Name)}" data-site-action="details">
+                                <i class="fas fa-eye"></i><span>View Details</span>
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
         }
 
         return sites.map((site) => {
@@ -2648,7 +2679,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) {
             return;
         }
-
         container.innerHTML = renderLatestSiteCards(
             sites,
             'No assigned sites',

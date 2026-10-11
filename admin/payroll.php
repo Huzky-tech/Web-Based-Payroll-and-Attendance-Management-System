@@ -6,10 +6,23 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 include __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../api/payroll_deduction_helpers.php';
 require_once __DIR__ . '/../api/payroll_approval_helpers.php';
+require_once __DIR__ . '/../api/overtime_helpers.php';
 
-// This view is shared by the Admin and HR dashboards. HR can prepare payroll
-// batches, while the workflow API keeps the submission pending for approval.
-require_auth($conn, ['Admin', 'HR']);
+// This view is shared by the Admin, HR, and Payroll Staff dashboards. Payroll
+// Staff can prepare only the payroll batches for sites assigned to them.
+$currentRole = require_auth($conn, ['Admin', 'HR', 'Payroll Staff']);
+$currentUserId = (int) ($_SESSION['user_id'] ?? 0);
+$payrollStaffId = 0;
+if ($currentRole === 'Payroll Staff') {
+    $payrollStaffStmt = $conn->prepare('SELECT PayrollStaff_ID FROM payrollstaff WHERE UserID = ? LIMIT 1');
+    if ($payrollStaffStmt) {
+        $payrollStaffStmt->bind_param('i', $currentUserId);
+        $payrollStaffStmt->execute();
+        $payrollStaffRow = $payrollStaffStmt->get_result()->fetch_assoc();
+        $payrollStaffId = (int) ($payrollStaffRow['PayrollStaff_ID'] ?? 0);
+        $payrollStaffStmt->close();
+    }
+}
 
 function build_pay_period(DateTime $start, DateTime $end): array {
     return [
@@ -103,6 +116,13 @@ while ($row = $recordResult->fetch_assoc()) {
 $recordSql->close();
 
 $sites = [];
+$payrollSiteScope = '';
+if ($currentRole === 'Payroll Staff') {
+    $payrollSiteScope = $payrollStaffId > 0
+        ? "WHERE EXISTS (SELECT 1 FROM payrollstaffassignment payroll_scope WHERE payroll_scope.SiteID = ps.SiteID AND payroll_scope.PayrollStaff_ID = {$payrollStaffId})"
+        : 'WHERE 1 = 0';
+}
+
 $sitesQuery = $conn->query("
     SELECT 
         ps.SiteID,
@@ -120,6 +140,7 @@ $sitesQuery = $conn->query("
     LEFT JOIN payrollstaffassignment psa ON psa.SiteID = ps.SiteID
     LEFT JOIN payrollstaff payroll_staff ON payroll_staff.PayrollStaff_ID = psa.PayrollStaff_ID
     LEFT JOIN users u ON u.id = payroll_staff.UserID
+    {$payrollSiteScope}
     GROUP BY ps.SiteID, ps.Site_Name, ps.Location, ps.Start_Date, ps.Status
     ORDER BY ps.Site_Name
 ");
@@ -201,6 +222,27 @@ while ($site = $sitesQuery->fetch_assoc()) {
     $sitePeriodEnd = $payPeriod['end'];
     $sitePeriodLabel = payroll_period_label($sitePeriodStart, $sitePeriodEnd);
 
+    // Mirror final payroll processing: approved overtime requests are paid
+    // even if their hours were not derived from a clock-out record.
+    $approvedOvertimeByWorkerId = [];
+    if (overtime_table_exists($conn)) {
+        $approvedOtStmt = $conn->prepare("
+            SELECT WorkerID, COALESCE(SUM(TotalHours), 0) AS approved_hours
+            FROM overtime_requests
+            WHERE SiteID = ? AND Status = 'Approved' AND RequestDate BETWEEN ? AND ?
+            GROUP BY WorkerID
+        ");
+        if ($approvedOtStmt) {
+            $approvedOtStmt->bind_param('iss', $siteId, $sitePeriodStart, $sitePeriodEnd);
+            $approvedOtStmt->execute();
+            $approvedOtResult = $approvedOtStmt->get_result();
+            while ($approvedOt = $approvedOtResult->fetch_assoc()) {
+                $approvedOvertimeByWorkerId[(int) $approvedOt['WorkerID']] = (float) $approvedOt['approved_hours'];
+            }
+            $approvedOtStmt->close();
+        }
+    }
+
     $workerStmt->bind_param("ssi", $sitePeriodStart, $sitePeriodEnd, $siteId);
     $workerStmt->execute();
     $workerResult = $workerStmt->get_result();
@@ -209,10 +251,12 @@ while ($site = $sitesQuery->fetch_assoc()) {
         $rateType = strtolower((string) ($worker['RateType'] ?? 'hourly'));
         $rateAmount = (float) ($worker['RateAmount'] ?? 0);
         $totalHours = (float) ($worker['total_hours'] ?? 0);
-        $overtimeHours = (float) ($worker['overtime_hours'] ?? 0);
+        $attendanceOvertimeHours = (float) ($worker['overtime_hours'] ?? 0);
+        $approvedOvertimeHours = (float) ($approvedOvertimeByWorkerId[(int) $worker['WorkerID']] ?? 0);
+        $overtimeHours = $attendanceOvertimeHours + $approvedOvertimeHours;
         $lateDays = (int) ($worker['late_days'] ?? 0);
         $roleOnSite = $worker['role_on_site'] ?: 'Construction Worker';
-        $regularHours = max(0, $totalHours - $overtimeHours);
+        $regularHours = max(0, $totalHours - $attendanceOvertimeHours);
 
         if ($rateType === 'salary') {
             $grossPay = $rateAmount;
@@ -260,7 +304,6 @@ while ($site = $sitesQuery->fetch_assoc()) {
             'sss_deduction' => $deductionBreakdown['sss'],
             'philhealth_deduction' => $deductionBreakdown['philhealth'],
             'pagibig_deduction' => $deductionBreakdown['pagibig'],
-            'tax_deduction' => $deductionBreakdown['tax'],
             'late_deduction' => $fixedDeductionBreakdown['late'],
             'position_deduction' => $fixedDeductionBreakdown['position'],
             'attendance_trail' => $attendanceTrail

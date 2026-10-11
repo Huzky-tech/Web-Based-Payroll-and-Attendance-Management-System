@@ -103,13 +103,24 @@ function updateDateTime() {
 }
 
 function selectReportType(reportType) {
-    const role = String(document.body?.dataset?.dashboardRole || 'admin').toLowerCase();
-    const routeRole = role === 'assistant' ? 'assistant' : (role === 'payroll' ? 'payroll' : (role === 'hr' ? 'hr' : 'admin'));
-    // Keep the report page at one path level.  The dashboard and report scripts
-    // use relative asset/API URLs (for example, ../api/...), which resolve
-    // incorrectly from /reports/payroll or another nested report URL.
-    const targetUrl = new URL(`/capstone/${routeRole}/reports`, window.location.origin);
+    // Keep report navigation inside the active dashboard controller. This avoids
+    // legacy /reports/... paths, which Hostinger treats as missing pages.
+    const targetUrl = new URL(window.location.href);
+    const reportTypes = new Set(['attendance', 'payroll', 'deductions', 'overtime']);
+    if (!reportTypes.has(reportType)) {
+        return;
+    }
+
+    const isDashboardController = /\/(?:dashboard|ass_dashboard|payroll_dashboard|hr_dashboard)\.php$/i.test(targetUrl.pathname);
+    if (isDashboardController) {
+        targetUrl.searchParams.set('page', 'reports');
+    } else {
+        // Flatten legacy nested report URLs while preserving the site's folder.
+        targetUrl.pathname = targetUrl.pathname.replace(/\/reports\/(?:attendance|payroll|deductions|overtime)\/?$/i, '/reports');
+    }
+    targetUrl.hash = '';
     targetUrl.searchParams.set('report', reportType);
+    targetUrl.searchParams.delete('report_id');
 
     window.location.assign(targetUrl.toString());
 }

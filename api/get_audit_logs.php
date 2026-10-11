@@ -90,19 +90,19 @@ $base_sql = "
             WHEN w.UserID IS NOT NULL THEN 'Worker'
             ELSE 'User'
         END AS role
-    FROM Audit_logs a
+    FROM audit_logs a
     LEFT JOIN users u ON a.UserID = u.id
-    LEFT JOIN Admin ad ON ad.UserID = a.UserID
+    LEFT JOIN admin ad ON ad.UserID = a.UserID
     LEFT JOIN hr ON hr.UserID = a.UserID
-    LEFT JOIN Timekeeper tk ON tk.UserID = a.UserID
-    LEFT JOIN AssistantManager am ON am.UserID = a.UserID
-    LEFT JOIN PayrollStaff ps ON ps.UserID = a.UserID
+    LEFT JOIN timekeeper tk ON tk.UserID = a.UserID
+    LEFT JOIN assistantmanager am ON am.UserID = a.UserID
+    LEFT JOIN payrollstaff ps ON ps.UserID = a.UserID
     LEFT JOIN worker w ON w.UserID = a.UserID
 ";
 
 $count_sql = "
     SELECT COUNT(*) as total
-    FROM Audit_logs a
+    FROM audit_logs a
     LEFT JOIN users u ON a.UserID = u.id
 ";
 
@@ -138,7 +138,7 @@ if (!empty($action_filter)) {
 if (!empty($start_date)) {
     $validDate = DateTime::createFromFormat('Y-m-d', $start_date);
     if ($validDate && $validDate->format('Y-m-d') === $start_date) {
-        $where[] = "a.Date >= ? AND a.Date < DATE_ADD(?, INTERVAL 1 DAY)";
+        $where[] = "CONVERT_TZ(a.Date, '+00:00', '+08:00') >= ? AND CONVERT_TZ(a.Date, '+00:00', '+08:00') < DATE_ADD(?, INTERVAL 1 DAY)";
         $params[] = $start_date . ' 00:00:00';
         $params[] = $start_date . ' 00:00:00';
         $types .= 'ss';

@@ -209,11 +209,9 @@ if (!function_exists('mobile_resolve_attendance_status')) {
         $timeInNormalized = mobile_parse_attendance_time($timeIn);
         $timeInTs = strtotime("{$date} {$timeInNormalized}");
         $shiftTs = strtotime("{$date} {$shiftStart}");
-        if ($timeInTs !== false && $shiftTs !== false && $timeInTs > $shiftTs) {
-            return 'Late';
-        }
-
-        if (strcasecmp($clientStatus, 'Late') === 0) {
+        // Allow a 15-minute grace period after the scheduled shift start.
+        if ($timeInTs !== false && $shiftTs !== false &&
+            $timeInTs > ($shiftTs + 15 * 60)) {
             return 'Late';
         }
 
@@ -225,6 +223,17 @@ if (!function_exists('mobile_resolve_attendance_status')) {
     }
 }
 
+if (!function_exists('mobile_get_assigned_site')) {
+    function mobile_get_assigned_site(mysqli $conn, int $userId): ?array
+    {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        return get_active_timekeeper_assignment($conn, $userId);
+    }
+}
+
 if (!function_exists('worker_assigned_to_site')) {
     function worker_assigned_to_site(mysqli $conn, int $workerId, int $siteId): bool
     {
@@ -232,16 +241,31 @@ if (!function_exists('worker_assigned_to_site')) {
             return false;
         }
 
-        $tables = [
-            ['workerassignment', 'WorkerID', 'SiteID'],
-            ['worker_assignment', 'WorkerID', 'SiteID'],
-        ];
+        $tables = ['workerassignment', 'worker_assignment'];
 
-        foreach ($tables as [$table, $workerColumn, $siteColumn]) {
+        foreach ($tables as $table) {
             $exists = $conn->query("SHOW TABLES LIKE '{$table}'");
             if ($exists === false || $exists->num_rows === 0) {
                 continue;
             }
+
+            $columnsResult = $conn->query("SHOW COLUMNS FROM {$table}");
+            $columns = [];
+            if ($columnsResult) {
+                while ($column = $columnsResult->fetch_assoc()) {
+                    $columns[strtolower((string) ($column['Field'] ?? ''))] = (string) ($column['Field'] ?? '');
+                }
+                $columnsResult->close();
+            }
+            $workerColumn = null;
+            foreach (['workerid', 'worker_id', 'employeeid', 'employee_id'] as $candidate) {
+                if (isset($columns[$candidate])) { $workerColumn = $columns[$candidate]; break; }
+            }
+            $siteColumn = null;
+            foreach (['siteid', 'site_id', 'projectsiteid', 'project_site_id'] as $candidate) {
+                if (isset($columns[$candidate])) { $siteColumn = $columns[$candidate]; break; }
+            }
+            if ($workerColumn === null || $siteColumn === null) continue;
 
             $sql = "SELECT 1 FROM {$table} WHERE {$workerColumn} = ? AND {$siteColumn} = ? LIMIT 1";
             $stmt = $conn->prepare($sql);

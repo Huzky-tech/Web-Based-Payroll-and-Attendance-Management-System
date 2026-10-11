@@ -29,6 +29,10 @@ function isPayrollStaffSettingsView() {
     return window.isPayrollStaffSettings === true;
 }
 
+function isAssistantAdminSettingsView() {
+    return window.currentUserRole === 'Assistant Admin';
+}
+
 function showSettingsActionResult(success, message, actionLabel = 'Settings Action') {
     if (typeof window.showCrudResultModal === 'function') {
         window.showCrudResultModal(success, message, actionLabel);
@@ -74,8 +78,9 @@ function handleOvertimeToggle() {
 }
 
 const payrollNumericRules = {
-    philhealth_rate: { label: 'PhilHealth Rate', min: 0, max: 100 },
-    pagibig_rate: { label: 'Pag-IBIG Rate', min: 0, max: 100 },
+    sss_rate: { label: 'SSS Deduction', min: 0 },
+    philhealth_rate: { label: 'PhilHealth Deduction', min: 0 },
+    pagibig_rate: { label: 'Pag-IBIG Deduction', min: 0 },
     overtime_rate: { label: 'Overtime Rate', min: 0.01 },
     late_worker_deduction: { label: 'Late Worker Deduction', min: 0 }
 };
@@ -132,7 +137,7 @@ function setupGeneralSettingsLiveValidation() {
     const textRules = {
         company_name: { label: 'Company name', pattern: /[^\p{L}\p{N}\s&.,()-]/gu },
         tax_id: { label: 'Tax ID', pattern: /[^\d-]/g },
-        phone: { label: 'Phone number', pattern: /\D/g },
+        phone: { label: 'Phone number', pattern: /[^\d\s\-()+]/g },
         address: { label: 'Address', pattern: /[^\p{L}\p{N}\s,.-]/gu }
     };
     Object.entries(textRules).forEach(([id, rule]) => {
@@ -184,10 +189,6 @@ function validateCompanyInfo() {
 
 function validatePayrollSettings() {
     const payPeriods = document.getElementById('pay_periods')?.value || '';
-    const philhealthRate = (document.getElementById('philhealth_rate')?.value || '').replace('%', '');
-    const pagibigRate = (document.getElementById('pagibig_rate')?.value || '').replace('%', '');
-    const overtimeRate = document.getElementById('overtime_rate')?.value || '';
-    const lateWorkerDeduction = document.getElementById('late_worker_deduction')?.value || '0';
 
     const errors = [];
     Object.entries(payrollNumericRules).forEach(([id, rule]) => {
@@ -322,10 +323,9 @@ async function loadPayrollSettings() {
     }
 
     document.getElementById('pay_periods').value = normalizePayPeriod(data.data.pay_periods);
-    document.getElementById('sss_rate').value = data.data.sss_rate || 'Standard';
-    document.getElementById('philhealth_rate').value = String(data.data.philhealth_rate || '3');
-    document.getElementById('pagibig_rate').value = String(data.data.pagibig_rate || '2');
-    document.getElementById('tax_table').value = data.data.tax_table || 'Latest BIR Tax Table';
+    document.getElementById('sss_rate').value = Number(data.data.sss_rate || 0).toFixed(2);
+    document.getElementById('philhealth_rate').value = Number(data.data.philhealth_rate || 0).toFixed(2);
+    document.getElementById('pagibig_rate').value = Number(data.data.pagibig_rate || 0).toFixed(2);
     document.getElementById('allow_overtime').checked = Number(data.data.allow_overtime) === 1;
     document.getElementById('overtime_rate').value = data.data.overtime_rate || '1.25';
     document.getElementById('late_worker_deduction').value = Number(data.data.late_worker_deduction || 0).toFixed(2);
@@ -348,6 +348,42 @@ async function loadNotificationSettings() {
     document.getElementById('system_updates').checked = Number(data.data.system_updates) === 1;
     document.getElementById('daily_reports').checked = Number(data.data.daily_reports) === 1;
     document.getElementById('email_digest_frequency').value = data.data.email_digest_frequency || 'Daily';
+}
+
+async function loadAssistantNotificationSettings() {
+    if (!isAssistantAdminSettingsView()) return;
+    const data = await fetchJson('../api/get_assistant_notification_settings.php');
+    if (!data.success || !data.data) {
+        throw new Error(data.message || 'Unable to load notification settings.');
+    }
+
+    const settings = data.data;
+    document.getElementById('assistant_in_system_notifications').checked = Number(settings.in_system_notifications) === 1;
+    document.getElementById('assistant_payroll_processing').checked = Number(settings.payroll_processing) === 1;
+    document.getElementById('assistant_attendance_issues').checked = Number(settings.attendance_issues) === 1;
+    document.getElementById('assistant_site_assignments').checked = Number(settings.site_assignments) === 1;
+    document.getElementById('assistant_overtime_requests').checked = Number(settings.overtime_requests) === 1;
+}
+
+async function saveAssistantNotificationSettings() {
+    if (!isAssistantAdminSettingsView()) return;
+
+    const form = new FormData();
+    form.append('in_system_notifications', document.getElementById('assistant_in_system_notifications').checked ? '1' : '0');
+    form.append('payroll_processing', document.getElementById('assistant_payroll_processing').checked ? '1' : '0');
+    form.append('attendance_issues', document.getElementById('assistant_attendance_issues').checked ? '1' : '0');
+    form.append('site_assignments', document.getElementById('assistant_site_assignments').checked ? '1' : '0');
+    form.append('overtime_requests', document.getElementById('assistant_overtime_requests').checked ? '1' : '0');
+
+    try {
+        const result = await fetchJson('../api/update_assistant_notification_settings.php', {
+            method: 'POST',
+            body: form
+        });
+        showSettingsActionResult(Boolean(result.success), result.message, 'Notification Settings');
+    } catch (error) {
+        showSettingsActionResult(false, error.message || 'Unable to save notification settings.', 'Notification Settings');
+    }
 }
 
 let userPasswordPolicy = { min_password_length: 8, require_special_char: 1, require_number: 1, require_uppercase: 1 };
@@ -457,7 +493,7 @@ function updateSampleDataDevToolsVisibility(systemSettings = null) {
 
 async function loadAllSettings() {
     const loaders = window.currentUserRole === 'Assistant Admin'
-        ? [['System', loadSystemSettings]]
+        ? [['Notifications', loadAssistantNotificationSettings], ['System', loadSystemSettings]]
         : [
             ['Company', loadCompanySettings],
             ['Payroll', loadPayrollSettings],
@@ -495,10 +531,9 @@ async function saveCompanySettings() {
 async function savePayrollSettings() {
     const payrollForm = new FormData();
     payrollForm.append('pay_periods', normalizePayPeriod(document.getElementById('pay_periods').value));
-    payrollForm.append('sss_rate', document.getElementById('sss_rate').value);
-    payrollForm.append('philhealth_rate', (document.getElementById('philhealth_rate').value || '').replace('%', '') || '3');
-    payrollForm.append('pagibig_rate', (document.getElementById('pagibig_rate').value || '').replace('%', '') || '2');
-    payrollForm.append('tax_table', document.getElementById('tax_table').value);
+    payrollForm.append('sss_rate', document.getElementById('sss_rate').value || '0');
+    payrollForm.append('philhealth_rate', document.getElementById('philhealth_rate').value || '0');
+    payrollForm.append('pagibig_rate', document.getElementById('pagibig_rate').value || '0');
     payrollForm.append('allow_overtime', document.getElementById('allow_overtime').checked ? '1' : '0');
     payrollForm.append('overtime_rate', document.getElementById('overtime_rate').value || '1.25');
     payrollForm.append('late_worker_deduction', document.getElementById('late_worker_deduction')?.value || '0');
@@ -1390,7 +1425,12 @@ async function runBackup() {
     try {
         const data = await fetchJson('../api/backup_system.php', { method: 'POST' });
         showSettingsActionResult(data.success, data.message, 'System Backup');
-        if (data.success) await loadSystemSettings();
+        if (data.success) {
+            await loadSystemSettings();
+            if (data.download_url) {
+                window.location.assign(data.download_url);
+            }
+        }
     } catch (error) {
         showSettingsActionResult(false, error.message || 'Unable to run the system backup.', 'System Backup');
     }
@@ -1494,6 +1534,7 @@ window.handleOvertimeToggle = handleOvertimeToggle;
 window.handleLogoPreview = handleLogoPreview;
 window.saveAll = saveAll;
 window.saveActiveTab = saveActiveTab;
+window.saveAssistantNotificationSettings = saveAssistantNotificationSettings;
 window.openAddUserModal = openAddUserModal;
 window.closeAddUserModal = closeAddUserModal;
 window.togglePassword = togglePassword;

@@ -86,15 +86,16 @@ try {
         : ['Time_In', 'Time_Out'];
     $set_parts = [];
     $params = [];
+    $markAbsent = !empty($updates['Mark_Absent']);
     
     foreach ($updates as $field => $value) {
-        if (in_array($field, $allowed_fields)) {
+        if (!$markAbsent && in_array($field, $allowed_fields)) {
             $set_parts[] = "$field = ?";
             $params[] = $value;
         }
     }
     
-    if (empty($set_parts)) {
+    if (empty($set_parts) && !$markAbsent) {
         throw new Exception('No valid fields to update');
     }
 
@@ -108,36 +109,48 @@ try {
         throw new Exception('Attendance record not found');
     }
 
-    foreach ($allowed_fields as $field) {
-        if (array_key_exists($field, $updates)) {
-            $record[$field] = $updates[$field];
+    if (!$markAbsent) {
+        foreach ($allowed_fields as $field) {
+            if (array_key_exists($field, $updates)) {
+                $record[$field] = $updates[$field];
+            }
         }
     }
 
-    $timeIn = $record['Time_In'] ?? null;
-    $timeOut = $record['Time_Out'] ?? null;
-    $siteSchedule = get_site_schedule_row($conn, (int) ($record['SiteID'] ?? 0));
-    $hasTimeIn = !empty($timeIn) && $timeIn !== '00:00:00';
-    $shiftStart = (string) ($siteSchedule['ShiftStart'] ?? '07:00:00');
-    $expectedInMinutes = (site_schedule_time_to_minutes($shiftStart) ?? 420) + 30;
-    $timeInMinutes = site_schedule_time_to_minutes($timeIn);
-    $status = !$hasTimeIn
-        ? 'Absent'
-        : (($timeInMinutes ?? PHP_INT_MAX) <= $expectedInMinutes ? 'Present' : 'Late');
+    if ($markAbsent) {
+        foreach ($allowed_fields as $field) {
+            $set_parts[] = "{$field} = NULL";
+        }
+        $set_parts[] = 'IsLate = 0';
+        $status = 'Absent';
+        $hoursWorked = 0.0;
+        $overtimeHours = 0.0;
+    } else {
+        $timeIn = $record['Time_In'] ?? null;
+        $timeOut = $record['Time_Out'] ?? null;
+        $siteSchedule = get_site_schedule_row($conn, (int) ($record['SiteID'] ?? 0));
+        $hasTimeIn = !empty($timeIn) && $timeIn !== '00:00:00';
+        $shiftStart = (string) ($siteSchedule['ShiftStart'] ?? '07:00:00');
+        $expectedInMinutes = (site_schedule_time_to_minutes($shiftStart) ?? 420) + 30;
+        $timeInMinutes = site_schedule_time_to_minutes($timeIn);
+        $status = !$hasTimeIn
+            ? 'Absent'
+            : (($timeInMinutes ?? PHP_INT_MAX) <= $expectedInMinutes ? 'Present' : 'Late');
 
-    $hourTotals = calculate_attendance_hours_worked(
-        $timeIn,
-        $record['Lunch_Out'] ?? null,
-        $record['Lunch_In'] ?? null,
-        $timeOut,
-        $siteSchedule
-    );
-    $hoursWorked = ($hasTimeIn && !empty($timeOut) && $timeOut !== '00:00:00')
-        ? (float) ($hourTotals['hours_worked'] ?? 0)
-        : 0.0;
-    $overtimeHours = ($hasTimeIn && !empty($timeOut) && $timeOut !== '00:00:00')
-        ? (float) ($hourTotals['overtime_hours'] ?? 0)
-        : 0.0;
+        $hourTotals = calculate_attendance_hours_worked(
+            $timeIn,
+            $record['Lunch_Out'] ?? null,
+            $record['Lunch_In'] ?? null,
+            $timeOut,
+            $siteSchedule
+        );
+        $hoursWorked = ($hasTimeIn && !empty($timeOut) && $timeOut !== '00:00:00')
+            ? (float) ($hourTotals['hours_worked'] ?? 0)
+            : 0.0;
+        $overtimeHours = ($hasTimeIn && !empty($timeOut) && $timeOut !== '00:00:00')
+            ? (float) ($hourTotals['overtime_hours'] ?? 0)
+            : 0.0;
+    }
 
     $set_parts[] = 'Hours_Worked = ?';
     $params[] = $hoursWorked;

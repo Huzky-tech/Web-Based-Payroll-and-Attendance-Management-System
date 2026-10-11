@@ -8,6 +8,7 @@ include 'employee_helpers.php';
 require_once __DIR__ . '/worker_email_helpers.php';
 require_once __DIR__ . '/payroll_deduction_helpers.php';
 require_once __DIR__ . '/../includes/worker_position_helpers.php';
+require_once __DIR__ . '/../includes/position_catalog.php';
 require_once __DIR__ . '/../includes/password_policy.php';
 worker_position_ensure_column($conn);
 
@@ -21,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 function createEmployeeAudit(mysqli $conn, int $userId, string $action, string $details): void
 {
-    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())");
     if (!$stmt) {
         return;
     }
@@ -83,6 +84,34 @@ $rateAmount = (float) ($_POST['salary'] ?? 0);
 $phone = trim($_POST['phone'] ?? '');
 $joinDate = trim($_POST['join_date'] ?? date('Y-m-d'));
 $rateType = trim($_POST['rate_type'] ?? 'Hourly');
+$rateType = in_array($rateType, ['Hourly', 'Salary'], true) ? $rateType : 'Hourly';
+
+// A new worker's position and pay rate come from the position catalog. The
+// browser may display the rate, but it must not be able to submit a different
+// amount. Position or salary changes are handled later through worker editing.
+if (!position_catalog_ensure_table($conn)) {
+    echo json_encode(['success' => false, 'message' => 'Unable to load the position catalog.']);
+    exit;
+}
+$positionStmt = $conn->prepare(
+    'SELECT position_name, hourly_rate, salary_rate FROM employee_position_catalog WHERE LOWER(position_name) = LOWER(?) LIMIT 1'
+);
+if (!$positionStmt) {
+    echo json_encode(['success' => false, 'message' => 'Unable to verify the selected position.']);
+    exit;
+}
+$positionStmt->bind_param('s', $position);
+$positionStmt->execute();
+$positionRow = $positionStmt->get_result()->fetch_assoc();
+$positionStmt->close();
+
+if (!$positionRow) {
+    echo json_encode(['success' => false, 'message' => 'Select a valid position from the position list.']);
+    exit;
+}
+
+$position = trim((string) $positionRow['position_name']);
+$rateAmount = (float) ($rateType === 'Salary' ? $positionRow['salary_rate'] : $positionRow['hourly_rate']);
 $governmentDeductionStatus = normalize_government_deduction_status($_POST['government_deduction_status'] ?? GOVERNMENT_DEDUCTION_WITH);
 
 // Per-worker deduction type selection
@@ -183,10 +212,6 @@ if ($joinDate < date('Y-m-d')) {
     exit;
 }
 
-if (!in_array($rateType, ['Hourly', 'Salary'], true)) {
-    $rateType = 'Hourly';
-}
-
 try {
     if (worker_email_in_use($conn, $email)) {
         echo json_encode(['success' => false, 'message' => 'This email address is already registered.']);
@@ -208,6 +233,22 @@ try {
     echo json_encode(['success' => false, 'message' => $error->getMessage()]);
     exit;
 }
+
+// Status IDs are database-specific. Do not assume that the Active status is
+// always ID 1, because that makes an otherwise valid employee insert fail on
+// hosted databases whose status records were created in a different order.
+$activeWorkerStatusId = 0;
+$activeStatusStmt = $conn->prepare("SELECT WorkerStatusID FROM workerstatus WHERE LOWER(Status) = 'active' LIMIT 1");
+if ($activeStatusStmt) {
+    $activeStatusStmt->execute();
+    $activeWorkerStatusId = (int) (($activeStatusStmt->get_result()->fetch_assoc()['WorkerStatusID'] ?? 0));
+    $activeStatusStmt->close();
+}
+if ($activeWorkerStatusId <= 0) {
+    echo json_encode(['success' => false, 'message' => 'The Active worker status is not configured. Please contact the administrator.']);
+    exit;
+}
+
 $conn->begin_transaction();
 
 try {
@@ -242,7 +283,7 @@ $insertSql = "
             DateHired,
             WorkerStatusID,
             UserID
-        ) VALUES (?, ?, ?, ?" . ($hasGovernmentDeductionColumn ? ', ?' : '') . ($hasGovernmentDeductionTypesColumn ? ', ?' : '') . ", ?, ?, 1, ?)
+        ) VALUES (?, ?, ?, ?" . ($hasGovernmentDeductionColumn ? ', ?' : '') . ($hasGovernmentDeductionTypesColumn ? ', ?' : '') . ", ?, ?, ?, ?)
     ";
 
 
@@ -254,7 +295,7 @@ $stmt = $conn->prepare($insertSql);
 
     if ($hasGovernmentDeductionColumn && $hasGovernmentDeductionTypesColumn) {
         $stmt->bind_param(
-            "sssdssssi",
+            "sssdssssii",
             $firstName,
             $lastName,
             $rateType,
@@ -263,12 +304,13 @@ $stmt = $conn->prepare($insertSql);
             $governmentDeductionTypesJson,
             $phone,
             $joinDate,
+            $activeWorkerStatusId,
             $workerUserId
         );
     } elseif ($hasGovernmentDeductionColumn) {
         // columns: First_Name, Last_Name, RateType, RateAmount, GovernmentDeductionStatus, Phone, DateHired, WorkerStatusID, UserID
         $stmt->bind_param(
-            "sssdsssi",
+            "sssdsssii",
             $firstName,
             $lastName,
             $rateType,
@@ -276,12 +318,13 @@ $stmt = $conn->prepare($insertSql);
             $governmentDeductionStatus,
             $phone,
             $joinDate,
+            $activeWorkerStatusId,
             $workerUserId
         );
     } elseif ($hasGovernmentDeductionTypesColumn) {
         // columns: First_Name, Last_Name, RateType, RateAmount, GovernmentDeductionTypes, Phone, DateHired, WorkerStatusID, UserID
         $stmt->bind_param(
-            "sssdsssi",
+            "sssdsssii",
             $firstName,
             $lastName,
             $rateType,
@@ -289,11 +332,12 @@ $stmt = $conn->prepare($insertSql);
             $governmentDeductionTypesJson,
             $phone,
             $joinDate,
+            $activeWorkerStatusId,
             $workerUserId
         );
 
     } else {
-        $stmt->bind_param("sssdssi", $firstName, $lastName, $rateType, $rateAmount, $phone, $joinDate, $workerUserId);
+        $stmt->bind_param("sssdssii", $firstName, $lastName, $rateType, $rateAmount, $phone, $joinDate, $activeWorkerStatusId, $workerUserId);
     }
 
     if (!$stmt->execute()) {

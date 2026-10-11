@@ -631,7 +631,6 @@ function showWorkerSummary(workerId) {
                 <div><b>SSS:</b> ${escapeHtml(formatCurrency(worker.sss_deduction || 0))}</div>
                 <div><b>PhilHealth:</b> ${escapeHtml(formatCurrency(worker.philhealth_deduction || 0))}</div>
                 <div><b>Pag-IBIG:</b> ${escapeHtml(formatCurrency(worker.pagibig_deduction || 0))}</div>
-                <div><b>Tax:</b> ${escapeHtml(formatCurrency(worker.tax_deduction || 0))}</div>
                 <div><b>Late Deduction:</b> ${escapeHtml(formatCurrency(worker.late_deduction || 0))}</div>
                 <div><b>Position Deduction:</b> ${escapeHtml(formatCurrency(worker.position_deduction || 0))}</div>
                 <div><b>Total Deductions:</b> ${escapeHtml(formatCurrency(worker.deductions))}</div>

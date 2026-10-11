@@ -49,10 +49,7 @@ if (!$siteData) {
 }
 
 $currentStatus = strtolower(trim((string) ($siteData['Status'] ?? '')));
-if (in_array($currentStatus, ['archived', 'inactive'], true)) {
-    echo json_encode(['success' => false, 'message' => 'Site is already archived']);
-    exit;
-}
+$alreadyArchived = $currentStatus === 'archived';
 
 $siteName = (string) ($siteData['Site_Name'] ?? ('Site #' . $siteId));
 
@@ -62,35 +59,71 @@ if ($columnCheck && $columnCheck->num_rows > 0) {
     $hasArchivedAt = true;
 }
 
-if ($hasArchivedAt) {
-    $sql = "UPDATE projectsite SET Status = 'Archived', Archived_At = NOW() WHERE SiteID = ?";
-} else {
-    $sql = "UPDATE projectsite SET Status = 'Archived' WHERE SiteID = ?";
-}
+$stmt = null;
 
-$stmt = $conn->prepare($sql);
-if (!$stmt) {
-    echo json_encode(['success' => false, 'message' => 'Unable to archive site']);
-    exit;
-}
+$conn->begin_transaction();
 
-$stmt->bind_param('i', $siteId);
-$success = $stmt->execute();
-$stmt->close();
+try {
+    if (!$alreadyArchived) {
+        $sql = $hasArchivedAt
+            ? "UPDATE projectsite SET Status = 'Archived', Archived_At = NOW() WHERE SiteID = ?"
+            : "UPDATE projectsite SET Status = 'Archived' WHERE SiteID = ?";
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            throw new RuntimeException('Unable to archive site');
+        }
+        $stmt->bind_param('i', $siteId);
+        if (!$stmt->execute()) {
+            throw new RuntimeException('Failed to archive site');
+        }
+        $stmt->close();
+        $stmt = null;
+    }
 
-if (!$success) {
-    echo json_encode(['success' => false, 'message' => 'Failed to archive site']);
+    // Archiving ends the current site assignment. Keep attendance records for
+    // history, but make every worker available for another active site.
+    $unassignStmt = $conn->prepare('DELETE FROM workerassignment WHERE SiteID = ?');
+    if (!$unassignStmt) {
+        throw new RuntimeException('Unable to remove worker assignments');
+    }
+    $unassignStmt->bind_param('i', $siteId);
+    if (!$unassignStmt->execute()) {
+        $unassignStmt->close();
+        throw new RuntimeException('Unable to remove worker assignments');
+    }
+    $unassignedWorkers = $unassignStmt->affected_rows;
+    $unassignStmt->close();
+
+    $conn->commit();
+} catch (Throwable $error) {
+    if ($stmt instanceof mysqli_stmt) {
+        $stmt->close();
+    }
+    $conn->rollback();
+    error_log('Site archive failed: ' . $error->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Failed to archive site and remove worker assignments']);
     exit;
 }
 
 $actorLabel = trim($currentRole) !== '' ? "{$currentRole} User" : 'Admin User';
-record_audit_log($userId, 'Site Archived', "{$actorLabel} archived site: {$siteName}");
+record_audit_log(
+    $userId,
+    $alreadyArchived ? 'Archived Site Assignments Cleared' : 'Site Archived',
+    $alreadyArchived
+        ? "{$actorLabel} cleared {$unassignedWorkers} worker assignment(s) from archived site: {$siteName}"
+        : "{$actorLabel} archived site: {$siteName}; unassigned {$unassignedWorkers} worker(s)"
+);
 
 echo json_encode([
     'success' => true,
-    'message' => 'Site archived successfully',
+    'message' => $alreadyArchived
+        ? "The site was already archived. {$unassignedWorkers} worker(s) were unassigned."
+        : "Site archived successfully. {$unassignedWorkers} worker(s) were unassigned.",
     'site_id' => $siteId,
-    'status' => 'Archived'
+    'status' => 'Archived',
+    'already_archived' => $alreadyArchived,
+    'unassigned_workers' => $unassignedWorkers
 ]);
 
 $conn->close();

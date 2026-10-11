@@ -1,14 +1,12 @@
 <?php
 
 /**
- * A project is operational only when it has enough workers and a Timekeeper.
+ * A project becomes active once it has at least three assigned workers.
  */
 if (!function_exists('site_activation_requirements')) {
     function site_activation_requirements(mysqli $conn, int $siteId): array
     {
         $workerCount = 0;
-        $timekeeperUserId = 0;
-
         $workersStmt = $conn->prepare('SELECT COUNT(*) AS worker_count FROM workerassignment WHERE SiteID = ?');
         if ($workersStmt) {
             $workersStmt->bind_param('i', $siteId);
@@ -17,23 +15,10 @@ if (!function_exists('site_activation_requirements')) {
             $workersStmt->close();
         }
 
-        $timekeeperColumn = $conn->query("SHOW COLUMNS FROM projectsite LIKE 'Timekeeper_UserID'");
-        if ($timekeeperColumn && $timekeeperColumn->num_rows > 0) {
-            $timekeeperStmt = $conn->prepare('SELECT Timekeeper_UserID FROM projectsite WHERE SiteID = ? LIMIT 1');
-            if ($timekeeperStmt) {
-                $timekeeperStmt->bind_param('i', $siteId);
-                $timekeeperStmt->execute();
-                $timekeeperUserId = (int) (($timekeeperStmt->get_result()->fetch_assoc()['Timekeeper_UserID'] ?? 0));
-                $timekeeperStmt->close();
-            }
-        }
-
         return [
             'worker_count' => $workerCount,
             'minimum_workers' => 3,
-            'has_timekeeper' => $timekeeperUserId > 0,
-            'timekeeper_user_id' => $timekeeperUserId > 0 ? $timekeeperUserId : null,
-            'eligible' => $workerCount >= 3 && $timekeeperUserId > 0,
+            'eligible' => $workerCount >= 3,
         ];
     }
 }
@@ -42,9 +27,6 @@ if (!function_exists('site_activation_requirement_message')) {
     function site_activation_requirement_message(array $requirements): string
     {
         $missing = [];
-        if (empty($requirements['has_timekeeper'])) {
-            $missing[] = 'an assigned Timekeeper';
-        }
         if ((int) ($requirements['worker_count'] ?? 0) < 3) {
             $missing[] = 'at least 3 assigned workers';
         }

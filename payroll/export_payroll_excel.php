@@ -1,6 +1,11 @@
 <?php
 ob_start();
 
+// Tell the shared authentication layer that this is a protected binary
+// response. It still performs the normal role and session checks, but must not
+// attach HTML page helpers to an .xlsx download.
+define('AUTH_BINARY_DOWNLOAD', true);
+
 require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../api/connection/db_config.php';
 require_once __DIR__ . '/../includes/auth.php';
@@ -13,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 
 function payroll_export_build_period_dates(string $start, string $end): array
 {
@@ -101,9 +107,9 @@ if ($currentRole === 'Payroll Staff' && payroll_approval_columns_ready($conn)) {
 
 $settingsResult = $conn->query('SELECT sss_rate, philhealth_rate, pagibig_rate FROM payroll_settings WHERE id = 1 LIMIT 1');
 $settings = $settingsResult ? $settingsResult->fetch_assoc() : [];
-$sssRate = (float) ($settings['sss_rate'] ?? 0);
-$philhealthRate = (float) ($settings['philhealth_rate'] ?? 0);
-$pagibigRate = (float) ($settings['pagibig_rate'] ?? 0);
+$sssDeductionAmount = (float) ($settings['sss_rate'] ?? 0);
+$philhealthDeductionAmount = (float) ($settings['philhealth_rate'] ?? 0);
+$pagibigDeductionAmount = (float) ($settings['pagibig_rate'] ?? 0);
 $hasGovernmentDeductionColumn = worker_government_deduction_column_exists($conn);
 $governmentDeductionSelect = $hasGovernmentDeductionColumn
     ? "COALESCE(w.GovernmentDeductionStatus, 'With Deductions') AS GovernmentDeductionStatus"
@@ -223,10 +229,11 @@ if ($attendanceStmt) {
 }
 
 $fixedColumnCount = 2;
-$summaryColumnCount = 11;
+$summaryColumnCount = 10;
 $dayColumnCount = count($periodDates);
 $totalColumnCount = $fixedColumnCount + $dayColumnCount + $summaryColumnCount;
 $lastCol = Coordinate::stringFromColumnIndex($totalColumnCount);
+$signatureCol = Coordinate::stringFromColumnIndex($totalColumnCount + 1);
 
 $summaryStartCol = $fixedColumnCount + $dayColumnCount + 1;
 $summaryHeaders = [
@@ -238,7 +245,6 @@ $summaryHeaders = [
     'SSS',
     'PhilHealth',
     'Pag-IBIG',
-    'Tax',
     'Total Deductions',
     'Net Pay',
 ];
@@ -312,9 +318,10 @@ foreach ($summaryHeaders as $index => $headerLabel) {
     $col = Coordinate::stringFromColumnIndex($summaryStartCol + $index);
     $sheet->setCellValue($col . $row, $headerLabel);
 }
+$sheet->setCellValue($signatureCol . $row, 'SIGNATURE OF THE WORKER');
 
-$sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFont()->setBold(true);
-$sheet->getStyle("A{$row}:{$lastCol}{$row}")->getFill()
+$sheet->getStyle("A{$row}:{$signatureCol}{$row}")->getFont()->setBold(true);
+$sheet->getStyle("A{$row}:{$signatureCol}{$row}")->getFill()
     ->setFillType(Fill::FILL_SOLID)
     ->getStartColor()->setARGB('FFF3F4F6');
 $sheet->getRowDimension($row)->setRowHeight(32);
@@ -345,7 +352,6 @@ foreach ($workers as $worker) {
     $sssDeduction = $deductionBreakdown['sss'];
     $philhealthDeduction = $deductionBreakdown['philhealth'];
     $pagibigDeduction = $deductionBreakdown['pagibig'];
-    $taxDeduction = $deductionBreakdown['tax'];
 
     $breakdown['absence'] += $absenceDeduction;
     $breakdown['late'] += $lateDeduction;
@@ -390,12 +396,11 @@ foreach ($workers as $worker) {
     $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 5) . $row, $sssDeduction);
     $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 6) . $row, $philhealthDeduction);
     $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 7) . $row, $pagibigDeduction);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 8) . $row, $taxDeduction);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $row, $deductions);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 10) . $row, $netPay);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 8) . $row, $deductions);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $row, $netPay);
 
     $grossCol = Coordinate::stringFromColumnIndex($summaryStartCol + 3);
-    $netCol = Coordinate::stringFromColumnIndex($summaryStartCol + 10);
+    $netCol = Coordinate::stringFromColumnIndex($summaryStartCol + 9);
     $sheet->getStyle("{$grossCol}{$row}:{$netCol}{$row}")->getNumberFormat()->setFormatCode($currencyFormat);
     $row++;
 }
@@ -414,18 +419,18 @@ $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol) . $tota
 $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 1) . $totalRow, round($totals['late_hours'], 2));
 $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 2) . $totalRow, round($totals['overtime'], 2));
 $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 3) . $totalRow, round($totals['gross'], 2));
-$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $totalRow, round($totals['deductions'], 2));
-$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 10) . $totalRow, round($totals['net'], 2));
+$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 8) . $totalRow, round($totals['deductions'], 2));
+$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $totalRow, round($totals['net'], 2));
 $sheet->getStyle("A{$totalRow}:{$lastCol}{$totalRow}")->getFont()->setBold(true);
 
 $grossTotalCol = Coordinate::stringFromColumnIndex($summaryStartCol + 3);
-$netTotalCol = Coordinate::stringFromColumnIndex($summaryStartCol + 10);
+$netTotalCol = Coordinate::stringFromColumnIndex($summaryStartCol + 9);
 $moneyTotalStartCol = Coordinate::stringFromColumnIndex($summaryStartCol + 5);
-$moneyTotalEndCol = Coordinate::stringFromColumnIndex($summaryStartCol + 10);
+$moneyTotalEndCol = Coordinate::stringFromColumnIndex($summaryStartCol + 9);
 $sheet->getStyle("{$moneyTotalStartCol}{$totalRow}:{$moneyTotalEndCol}{$totalRow}")->getNumberFormat()->setFormatCode($currencyFormat);
 $sheet->getStyle("{$grossTotalCol}{$totalRow}:{$netTotalCol}{$totalRow}")->getNumberFormat()->setFormatCode($currencyFormat);
 
-$tableRange = "A{$tableHeaderRow}:{$lastCol}{$totalRow}";
+$tableRange = "A{$tableHeaderRow}:{$signatureCol}{$totalRow}";
 $sheet->getStyle($tableRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
 
 $row += 2;
@@ -440,14 +445,14 @@ $breakdownLines = [
     'Late (Hourly Rate × Late Hours)' => round($breakdown['late'], 2),
 ];
 
-if ($sssRate > 0) {
-    $breakdownLines['SSS (' . $sssRate . '%)'] = round($breakdown['sss'], 2);
+if ($sssDeductionAmount > 0) {
+    $breakdownLines['SSS (PHP ' . number_format($sssDeductionAmount, 2) . ' per eligible worker)'] = round($breakdown['sss'], 2);
 }
-if ($philhealthRate > 0) {
-    $breakdownLines['PhilHealth (' . $philhealthRate . '%)'] = round($breakdown['philhealth'], 2);
+if ($philhealthDeductionAmount > 0) {
+    $breakdownLines['PhilHealth (PHP ' . number_format($philhealthDeductionAmount, 2) . ' per eligible worker)'] = round($breakdown['philhealth'], 2);
 }
-if ($pagibigRate > 0) {
-    $breakdownLines['Pag-IBIG (' . $pagibigRate . '%)'] = round($breakdown['pagibig'], 2);
+if ($pagibigDeductionAmount > 0) {
+    $breakdownLines['Pag-IBIG (PHP ' . number_format($pagibigDeductionAmount, 2) . ' per eligible worker)'] = round($breakdown['pagibig'], 2);
 }
 if ($breakdown['other'] > 0) {
     $breakdownLines['Other Deductions'] = $breakdown['other'];
@@ -478,7 +483,28 @@ $sheet->getStyle("A{$row}")->getFont()->setBold(true);
 $row++;
 $sheet->setCellValue("A{$row}", $record['approved_by_name'] ?: 'Administrator');
 
-foreach (range(1, $totalColumnCount) as $columnIndex) {
+// Keep the approved payroll report together when it is printed. Legal
+// landscape provides the needed width for the attendance and payroll columns;
+// Excel scales the defined print area to one legal sheet in each direction.
+$sheet->getPageSetup()
+    ->setOrientation(PageSetup::ORIENTATION_LANDSCAPE)
+    ->setPaperSize(PageSetup::PAPERSIZE_LEGAL)
+    ->setFitToWidth(1)
+    ->setFitToHeight(1);
+$sheet->getSheetView()->setZoomScale(75);
+$sheet->getPageMargins()
+    ->setTop(0.25)
+    ->setRight(0.2)
+    ->setBottom(0.25)
+    ->setLeft(0.2)
+    ->setHeader(0.1)
+    ->setFooter(0.1);
+$sheet->getPageSetup()
+    ->setFitToPage(true)
+    ->setHorizontalCentered(true)
+    ->setPrintArea("A1:{$signatureCol}{$row}");
+
+foreach (range(1, $totalColumnCount + 1) as $columnIndex) {
     $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($columnIndex))->setAutoSize(true);
 }
 

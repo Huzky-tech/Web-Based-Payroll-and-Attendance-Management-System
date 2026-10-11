@@ -53,7 +53,6 @@ if (!function_exists('compute_worker_payroll_deductions')) {
      *   sss: float,
      *   philhealth: float,
      *   pagibig: float,
-     *   tax: float,
      *   total: float,
      *   government_deduction_status: string,
      *   government_deduction_label: string
@@ -68,28 +67,23 @@ if (!function_exists('compute_worker_payroll_deductions')) {
                 'sss' => 0.0,
                 'philhealth' => 0.0,
                 'pagibig' => 0.0,
-                'tax' => 0.0,
                 'total' => 0.0,
                 'government_deduction_status' => GOVERNMENT_DEDUCTION_NONE,
                 'government_deduction_label' => government_deduction_status_label(GOVERNMENT_DEDUCTION_NONE),
             ];
         }
 
-        $sssRate = (float) ($settings['sss_rate'] ?? 0);
-        $philhealthRate = (float) ($settings['philhealth_rate'] ?? 0);
-        $pagibigRate = (float) ($settings['pagibig_rate'] ?? 0);
-
-        $sss = round($grossPay * ($sssRate / 100), 2);
-        $philhealth = round($grossPay * ($philhealthRate / 100), 2);
-        $pagibig = round($grossPay * ($pagibigRate / 100), 2);
-        $tax = 0.0;
-        $total = round($sss + $philhealth + $pagibig + $tax, 2);
+        // These settings are fixed peso deductions per payroll, not rates.
+        // Column names are retained so existing installations need no migration.
+        $sss = round(max(0, (float) ($settings['sss_rate'] ?? 0)), 2);
+        $philhealth = round(max(0, (float) ($settings['philhealth_rate'] ?? 0)), 2);
+        $pagibig = round(max(0, (float) ($settings['pagibig_rate'] ?? 0)), 2);
+        $total = round($sss + $philhealth + $pagibig, 2);
 
         return [
             'sss' => $sss,
             'philhealth' => $philhealth,
             'pagibig' => $pagibig,
-            'tax' => $tax,
             'total' => $total,
             'government_deduction_status' => GOVERNMENT_DEDUCTION_WITH,
             'government_deduction_label' => government_deduction_status_label(GOVERNMENT_DEDUCTION_WITH),
@@ -143,4 +137,3 @@ if (!function_exists('compute_fixed_payroll_deductions')) {
         ];
     }
 }
-

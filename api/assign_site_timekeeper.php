@@ -79,7 +79,13 @@ if ($userId > 0) {
         exit;
     }
 
-    $otherSite = timekeeper_assigned_to_other_active_site($conn, $userId, $siteId);
+    // Some existing hosted installations have the older helper file. Keep
+    // this endpoint self-contained while still preventing a Timekeeper from
+    // being assigned to another active site.
+    $otherSite = null;
+    if (function_exists('timekeeper_assigned_to_other_active_site')) {
+        $otherSite = timekeeper_assigned_to_other_active_site($conn, $userId, $siteId);
+    }
     if ($otherSite !== null) {
         echo json_encode([
             'success' => false,
@@ -112,6 +118,15 @@ if ($previousStmt) {
 }
 
 if ($userId > 0) {
+    // One Timekeeper can oversee only one site. Clear an older direct
+    // projectsite assignment before saving the new one.
+    $clearOtherSitesStmt = $conn->prepare('UPDATE projectsite SET Timekeeper_UserID = NULL WHERE Timekeeper_UserID = ? AND SiteID <> ?');
+    if ($clearOtherSitesStmt) {
+        $clearOtherSitesStmt->bind_param('ii', $userId, $siteId);
+        $clearOtherSitesStmt->execute();
+        $clearOtherSitesStmt->close();
+    }
+
     $updateStmt = $conn->prepare('UPDATE projectsite SET Timekeeper_UserID = ? WHERE SiteID = ?');
     if (!$updateStmt) {
         echo json_encode(['success' => false, 'message' => 'Failed to prepare timekeeper assignment']);
@@ -134,18 +149,20 @@ if (!$updateStmt->execute()) {
 }
 $updateStmt->close();
 
-if ($userId > 0) {
+if ($userId > 0 && function_exists('sync_projectsite_timekeeper_user')) {
     sync_projectsite_timekeeper_user($conn, $userId, $siteId, true);
-} elseif ($previousTimekeeperUserId > 0) {
+} elseif ($previousTimekeeperUserId > 0 && function_exists('sync_projectsite_timekeeper_user')) {
     sync_projectsite_timekeeper_user($conn, $previousTimekeeperUserId, 0, false);
 }
 
-if (timekeeper_assignment_table_exists($conn)) {
+if (function_exists('timekeeper_assignment_table_exists') && timekeeper_assignment_table_exists($conn)) {
     if ($userId > 0) {
-        if ($previousTimekeeperUserId > 0 && $previousTimekeeperUserId !== $userId) {
+        if ($previousTimekeeperUserId > 0 && $previousTimekeeperUserId !== $userId && function_exists('deactivate_timekeeper_assignments')) {
             deactivate_timekeeper_assignments($conn, $previousTimekeeperUserId);
         }
-        deactivate_timekeeper_assignments($conn, $userId);
+        if (function_exists('deactivate_timekeeper_assignments')) {
+            deactivate_timekeeper_assignments($conn, $userId);
+        }
         $assignDate = date('Y-m-d');
         $insertStmt = $conn->prepare("
             INSERT INTO timekeeper_assignment (UserID, SiteID, AssignedDate, Status)
@@ -156,7 +173,7 @@ if (timekeeper_assignment_table_exists($conn)) {
             $insertStmt->execute();
             $insertStmt->close();
         }
-    } elseif ($previousTimekeeperUserId > 0) {
+    } elseif ($previousTimekeeperUserId > 0 && function_exists('deactivate_timekeeper_assignments')) {
         deactivate_timekeeper_assignments($conn, $previousTimekeeperUserId);
     }
 }

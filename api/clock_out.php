@@ -38,7 +38,8 @@ function getCurrentPayrollStaffId(mysqli $conn, int $userId): int
 
 $input = json_decode(file_get_contents('php://input'), true);
 $attendance_id = (int) ($input['attendance_id'] ?? 0);
-$current_time = date('H:i:s');
+$now = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
+$current_time = $now->format('H:i:s');
 
 try {
     if ($attendance_id <= 0) {
@@ -101,6 +102,12 @@ try {
 
     $siteId = (int) ($record['SiteID'] ?? 0);
     $siteSchedule = get_site_schedule_row($conn, $siteId);
+    $shiftEnd = (string) ($siteSchedule['ShiftEnd'] ?? '17:00:00');
+    $currentTimeMinutes = site_schedule_time_to_minutes($current_time) ?? 0;
+    $shiftEndMinutes = site_schedule_time_to_minutes($shiftEnd) ?? (17 * 60);
+    if ($currentTimeMinutes > $shiftEndMinutes) {
+        throw new Exception('PM OUT can only be recorded on or before the assigned shift end time.');
+    }
 
     $hourTotals = calculate_attendance_hours_worked(
         $record['Time_In'] ?? null,

@@ -72,7 +72,7 @@ if (!function_exists('attendance_photo_save_uploaded_file')) {
 if (!function_exists('attendance_photo_ensure_log_table')) {
     function attendance_photo_ensure_log_table(mysqli $conn): void
     {
-        $conn->query("
+        $created = $conn->query("
             CREATE TABLE IF NOT EXISTS attendance_photo_logs (
                 LogID INT AUTO_INCREMENT PRIMARY KEY,
                 AttendanceID INT NULL,
@@ -90,162 +90,18 @@ if (!function_exists('attendance_photo_ensure_log_table')) {
             )
         ");
 
-        $columns = attendance_photo_column_map($conn);
-        if (!isset($columns['AttendanceID'])) {
-            $conn->query('ALTER TABLE attendance_photo_logs ADD COLUMN AttendanceID INT NULL AFTER LogID');
+        if (!$created) {
+            mobile_json_error('Could not create attendance photo log.', 500);
         }
-    }
-}
-
-if (!function_exists('attendance_photo_punch_column_name')) {
-    function attendance_photo_punch_column_name(string $attendanceType): ?string
-    {
-        switch ($attendanceType) {
-            case 'Time In':
-                return 'AMTimeInPhoto';
-            case 'Lunch In':
-                return 'PMTimeInPhoto';
-            case 'Time Out':
-                return 'TimeOutPhoto';
-            default:
-                return null;
+        // Inspect the log table, not the attendance table.
+        $columns = $conn->query("SHOW COLUMNS FROM attendance_photo_logs LIKE 'AttendanceID'");
+        if (!$columns) {
+            mobile_json_error('Could not inspect attendance photo log.', 500);
         }
-    }
-}
-
-if (!function_exists('ensure_attendance_punch_photo_columns')) {
-    function ensure_attendance_punch_photo_columns(mysqli $conn): bool
-    {
-        $columns = attendance_photo_column_map($conn);
-        $required = [
-            'AMTimeInPhoto' => 'VARCHAR(500) DEFAULT NULL',
-            'PMTimeInPhoto' => 'VARCHAR(500) DEFAULT NULL',
-            'TimeOutPhoto' => 'VARCHAR(500) DEFAULT NULL',
-        ];
-
-        foreach ($required as $column => $definition) {
-            if (isset($columns[$column])) {
-                continue;
-            }
-
-            if (!$conn->query("ALTER TABLE attendance ADD COLUMN {$column} {$definition}")) {
-                return false;
-            }
-            $columns[$column] = true;
+        if ($columns->num_rows === 0 &&
+            !$conn->query('ALTER TABLE attendance_photo_logs ADD COLUMN AttendanceID INT NULL AFTER LogID')) {
+            mobile_json_error('Could not update attendance photo log.', 500);
         }
-
-        attendance_photo_column_map($conn, true);
-
-        return true;
-    }
-}
-
-if (!function_exists('attendance_photo_apply_punch_column')) {
-    function attendance_photo_apply_punch_column(
-        mysqli $conn,
-        int $attendanceId,
-        string $attendanceType,
-        string $photoPath
-    ): void {
-        if ($attendanceId <= 0 || $photoPath === '') {
-            return;
-        }
-
-        $column = attendance_photo_punch_column_name($attendanceType);
-        if ($column === null) {
-            return;
-        }
-
-        if (!ensure_attendance_punch_photo_columns($conn)) {
-            return;
-        }
-
-        $columns = attendance_photo_column_map($conn);
-        if (!isset($columns[$column])) {
-            return;
-        }
-
-        $stmt = $conn->prepare("UPDATE attendance SET {$column} = ? WHERE AttendanceID = ? LIMIT 1");
-        if (!$stmt) {
-            return;
-        }
-
-        $stmt->bind_param('si', $photoPath, $attendanceId);
-        $stmt->execute();
-        $stmt->close();
-    }
-}
-
-if (!function_exists('attendance_photo_haversine_distance_m')) {
-    function attendance_photo_haversine_distance_m(
-        float $lat1,
-        float $lng1,
-        float $lat2,
-        float $lng2
-    ): float {
-        $earthRadius = 6371000.0;
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lngDelta = deg2rad($lng2 - $lng1);
-        $a = sin($latDelta / 2) ** 2
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($lngDelta / 2) ** 2;
-
-        return 2 * $earthRadius * asin(min(1.0, sqrt($a)));
-    }
-}
-
-if (!function_exists('attendance_calculate_distance_from_site')) {
-    function attendance_calculate_distance_from_site(
-        mysqli $conn,
-        int $siteId,
-        ?float $latitude,
-        ?float $longitude
-    ): ?float {
-        if ($siteId <= 0 || $latitude === null || $longitude === null) {
-            return null;
-        }
-
-        require_once __DIR__ . '/site_schedule_helpers.php';
-        if (!geofence_columns_exist($conn)) {
-            return null;
-        }
-
-        $stmt = $conn->prepare('
-            SELECT Geofence_Lat, Geofence_Lng
-            FROM projectsite
-            WHERE SiteID = ?
-            LIMIT 1
-        ');
-        if (!$stmt) {
-            return null;
-        }
-
-        $stmt->bind_param('i', $siteId);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        $siteLat = isset($row['Geofence_Lat']) ? (float) $row['Geofence_Lat'] : null;
-        $siteLng = isset($row['Geofence_Lng']) ? (float) $row['Geofence_Lng'] : null;
-        if ($siteLat === null || $siteLng === null) {
-            return null;
-        }
-
-        return round(attendance_photo_haversine_distance_m($latitude, $longitude, $siteLat, $siteLng), 2);
-    }
-}
-
-if (!function_exists('attendance_gps_verification_label')) {
-    function attendance_gps_verification_label(?float $distance, ?float $radius): string
-    {
-        if ($distance === null) {
-            return 'No GPS';
-        }
-
-        if ($radius === null || $radius <= 0) {
-            return 'GPS Recorded';
-        }
-
-        return $distance <= $radius ? 'Within Geofence' : 'Outside Geofence';
     }
 }
 
@@ -277,8 +133,12 @@ if (!function_exists('attendance_photo_log_punch')) {
             ');
             if ($deleteStmt) {
                 $deleteStmt->bind_param('is', $attendanceId, $attendanceType);
-                $deleteStmt->execute();
+                if (!$deleteStmt->execute()) {
+                    mobile_json_error('Could not replace attendance photo evidence.', 500);
+                }
                 $deleteStmt->close();
+            } else {
+                mobile_json_error('Could not prepare attendance photo replacement.', 500);
             }
         }
 
@@ -289,7 +149,7 @@ if (!function_exists('attendance_photo_log_punch')) {
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
         if (!$stmt) {
-            return;
+            mobile_json_error('Could not prepare attendance photo insert.', 500);
         }
 
         $lat = $latitude;
@@ -310,12 +170,10 @@ if (!function_exists('attendance_photo_log_punch')) {
             $distance,
             $photoPath
         );
-        $stmt->execute();
-        $stmt->close();
-
-        if ($attendanceId !== null && $attendanceId > 0) {
-            attendance_photo_apply_punch_column($conn, $attendanceId, $attendanceType, $photoPath);
+        if (!$stmt->execute()) {
+            mobile_json_error('Could not save attendance photo evidence.', 500);
         }
+        $stmt->close();
     }
 }
 
@@ -353,12 +211,11 @@ if (!function_exists('attendance_photo_fetch_logs_for_records')) {
         if ($attendanceIds !== []) {
             $idList = implode(',', array_map('intval', array_values($attendanceIds)));
             $result = $conn->query("
-                SELECT l.LogID, l.AttendanceID, l.WorkerID, l.TimekeeperID, l.AttendanceType, l.EventDate, l.EventTime,
-                       l.Latitude, l.Longitude, l.DistanceFromSite, l.PhotoPath, u.full_name AS TimekeeperName
-                FROM attendance_photo_logs l
-                LEFT JOIN users u ON u.id = l.TimekeeperID
-                WHERE l.AttendanceID IN ({$idList})
-                  AND l.AttendanceType IN ('Time In', 'Lunch In', 'Time Out')
+                SELECT LogID, AttendanceID, WorkerID, AttendanceType, EventDate, EventTime,
+                       Latitude, Longitude, DistanceFromSite, PhotoPath
+                FROM attendance_photo_logs
+                WHERE AttendanceID IN ({$idList})
+                  AND AttendanceType IN ('Time In', 'Lunch In', 'Time Out')
                 ORDER BY FIELD(AttendanceType, 'Time In', 'Lunch In', 'Time Out'), EventTime ASC
             ");
             if ($result) {
@@ -375,12 +232,11 @@ if (!function_exists('attendance_photo_fetch_logs_for_records')) {
 
         foreach ($workerDates as [$workerId, $date]) {
             $stmt = $conn->prepare("
-                SELECT l.LogID, l.AttendanceID, l.WorkerID, l.TimekeeperID, l.AttendanceType, l.EventDate, l.EventTime,
-                       l.Latitude, l.Longitude, l.DistanceFromSite, l.PhotoPath, u.full_name AS TimekeeperName
-                FROM attendance_photo_logs l
-                LEFT JOIN users u ON u.id = l.TimekeeperID
-                WHERE l.WorkerID = ? AND l.EventDate = ?
-                  AND l.AttendanceType IN ('Time In', 'Lunch In', 'Time Out')
+                SELECT LogID, AttendanceID, WorkerID, AttendanceType, EventDate, EventTime,
+                       Latitude, Longitude, DistanceFromSite, PhotoPath
+                FROM attendance_photo_logs
+                WHERE WorkerID = ? AND EventDate = ?
+                  AND AttendanceType IN ('Time In', 'Lunch In', 'Time Out')
                 ORDER BY FIELD(AttendanceType, 'Time In', 'Lunch In', 'Time Out'), EventTime ASC
             ");
             if (!$stmt) {
@@ -433,8 +289,6 @@ if (!function_exists('attendance_photo_format_log_row')) {
             'log_id' => (int) ($row['LogID'] ?? 0),
             'attendance_id' => (int) ($row['AttendanceID'] ?? 0),
             'worker_id' => (int) ($row['WorkerID'] ?? 0),
-            'timekeeper_id' => (int) ($row['TimekeeperID'] ?? 0),
-            'timekeeper_name' => (string) ($row['TimekeeperName'] ?? ''),
             'attendance_type' => $type,
             'label' => attendance_photo_display_label($type),
             'event_date' => (string) ($row['EventDate'] ?? ''),
@@ -468,10 +322,10 @@ if (!function_exists('attendance_photo_normalize_type')) {
 }
 
 if (!function_exists('attendance_photo_column_map')) {
-    function attendance_photo_column_map(mysqli $conn, bool $refresh = false): array
+    function attendance_photo_column_map(mysqli $conn): array
     {
         static $cache = null;
-        if (is_array($cache) && !$refresh) {
+        if (is_array($cache)) {
             return $cache;
         }
 
@@ -519,105 +373,68 @@ if (!function_exists('ensure_attendance_photo_columns')) {
     }
 }
 
-if (!function_exists('attendance_photo_select_columns')) {
-    function attendance_photo_select_columns(mysqli $conn): string
+// Kept as a compatibility name for the attendance records endpoint. Punch
+// photos are stored in attendance_photo_logs; the attendance row only needs
+// the shared legacy photo/location columns.
+if (!function_exists('ensure_attendance_punch_photo_columns')) {
+    function ensure_attendance_punch_photo_columns(mysqli $conn): bool
     {
-        $columns = attendance_photo_column_map($conn);
-        $parts = [];
-
-        $parts[] = isset($columns['PhotoPath']) ? 'a.PhotoPath' : 'NULL AS PhotoPath';
-        $parts[] = isset($columns['AMTimeInPhoto']) ? 'a.AMTimeInPhoto' : 'NULL AS AMTimeInPhoto';
-        $parts[] = isset($columns['PMTimeInPhoto']) ? 'a.PMTimeInPhoto' : 'NULL AS PMTimeInPhoto';
-        $parts[] = isset($columns['TimeOutPhoto']) ? 'a.TimeOutPhoto' : 'NULL AS TimeOutPhoto';
-        $parts[] = isset($columns['Latitude']) ? 'a.Latitude' : 'NULL AS Latitude';
-        $parts[] = isset($columns['Longitude']) ? 'a.Longitude' : 'NULL AS Longitude';
-        $parts[] = isset($columns['DistanceFromSite']) ? 'a.DistanceFromSite' : 'NULL AS DistanceFromSite';
-
-        return implode(', ', $parts);
+        return ensure_attendance_photo_columns($conn);
     }
 }
 
 if (!function_exists('attendance_photo_build_logs_from_record')) {
-    /**
-     * @return list<array<string, mixed>>
-     */
     function attendance_photo_build_logs_from_record(array $record): array
     {
-        $typeMap = [
-            'Time In' => [
-                'column' => 'AMTimeInPhoto',
-                'time_column' => 'Time_In',
-            ],
-            'Lunch In' => [
-                'column' => 'PMTimeInPhoto',
-                'time_column' => 'Lunch_In',
-            ],
-            'Time Out' => [
-                'column' => 'TimeOutPhoto',
-                'time_column' => 'Time_Out',
-            ],
+        $map = [
+            'Time In' => ['AMTimeInPhoto', 'Time_In', 'AM IN Photo'],
+            'Lunch In' => ['PMTimeInPhoto', 'Lunch_In', 'PM IN Photo'],
+            'Time Out' => ['TimeOutPhoto', 'Time_Out', 'PM OUT Photo'],
         ];
-
         $logs = [];
-        foreach ($typeMap as $type => $config) {
-            $photoPath = trim((string) ($record[$config['column']] ?? ''));
-            if ($photoPath === '') {
-                continue;
-            }
-
+        foreach ($map as $type => [$photoColumn, $timeColumn, $label]) {
+            $path = trim((string) ($record[$photoColumn] ?? ''));
+            if ($path === '') continue;
             $logs[] = [
-                'log_id' => 0,
-                'attendance_id' => (int) ($record['AttendanceID'] ?? 0),
-                'worker_id' => (int) ($record['WorkerID'] ?? $record['ID'] ?? 0),
                 'attendance_type' => $type,
-                'label' => attendance_photo_display_label($type),
-                'event_date' => (string) ($record['Date'] ?? ''),
-                'event_time' => (string) ($record[$config['time_column']] ?? ''),
-                'photo_path' => $photoPath,
-                'latitude' => $record['Latitude'] ?? null,
-                'longitude' => $record['Longitude'] ?? null,
-                'distance_from_site' => $record['DistanceFromSite'] ?? null,
+                'photo_path' => $path,
+                'event_time' => (string) ($record[$timeColumn] ?? ''),
+                'label' => $label,
             ];
         }
-
+        if ($logs === [] && trim((string) ($record['PhotoPath'] ?? '')) !== '') {
+            $logs[] = [
+                'attendance_type' => 'Time In',
+                'photo_path' => trim((string) $record['PhotoPath']),
+                'event_time' => (string) ($record['Time_In'] ?? ''),
+                'label' => 'AM IN Photo',
+            ];
+        }
         return $logs;
     }
 }
 
 if (!function_exists('attendance_photo_merge_logs')) {
-    /**
-     * @param list<array<string, mixed>> $existingLogs
-     * @param list<array<string, mixed>> $columnLogs
-     * @return list<array<string, mixed>>
-     */
-    function attendance_photo_merge_logs(array $existingLogs, array $columnLogs): array
+    function attendance_photo_merge_logs(array $logs, array $fallback): array
     {
-        $merged = $existingLogs;
-        $typesPresent = [];
-        foreach ($merged as $entry) {
-            $typesPresent[(string) ($entry['attendance_type'] ?? '')] = true;
+        $merged = [];
+        foreach (array_merge($logs, $fallback) as $log) {
+            $type = (string) ($log['attendance_type'] ?? '');
+            if ($type === '' || isset($merged[$type])) continue;
+            $merged[$type] = $log;
+        }
+        return array_values($merged);
+    }
+}
+
+if (!function_exists('attendance_photo_select_columns')) {
+    function attendance_photo_select_columns(mysqli $conn): string
+    {
+        $columns = attendance_photo_column_map($conn);
+        if (isset($columns['PhotoPath'])) {
+            return 'a.PhotoPath, a.Latitude, a.Longitude, a.DistanceFromSite';
         }
 
-        foreach ($columnLogs as $entry) {
-            $type = (string) ($entry['attendance_type'] ?? '');
-            if ($type === '' || isset($typesPresent[$type])) {
-                continue;
-            }
-            $merged[] = $entry;
-            $typesPresent[$type] = true;
-        }
-
-        usort($merged, static function (array $left, array $right): int {
-            $order = ['Time In' => 0, 'Lunch In' => 1, 'Time Out' => 2];
-            $leftOrder = $order[$left['attendance_type'] ?? ''] ?? 99;
-            $rightOrder = $order[$right['attendance_type'] ?? ''] ?? 99;
-            if ($leftOrder !== $rightOrder) {
-                return $leftOrder <=> $rightOrder;
-            }
-
-            return strcmp((string) ($left['event_time'] ?? ''), (string) ($right['event_time'] ?? ''));
-        });
-
-        return $merged;
+        return 'NULL AS PhotoPath, NULL AS Latitude, NULL AS Longitude, NULL AS DistanceFromSite';
     }
 }

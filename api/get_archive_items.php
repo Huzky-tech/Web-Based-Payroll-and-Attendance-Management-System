@@ -3,7 +3,7 @@ header('Content-Type: application/json');
 include 'connection/db_config.php';
 include '../includes/auth.php';
 
-require_auth($conn, ['Admin', 'Assistant Admin']);
+$currentRole = require_auth($conn, ['Admin', 'Assistant Admin']);
 
 $archiveFile = __DIR__ . '/../data/archive_items.json';
 $items = [];
@@ -50,10 +50,13 @@ $employeeQuery = $conn->query("
         w.WorkerID,
         CONCAT(COALESCE(w.First_Name, ''), ' ', COALESCE(w.Last_Name, '')) AS full_name,
         w.DateHired,
-        ws.Status AS worker_status
+        ws.Status AS worker_status,
+        u.status AS account_status
     FROM worker w
-    INNER JOIN workerstatus ws ON ws.WorkerStatusID = w.WorkerStatusID
-    WHERE ws.Status = 'Inactive'
+    LEFT JOIN workerstatus ws ON ws.WorkerStatusID = w.WorkerStatusID
+    LEFT JOIN users u ON u.id = w.UserID
+    WHERE LOWER(COALESCE(ws.Status, '')) IN ('inactive', 'archived')
+       OR LOWER(COALESCE(u.status, '')) = 'inactive'
     ORDER BY w.WorkerID DESC
 ");
 
@@ -79,6 +82,38 @@ if ($employeeQuery) {
     }
 }
 
+// Account deactivation is a soft archive. An account is shown here even when
+// it belongs to a worker, because Workers and Users are separate filters.
+$userQuery = $conn->query("
+    SELECT id, full_name, email, created_at
+    FROM users u
+    WHERE LOWER(COALESCE(u.status, '')) IN ('inactive', 'archived', 'deactivated')
+    ORDER BY id DESC
+");
+
+if ($userQuery) {
+    while ($row = $userQuery->fetch_assoc()) {
+        $userName = trim((string) ($row['full_name'] ?? '')) ?: (string) ($row['email'] ?? 'Archived User');
+        $createdAt = !empty($row['created_at']) ? date('n/j/Y', strtotime((string) $row['created_at'])) : 'Unknown';
+
+        $items[] = [
+            'id' => 'user-' . (int) $row['id'],
+            'title' => $userName,
+            'type' => 'user',
+            'description' => trim((string) ($row['email'] ?? '')) ?: 'Archived user account',
+            'archived_date' => 'Inactive',
+            'archived_by' => 'System',
+            'original_date' => $createdAt,
+            'icon' => 'fa-regular fa-user',
+            'color' => 'blue',
+            'source' => 'database',
+            // Only Admin can deactivate or reactivate user accounts.
+            'can_restore' => $currentRole === 'Admin',
+            'can_delete' => false
+        ];
+    }
+}
+
 $hasArchivedAt = false;
 $columnCheck = $conn->query("SHOW COLUMNS FROM projectsite LIKE 'Archived_At'");
 if ($columnCheck && $columnCheck->num_rows > 0) {
@@ -97,9 +132,10 @@ $siteQuery = $conn->query("
         s.End_Date,
         {$archivedAtSelect},
         s.Status,
-        (SELECT COUNT(*) FROM WorkerAssignment wa WHERE wa.SiteID = s.SiteID) AS worker_count
+        (SELECT COUNT(*) FROM workerassignment wa WHERE wa.SiteID = s.SiteID) AS worker_count
     FROM projectsite s
-    WHERE LOWER(COALESCE(s.Status, '')) IN ('archived', 'inactive')
+    -- Inactive sites are awaiting activation; they are not archived records.
+    WHERE LOWER(COALESCE(s.Status, '')) = 'archived'
     ORDER BY s.SiteID DESC
 ");
 

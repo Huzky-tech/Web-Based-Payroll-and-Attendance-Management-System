@@ -7,12 +7,14 @@ header('Access-Control-Allow-Headers: Content-Type');
 require_once 'connection/db_config.php';
 require_once '../includes/auth.php';
 require_once __DIR__ . '/site_schedule_helpers.php';
+require_once __DIR__ . '/attendance_auto_lunch.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR', 'Timekeeper']);
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
+// Fallback for the scheduled task: materialize AM OUT at Lunch Start when this API is used.
+attendance_apply_due_lunch_out($conn);
 require_once __DIR__ . '/attendance_schema_helpers.php';
 attendance_schema_ensure_table($conn);
-auto_close_open_attendance_at_shift_end($conn);
 
 function getCurrentPayrollStaffId(mysqli $conn, int $userId): int
 {
@@ -82,6 +84,7 @@ try {
             COALESCE(NULLIF(TRIM(ps.Site_Manager), ''), 'Not assigned') AS Site_Manager,
             wa.WorkerID,
             a.Time_In,
+            a.Time_Out,
             a.AttendanceStatus, a.IsLate
         FROM projectsite ps
         LEFT JOIN workerassignment wa ON wa.SiteID = ps.SiteID
@@ -135,7 +138,8 @@ try {
             $row['AttendanceStatus'] ?? null,
             $row['Time_In'] ?? null,
             $date,
-            $scheduleCache[$siteId]['ShiftEnd'] ?? null
+            $scheduleCache[$siteId]['ShiftEnd'] ?? null,
+            $row['Time_Out'] ?? null
         );
         if ($status === 'Present') $statsBySite[$siteId]['present_count']++;
         if ((int) ($row['IsLate'] ?? 0) === 1) $statsBySite[$siteId]['late_count']++;

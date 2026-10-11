@@ -7,7 +7,7 @@ require_auth($conn, ['Admin', 'Assistant Admin']);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 function logAudit($conn, $userId, $action, $details) {
-    $sql = "INSERT INTO Audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
+    $sql = "INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();

@@ -5,8 +5,11 @@ include '../includes/auth.php';
 $currentRole = require_auth($conn, ['Assistant Admin', 'Payroll Staff', 'HR', 'Timekeeper']);
 $embeddedDashboard = $embeddedDashboard ?? false;
 $isHrReports = ($currentRole === 'HR') || !empty($hrDashboardMode) || !empty($isHr);
+$hidePayrollSummary = in_array($currentRole, ['HR', 'Payroll Staff'], true);
 $selectedReport = $_GET['report'] ?? 'attendance';
-$validReports = $isHrReports ? ['attendance'] : ['attendance', 'payroll', 'deductions', 'overtime'];
+$validReports = $hidePayrollSummary
+    ? ['attendance', 'deductions', 'overtime']
+    : ['attendance', 'payroll', 'deductions', 'overtime'];
 if (!in_array($selectedReport, $validReports, true)) {
     $selectedReport = 'attendance';
 }
@@ -19,13 +22,13 @@ if (!in_array($selectedReport, $validReports, true)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reports - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/reports.css?v=20260907-6">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <link rel="stylesheet" href="../css/reports.css?v=20260930-gps-links-1">
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
     <?php if ($selectedReport === 'overtime'): ?>
     <link rel="stylesheet" href="../css/overtime_requests.css?v=20260905-1">
 <script src="../js/overtime_report.js?v=20260905-1" defer></script>
     <?php endif; ?>
-<script src="../js/reports.js?v=20260907-5" defer></script>
+<script src="../js/reports.js?v=20260921-hosting-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -35,13 +38,14 @@ if (!in_array($selectedReport, $validReports, true)) {
     <?php endif; ?>
         <div class="content-area<?php echo $isHrReports ? ' hr-reports-content' : ''; ?>">
             <h1 class="page-title">Reports</h1>
-            <?php if (!$isHrReports): ?>
             <div class="report-type-label">Report Type</div>
             <div class="report-type-cards">
+                <?php if (!$hidePayrollSummary): ?>
                 <div class="report-type-card <?php echo $selectedReport === 'payroll' ? 'active' : ''; ?>" data-report="payroll" onclick="selectReportType('payroll')">
                     <i class="fas fa-file-invoice-dollar"></i>
                     <div class="report-type-card-title">Payroll Summary</div>
                 </div>
+                <?php endif; ?>
                 <div class="report-type-card <?php echo $selectedReport === 'attendance' ? 'active' : ''; ?>" data-report="attendance" onclick="selectReportType('attendance')">
                     <i class="fas fa-calendar-check"></i>
                     <div class="report-type-card-title">Attendance Summary</div>
@@ -55,10 +59,9 @@ if (!in_array($selectedReport, $validReports, true)) {
                     <div class="report-type-card-title">Overtime Report</div>
                 </div>
             </div>
-            <?php endif; ?>
 
             <?php if ($isHrReports): ?>
-            <p class="hr-reports-intro">Review workforce attendance records, hours, and attendance status by site.</p>
+            <p class="hr-reports-intro">Review attendance, deductions, overtime, and workforce records by site.</p>
             <?php endif; ?>
 
             <?php if ($selectedReport === 'attendance'): ?>

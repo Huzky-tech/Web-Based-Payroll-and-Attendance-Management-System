@@ -42,8 +42,8 @@ try {
 
     $sql = "
         INSERT INTO attendance (WorkerID, SiteID, Date, Time_In, Hours_Worked, AttendanceStatus)
-        VALUES (?, ?, ?, ?, 0.00, 'Present')
-        ON DUPLICATE KEY UPDATE Time_In = VALUES(Time_In), AttendanceStatus = 'Present'
+        VALUES (?, ?, ?, ?, 0.00, 'Incomplete')
+        ON DUPLICATE KEY UPDATE Time_In = VALUES(Time_In), AttendanceStatus = 'Incomplete'
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$workerId, $siteId, $date, $currentTime]);

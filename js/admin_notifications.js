@@ -7,14 +7,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!center || !button || !panel || !badge || !list) return;
     const role = document.body.dataset.dashboardRole || 'admin';
     const dashboardFile = role === 'assistant'
-        ? '/capstone/assistant/dashboard'
+        ? '../users/ass_dashboard.php'
         : (role === 'payroll'
-            ? '/capstone/payroll/dashboard'
-            : (role === 'hr' ? '/capstone/hr/dashboard' : '/capstone/admin/dashboard'));
+            ? '../users/payroll_dashboard.php'
+            : (role === 'hr' ? '../users/hr_dashboard.php' : '../admin/dashboard.php'));
     const esc = value => String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[c]);
     let activeFilter = 'all';
     function setPanelOpen(open) {
+        // Use an explicit display state because dashboard shells also contain
+        // global click handlers and overflow rules that can otherwise leave a
+        // visible panel marked as hidden.
         panel.hidden = !open;
+        panel.style.display = open ? 'block' : 'none';
+        panel.style.visibility = open ? 'visible' : 'hidden';
+        panel.style.opacity = open ? '1' : '0';
+        panel.style.pointerEvents = open ? 'auto' : 'none';
         button.setAttribute('aria-expanded', String(open));
         document.body.classList.toggle('admin-notifications-open', open);
     }
@@ -26,9 +33,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch { list.innerHTML = '<div class="admin-notification-empty">Could not load notifications.</div>'; }
     }
     async function mark(body) { await fetch('../api/mark_admin_notification_read.php', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); }
+    setPanelOpen(false);
     button.addEventListener('click', e => {
         e.stopPropagation();
-        const open = panel.hidden;
+        e.preventDefault();
+        const open = panel.style.display === 'none';
         setPanelOpen(open);
         if (open) load();
     });
@@ -64,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
     document.getElementById('markAllNotificationsRead')?.addEventListener('click', async()=>{await mark({mark_all:true});load();});
     document.addEventListener('click', e => {
-        if (!center.contains(e.target)) setPanelOpen(false);
+        if (!button.contains(e.target) && !panel.contains(e.target)) setPanelOpen(false);
     });
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {

@@ -42,26 +42,25 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $pay_periods = normalize_pay_period((string) ($_POST['pay_periods'] ?? ''));
-$sss_rate = floatval($_POST['sss_rate'] ?? 0);
+$sssRaw = trim((string) ($_POST['sss_rate'] ?? ''));
 $philhealthRaw = trim((string) ($_POST['philhealth_rate'] ?? ''));
 $pagibigRaw = trim((string) ($_POST['pagibig_rate'] ?? ''));
 $overtimeRaw = trim((string) ($_POST['overtime_rate'] ?? ''));
 $lateDeductionRaw = trim((string) ($_POST['late_worker_deduction'] ?? ''));
-foreach (['PhilHealth Rate' => $philhealthRaw, 'Pag-IBIG Rate' => $pagibigRaw, 'Overtime Rate' => $overtimeRaw, 'Late Worker Deduction' => $lateDeductionRaw] as $label => $value) {
+foreach (['SSS Deduction' => $sssRaw, 'PhilHealth Deduction' => $philhealthRaw, 'Pag-IBIG Deduction' => $pagibigRaw, 'Overtime Rate' => $overtimeRaw, 'Late Worker Deduction' => $lateDeductionRaw] as $label => $value) {
     if (!preg_match('/^\d+(?:\.\d+)?$/', $value)) {
         echo json_encode(['success' => false, 'message' => "{$label} must contain numbers only. Special characters and letters are not allowed."]);
         exit;
     }
 }
+$sss_rate = (float) $sssRaw;
 $philhealth_rate = (float) $philhealthRaw;
 $pagibig_rate = (float) $pagibigRaw;
-$tax_table = trim($_POST['tax_table'] ?? '');
 $allow_overtime = (int) ($_POST['allow_overtime'] ?? 0) === 1 ? 1 : 0;
 $overtime_rate = (float) $overtimeRaw;
 $late_worker_deduction = (float) $lateDeductionRaw;
-// Validate rates
-if ($philhealth_rate < 0 || $pagibig_rate < 0 || $overtime_rate < 0 || $late_worker_deduction < 0) {
-    echo json_encode(['success' => false, 'message' => 'Rates must be non-negative']);
+if ($sss_rate < 0 || $philhealth_rate < 0 || $pagibig_rate < 0 || $overtime_rate < 0 || $late_worker_deduction < 0) {
+    echo json_encode(['success' => false, 'message' => 'Deduction amounts and rates must be non-negative']);
     exit;
 }
 
@@ -69,8 +68,8 @@ try {
     ensure_payroll_deduction_columns($conn);
 
     // Position default deductions are deprecated; only late_worker_deduction is used.
-    $stmt = $conn->prepare("UPDATE payroll_settings SET pay_periods = ?, sss_rate = ?, philhealth_rate = ?, pagibig_rate = ?, tax_table = ?, allow_overtime = ?, overtime_rate = ?, late_worker_deduction = ? WHERE id = 1");
-    $stmt->bind_param("sdddsidd", $pay_periods, $sss_rate, $philhealth_rate, $pagibig_rate, $tax_table, $allow_overtime, $overtime_rate, $late_worker_deduction);
+    $stmt = $conn->prepare("UPDATE payroll_settings SET pay_periods = ?, sss_rate = ?, philhealth_rate = ?, pagibig_rate = ?, allow_overtime = ?, overtime_rate = ?, late_worker_deduction = ? WHERE id = 1");
+    $stmt->bind_param("sdddidd", $pay_periods, $sss_rate, $philhealth_rate, $pagibig_rate, $allow_overtime, $overtime_rate, $late_worker_deduction);
 
 
     if ($stmt->execute()) {

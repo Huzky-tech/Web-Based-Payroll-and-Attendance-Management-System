@@ -4,6 +4,42 @@
  */
 
 header('Content-Type: application/json');
+ini_set('display_errors', '0');
+ob_start();
+
+function update_assignment_role_response(array $payload, int $status = 200): void
+{
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+    http_response_code($status);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($payload);
+    exit;
+}
+
+set_exception_handler(static function (Throwable $error): void {
+    error_log('update_worker_assignment_role failed: ' . $error->getMessage());
+    update_assignment_role_response([
+        'success' => false,
+        'message' => 'Unable to update the worker assignment. Please try again.'
+    ], 500);
+});
+
+register_shutdown_function(static function (): void {
+    $error = error_get_last();
+    $fatalErrors = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+    if ($error === null || !in_array($error['type'] ?? 0, $fatalErrors, true)) {
+        return;
+    }
+
+    error_log('update_worker_assignment_role fatal error: ' . ($error['message'] ?? 'Unknown error'));
+    update_assignment_role_response([
+        'success' => false,
+        'message' => 'Unable to update the worker assignment. Please try again.'
+    ], 500);
+});
+
 include 'connection/db_config.php';
 include '../includes/auth.php';
 require_once 'record_audit_log.php';
@@ -23,6 +59,20 @@ if ($workerId <= 0 || $siteId <= 0) {
 
 if ($role === '') {
     $role = 'Construction Worker';
+}
+
+$hasRoleColumn = false;
+$columnsResult = $conn->query("SHOW COLUMNS FROM workerassignment LIKE 'Role_On_Site'");
+if ($columnsResult) {
+    $hasRoleColumn = $columnsResult->num_rows > 0;
+}
+
+// Older databases do not keep a separate site role.  The worker's position is
+// already shown and remains the effective role for that assignment.
+if (!$hasRoleColumn) {
+    echo json_encode(['success' => true, 'message' => 'Worker assignment saved successfully']);
+    $conn->close();
+    exit;
 }
 
 $stmt = $conn->prepare(

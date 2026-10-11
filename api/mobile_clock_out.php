@@ -16,7 +16,8 @@ mobile_require_timekeeper_assignment($conn, $timekeeperId);
 $attendanceId = (int) ($payload['attendance_id'] ?? 0);
 mobile_validate_attendance_record_access($conn, $timekeeperId, $attendanceId);
 
-$currentTime = date('H:i:s');
+$now = new DateTimeImmutable('now', new DateTimeZone('Asia/Manila'));
+$currentTime = $now->format('H:i:s');
 
 try {
     $pdo = getDbConnection();
@@ -37,17 +38,15 @@ try {
 
     $siteId = (int) ($record['SiteID'] ?? 0);
     $siteSchedule = get_site_schedule_row($conn, $siteId);
+    $shiftEnd = (string) ($siteSchedule['ShiftEnd'] ?? '17:00:00');
+    $currentTimeMinutes = site_schedule_time_to_minutes($currentTime) ?? 0;
+    $shiftEndMinutes = site_schedule_time_to_minutes($shiftEnd) ?? (17 * 60);
+    if ($currentTimeMinutes > $shiftEndMinutes) {
+        throw new Exception('PM OUT can only be recorded on or before the assigned shift end time.');
+    }
+
     $lunchOut = $record['Lunch_Out'] ?? null;
     $lunchIn = $record['Lunch_In'] ?? null;
-
-    if (attendance_lunch_columns_exist($conn)) {
-        if (empty($lunchOut) && !empty($siteSchedule['LunchStart'])) {
-            $lunchOut = $siteSchedule['LunchStart'];
-        }
-        if (empty($lunchIn) && !empty($siteSchedule['LunchEnd'])) {
-            $lunchIn = $siteSchedule['LunchEnd'];
-        }
-    }
 
     $hourTotals = calculate_attendance_hours_worked(
         $record['Time_In'] ?? null,
@@ -64,20 +63,9 @@ try {
     $timeInMin = site_schedule_time_to_minutes($record['Time_In'] ?? null) ?? 0;
     $status = $timeInMin <= $expectedInMin ? 'Present' : 'Late';
 
-    if (attendance_lunch_columns_exist($conn)) {
-        $updateSql = "
-            UPDATE attendance
-            SET Time_Out = ?, Lunch_Out = COALESCE(Lunch_Out, ?), Lunch_In = COALESCE(Lunch_In, ?),
-                Hours_Worked = ?, Overtime_Hours = ?, AttendanceStatus = ?
-            WHERE AttendanceID = ?
-        ";
-        $stmt = $pdo->prepare($updateSql);
-        $stmt->execute([$currentTime, $lunchOut, $lunchIn, $hoursWorked, $overtimeHours, $status, $attendanceId]);
-    } else {
-        $updateSql = "UPDATE attendance SET Time_Out = ?, Hours_Worked = ?, Overtime_Hours = ?, AttendanceStatus = ? WHERE AttendanceID = ?";
-        $stmt = $pdo->prepare($updateSql);
-        $stmt->execute([$currentTime, $hoursWorked, $overtimeHours, $status, $attendanceId]);
-    }
+    $updateSql = "UPDATE attendance SET Time_Out = ?, Hours_Worked = ?, Overtime_Hours = ?, AttendanceStatus = ? WHERE AttendanceID = ?";
+    $stmt = $pdo->prepare($updateSql);
+    $stmt->execute([$currentTime, $hoursWorked, $overtimeHours, $status, $attendanceId]);
 
     $pdo->commit();
     record_audit_log($timekeeperId, 'Mobile Clock Out', "Worker {$record['WorkerID']} clocked out at site {$record['SiteID']}");

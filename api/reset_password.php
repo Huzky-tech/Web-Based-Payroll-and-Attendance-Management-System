@@ -1,6 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/security.php';
 require_once __DIR__ . '/connection/db_config.php';
+require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/password_change_notification.php';
+require_once __DIR__ . '/record_audit_log.php';
 header('Content-Type: application/json');
 
 if (empty($_SESSION['password_reset_verified']) || empty($_SESSION['password_reset_email'])) {
@@ -25,6 +28,20 @@ $stmt->bind_param('ss', $hash, $email);
 $ok = $stmt->execute() && $stmt->affected_rows === 1;
 
 if ($ok) {
+    $userLookup = $conn->prepare('SELECT id, full_name FROM users WHERE email = ? LIMIT 1');
+    if ($userLookup) {
+        $userLookup->bind_param('s', $email);
+        $userLookup->execute();
+        $changedUser = $userLookup->get_result()->fetch_assoc() ?: [];
+        $userLookup->close();
+        $changedUserId = (int) ($changedUser['id'] ?? 0);
+        if ($changedUserId > 0 && auth_get_user_role($conn, $changedUserId) !== 'Admin') {
+            notify_admins_of_password_change($conn, $changedUserId, (string) ($changedUser['full_name'] ?? ''), 'password reset');
+        }
+        if ($changedUserId > 0) {
+            record_audit_log($changedUserId, 'Password Changed', 'Reset password using verified email recovery.');
+        }
+    }
     unset($_SESSION['password_reset_email'], $_SESSION['password_reset_expires'], $_SESSION['password_reset_verified'], $_SESSION['password_reset_attempts'], $_SESSION['password_reset_last_sent_at'], $_SESSION['password_reset_send_count'], $_SESSION['password_reset_window_started_at']);
     echo json_encode(['success' => true, 'message' => 'Your password has been reset. You can now log in.']);
 } else {

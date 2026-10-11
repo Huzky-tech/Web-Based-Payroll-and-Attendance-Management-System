@@ -398,6 +398,15 @@
         .assigned-sites-overview .site-card-actions { margin-top: 16px; }
         .assigned-sites-overview .btn-view-details { padding: 11px 16px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #334155; font-size: 12px; font-weight: 750; }
         .assigned-sites-overview .btn-view-details:hover { border-color: #fdba74; background: #fff7ed; color: #c2410c; }
+        .hr-compact-site-card { min-height: 0; padding: 15px 18px !important; }
+        .hr-compact-site-card .site-card-header { margin-bottom: 7px; }
+        .hr-compact-site-card .site-card-title { font-size: 16px; }
+        .hr-compact-site-card .site-location { margin: 0 0 12px; padding: 0 0 10px; }
+        .hr-site-staffing { display: flex; gap: 18px; color: #64748b; font-size: 11px; }
+        .hr-site-staffing strong { margin-right: 4px; color: #0f172a; font-size: 13px; }
+        .hr-compact-site-card .site-card-actions { margin-top: 12px; }
+        .hr-compact-site-card .btn-view-details { padding: 8px 12px; }
+
         @media (max-width: 760px) {
             .assigned-sites-overview { padding: 16px; }
             .assigned-sites-heading { align-items: flex-start; flex-direction: column; }
@@ -460,6 +469,7 @@
             background: #fff;
             box-shadow: 0 12px 32px rgba(15, 23, 42, .055);
         }
+
         .quick-actions-section .section-title { margin-bottom: 18px; font-size: 20px; }
         .quick-actions-section .actions-grid { gap: 14px; }
         .quick-actions-section .action-card {

@@ -50,9 +50,9 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
     <title>Settings - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/setting.css?v=20260916-payroll-validation-1">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
 <script src="../js/user_email_validation.js?v=20260920-availability-3" defer></script>
-<script src="../js/setting.js?v=20260921-admin-1" defer></script>
+<script src="../js/setting.js?v=20261008-remove-tax-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -156,7 +156,7 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
             <!-- Payroll -->
             <div id="payroll" class="panel" style="display:none;">
                 <div class="section-title" style="font-size:18px;">Payroll Settings</div>
-                <div class="section-sub">Configure your payroll calculation parameters and deduction rates.</div>
+                <div class="section-sub">Configure payroll periods, fixed government deduction amounts, and overtime settings.</div>
                 <div class="form-grid">
                     <div>
                         <label>Pay Periods</label>
@@ -167,24 +167,16 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                         </select>
                     </div>
                     <div>
-                        <label>SSS Rate</label>
-                        <select id="sss_rate">
-                            <option value="Standard">Standard</option>
-                        </select>
+                        <label>SSS Deduction (PHP)</label>
+                        <input type="number" id="sss_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
                     </div>
                     <div>
-                        <label>PhilHealth Rate (%)</label>
-                        <input type="text" id="philhealth_rate" value="3%">
+                        <label>PhilHealth Deduction (PHP)</label>
+                        <input type="number" id="philhealth_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
                     </div>
                     <div>
-                        <label>Pag-IBIG Rate (%)</label>
-                        <input type="text" id="pagibig_rate" value="2%">
-                    </div>
-                    <div>
-                        <label>Tax Table</label>
-                        <select id="tax_table">
-                            <option value="Latest BIR Tax Table">Latest BIR Tax Table</option>
-                        </select>
+                        <label>Pag-IBIG Deduction (PHP)</label>
+                        <input type="number" id="pagibig_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
                     </div>
                 </div>
                 <div style="margin-top:16px;">

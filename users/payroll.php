@@ -6,6 +6,7 @@ if (!isset($conn) || !($conn instanceof mysqli)) {
 include __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../api/payroll_deduction_helpers.php';
 require_once __DIR__ . '/../api/payroll_approval_helpers.php';
+require_once __DIR__ . '/../api/overtime_helpers.php';
 
 $currentRole = require_auth($conn, ['Assistant Admin', 'Payroll Staff']);
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
@@ -221,6 +222,27 @@ while ($site = $sitesQuery->fetch_assoc()) {
     $sitePeriodEnd = $payPeriod['end'];
     $sitePeriodLabel = payroll_period_label($sitePeriodStart, $sitePeriodEnd);
 
+    // The preview must include approved overtime requests, just as the final
+    // payroll processor does. Attendance overtime alone is not enough.
+    $approvedOvertimeByWorkerId = [];
+    if (overtime_table_exists($conn)) {
+        $approvedOtStmt = $conn->prepare("
+            SELECT WorkerID, COALESCE(SUM(TotalHours), 0) AS approved_hours
+            FROM overtime_requests
+            WHERE SiteID = ? AND Status = 'Approved' AND RequestDate BETWEEN ? AND ?
+            GROUP BY WorkerID
+        ");
+        if ($approvedOtStmt) {
+            $approvedOtStmt->bind_param('iss', $siteId, $sitePeriodStart, $sitePeriodEnd);
+            $approvedOtStmt->execute();
+            $approvedOtResult = $approvedOtStmt->get_result();
+            while ($approvedOt = $approvedOtResult->fetch_assoc()) {
+                $approvedOvertimeByWorkerId[(int) $approvedOt['WorkerID']] = (float) $approvedOt['approved_hours'];
+            }
+            $approvedOtStmt->close();
+        }
+    }
+
     $workerStmt->bind_param("ssi", $sitePeriodStart, $sitePeriodEnd, $siteId);
     $workerStmt->execute();
     $workerResult = $workerStmt->get_result();
@@ -229,8 +251,10 @@ while ($site = $sitesQuery->fetch_assoc()) {
         $rateType = strtolower((string) ($worker['RateType'] ?? 'hourly'));
         $rateAmount = (float) ($worker['RateAmount'] ?? 0);
         $totalHours = (float) ($worker['total_hours'] ?? 0);
-        $overtimeHours = (float) ($worker['overtime_hours'] ?? 0);
-        $regularHours = max(0, $totalHours - $overtimeHours);
+        $attendanceOvertimeHours = (float) ($worker['overtime_hours'] ?? 0);
+        $approvedOvertimeHours = (float) ($approvedOvertimeByWorkerId[(int) $worker['WorkerID']] ?? 0);
+        $overtimeHours = $attendanceOvertimeHours + $approvedOvertimeHours;
+        $regularHours = max(0, $totalHours - $attendanceOvertimeHours);
 
         if ($rateType === 'salary') {
             $grossPay = $rateAmount;
@@ -275,7 +299,6 @@ while ($site = $sitesQuery->fetch_assoc()) {
             'sss_deduction' => $deductionBreakdown['sss'],
             'philhealth_deduction' => $deductionBreakdown['philhealth'],
             'pagibig_deduction' => $deductionBreakdown['pagibig'],
-            'tax_deduction' => $deductionBreakdown['tax'],
             'attendance_trail' => $attendanceTrail,
         ];
 

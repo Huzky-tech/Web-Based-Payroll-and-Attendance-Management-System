@@ -53,8 +53,8 @@ if (!$isAccountOnlySettings) {
     <title>Settings - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
      <link rel="stylesheet" href="../css/setting.css?v=20260906-3">
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
-<script src="../js/setting.js?v=20260921-admin-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
+<script src="../js/setting.js?v=20261008-remove-tax-1" defer></script>
 </head>
 <body>
 <?php endif; ?>
@@ -72,6 +72,7 @@ if (!$isAccountOnlySettings) {
                 <?php else: ?>
                 <?php if ($isAssistantAdmin): ?>
                 <button class="pill-tab active" data-tab="profile" onclick="switchTab('profile')"><i class="fas fa-user-circle"></i>Profile</button>
+                <button class="pill-tab" data-tab="assistant-notifications" onclick="switchTab('assistant-notifications')"><i class="fas fa-bell"></i>Notifications</button>
                 <button class="pill-tab" data-tab="system" onclick="switchTab('system')"><i class="fas fa-server"></i>System</button>
                 <?php else: ?>
                 <button class="pill-tab active" data-tab="company" onclick="switchTab('company')"><i class="fas fa-building"></i>Company</button>
@@ -216,6 +217,27 @@ if (!$isAccountOnlySettings) {
                 </div>
                 <div class="footer-actions"><button class="btn-action" type="button" onclick="saveMyProfile()"><i class="fas fa-save"></i>Save Profile</button></div>
             </div>
+
+            <div id="assistant-notifications" class="panel" style="display:none;">
+                <div class="section-title" style="font-size:18px;">Notification Settings</div>
+                <div class="section-sub">Choose which notifications appear in your Assistant Admin dashboard.</div>
+                <div class="section-title" style="font-size:16px;">Notification Channel</div>
+                <div class="pill-switch">
+                    <label class="checkbox-row"><input type="checkbox" id="assistant_in_system_notifications" checked>In-System Notifications</label>
+                </div>
+                <div style="margin-top:16px;">
+                    <div class="section-title" style="font-size:16px;">Notification Types</div>
+                    <div class="pill-switch">
+                        <label class="checkbox-row"><input type="checkbox" id="assistant_payroll_processing" checked>Payroll Processing</label>
+                        <label class="checkbox-row"><input type="checkbox" id="assistant_attendance_issues" checked>Attendance Issues</label>
+                        <label class="checkbox-row"><input type="checkbox" id="assistant_site_assignments" checked>Site Assignment Updates</label>
+                        <label class="checkbox-row"><input type="checkbox" id="assistant_overtime_requests" checked>Overtime Requests</label>
+                    </div>
+                </div>
+                <div class="footer-actions">
+                    <button class="btn-action" type="button" onclick="saveAssistantNotificationSettings()"><i class="fas fa-save"></i>Save Notification Settings</button>
+                </div>
+            </div>
             <?php endif; ?>
             <?php if (!$isAssistantAdmin): ?>
             <div class="footer-actions" style="margin-bottom: 18px;">
@@ -265,7 +287,7 @@ if (!$isAccountOnlySettings) {
             <!-- Payroll -->
             <div id="payroll" class="panel" style="display:none;">
                 <div class="section-title" style="font-size:18px;">Payroll Settings</div>
-                <div class="section-sub">Configure your payroll calculation parameters and deduction rates.</div>
+                <div class="section-sub">Configure payroll periods, fixed government deduction amounts, and overtime settings.</div>
                 <div class="form-grid">
                     <div>
                         <label>Pay Periods</label>
@@ -276,24 +298,16 @@ if (!$isAccountOnlySettings) {
                         </select>
                     </div>
                     <div>
-                        <label>SSS Rate</label>
-                        <select id="sss_rate">
-                            <option value="Standard">Standard</option>
-                        </select>
+                        <label>SSS Deduction (PHP)</label>
+                        <input type="number" id="sss_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
                     </div>
                     <div>
-                        <label>PhilHealth Rate (%)</label>
-                        <input type="text" id="philhealth_rate" value="3%">
+                        <label>PhilHealth Deduction (PHP)</label>
+                        <input type="number" id="philhealth_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
                     </div>
                     <div>
-                        <label>Pag-IBIG Rate (%)</label>
-                        <input type="text" id="pagibig_rate" value="2%">
-                    </div>
-                    <div>
-                        <label>Tax Table</label>
-                        <select id="tax_table">
-                            <option value="Latest BIR Tax Table">Latest BIR Tax Table</option>
-                        </select>
+                        <label>Pag-IBIG Deduction (PHP)</label>
+                        <input type="number" id="pagibig_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
                     </div>
                 </div>
                 <div style="margin-top:16px;">

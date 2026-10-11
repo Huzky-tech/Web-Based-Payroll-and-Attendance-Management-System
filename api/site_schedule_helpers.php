@@ -1,5 +1,19 @@
 <?php
 
+if (!function_exists('site_schedule_legacy_table_exists')) {
+    function site_schedule_legacy_table_exists(mysqli $conn): bool
+    {
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        $check = $conn->query("SHOW TABLES LIKE 'site_schedule'");
+        $cached = $check !== false && $check->num_rows > 0;
+        return $cached;
+    }
+}
+
 if (!function_exists('site_schedule_columns_exist')) {
     function site_schedule_columns_exist(mysqli $conn): bool
     {
@@ -91,12 +105,40 @@ if (!function_exists('attendance_display_status')) {
     /**
      * A missing time-in is Not Started until the site's scheduled shift has ended.
      */
-    function attendance_display_status(?string $storedStatus, ?string $timeIn, string $attendanceDate, ?string $shiftEnd): string
+    function attendance_display_status(?string $storedStatus, ?string $timeIn, string $attendanceDate, ?string $shiftEnd, ?string $timeOut = null): string
     {
+        // A reviewer may explicitly mark an existing scan as Absent after
+        // checking its photo evidence. Keep that decision visible immediately,
+        // even before the current day's shift has ended.
+        $storedStatus = ucfirst(strtolower(trim((string) $storedStatus)));
+        if ($storedStatus === 'Absent') {
+            return 'Absent';
+        }
         $hasTimeIn = trim((string) $timeIn) !== '' && trim((string) $timeIn) !== '00:00:00';
         if ($hasTimeIn) {
-            $status = ucfirst(strtolower(trim((string) $storedStatus)));
-            return in_array($status, ['Present', 'Late'], true) ? $status : 'Present';
+            $hasTimeOut = trim((string) $timeOut) !== '' && trim((string) $timeOut) !== '00:00:00';
+            if ($hasTimeOut) {
+                return in_array($storedStatus, ['Present', 'Late'], true) ? $storedStatus : 'Present';
+            }
+
+            // A worker who scanned in is Present during the current shift. It
+            // becomes Incomplete only after that site's shift end if PM OUT is
+            // still missing. This also corrects records saved by older builds.
+            $timezone = new DateTimeZone('Asia/Manila');
+            $now = new DateTimeImmutable('now', $timezone);
+            $today = $now->format('Y-m-d');
+            if ($attendanceDate < $today) {
+                return 'Incomplete';
+            }
+            if ($attendanceDate === $today) {
+                $shiftEndMinutes = site_schedule_time_to_minutes($shiftEnd) ?? (17 * 60);
+                $nowMinutes = ((int) $now->format('H') * 60) + (int) $now->format('i');
+                if ($nowMinutes >= $shiftEndMinutes) {
+                    return 'Incomplete';
+                }
+            }
+
+            return $storedStatus === 'Late' ? 'Late' : 'Present';
         }
 
         $timezone = new DateTimeZone('Asia/Manila');
@@ -388,7 +430,10 @@ if (!function_exists('auto_close_open_attendance_at_shift_end')) {
 if (!function_exists('site_schedule_select_sql')) {
     function site_schedule_select_sql(mysqli $conn): string
     {
-        if (site_schedule_columns_exist($conn)) {
+        $hasModernColumns = site_schedule_columns_exist($conn);
+        $hasLegacyTable = site_schedule_legacy_table_exists($conn);
+
+        if ($hasModernColumns && $hasLegacyTable) {
             return "
                 TIME_FORMAT(COALESCE(s.ShiftStart, sc.ShiftStart), '%H:%i') AS Start_Time,
                 TIME_FORMAT(COALESCE(s.ShiftEnd, sc.ShiftEnd), '%H:%i') AS End_Time,
@@ -403,17 +448,47 @@ if (!function_exists('site_schedule_select_sql')) {
             ";
         }
 
+        if ($hasModernColumns) {
+            return "
+                TIME_FORMAT(s.ShiftStart, '%H:%i') AS Start_Time,
+                TIME_FORMAT(s.ShiftEnd, '%H:%i') AS End_Time,
+                TIME_FORMAT(s.ShiftStart, '%H:%i') AS Shift_Start,
+                TIME_FORMAT(COALESCE(s.LunchStart, '12:00:00'), '%H:%i') AS Lunch_Start,
+                TIME_FORMAT(COALESCE(s.LunchEnd, '13:00:00'), '%H:%i') AS Lunch_End,
+                TIME_FORMAT(s.ShiftEnd, '%H:%i') AS Shift_End,
+                s.ShiftStart AS ShiftStartRaw,
+                COALESCE(s.LunchStart, '12:00:00') AS LunchStartRaw,
+                COALESCE(s.LunchEnd, '13:00:00') AS LunchEndRaw,
+                s.ShiftEnd AS ShiftEndRaw
+            ";
+        }
+
+        if ($hasLegacyTable) {
+            return "
+                TIME_FORMAT(sc.ShiftStart, '%H:%i') AS Start_Time,
+                TIME_FORMAT(sc.ShiftEnd, '%H:%i') AS End_Time,
+                TIME_FORMAT(sc.ShiftStart, '%H:%i') AS Shift_Start,
+                '12:00' AS Lunch_Start,
+                '13:00' AS Lunch_End,
+                TIME_FORMAT(sc.ShiftEnd, '%H:%i') AS Shift_End,
+                sc.ShiftStart AS ShiftStartRaw,
+                '12:00:00' AS LunchStartRaw,
+                '13:00:00' AS LunchEndRaw,
+                sc.ShiftEnd AS ShiftEndRaw
+            ";
+        }
+
         return "
-            TIME_FORMAT(sc.ShiftStart, '%H:%i') AS Start_Time,
-            TIME_FORMAT(sc.ShiftEnd, '%H:%i') AS End_Time,
-            TIME_FORMAT(sc.ShiftStart, '%H:%i') AS Shift_Start,
+            '07:00' AS Start_Time,
+            '17:00' AS End_Time,
+            '07:00' AS Shift_Start,
             '12:00' AS Lunch_Start,
             '13:00' AS Lunch_End,
-            TIME_FORMAT(sc.ShiftEnd, '%H:%i') AS Shift_End,
-            sc.ShiftStart AS ShiftStartRaw,
+            '17:00' AS Shift_End,
+            '07:00:00' AS ShiftStartRaw,
             '12:00:00' AS LunchStartRaw,
             '13:00:00' AS LunchEndRaw,
-            sc.ShiftEnd AS ShiftEndRaw
+            '17:00:00' AS ShiftEndRaw
         ";
     }
 }

@@ -536,11 +536,16 @@
         }
 
         .archive-employee-dialog {
-            width: 420px;
-            max-width: calc(100% - 32px);
+            /* Active Sites defines a generic .modal-content as flex: 1.
+               Keep this destructive-action confirmation compact. */
+            flex: 0 0 auto;
+            width: min(420px, calc(100vw - 32px));
+            max-width: calc(100vw - 32px);
+            min-height: 0;
             padding: 30px;
             text-align: center;
             border-radius: 14px;
+            overflow: visible;
         }
 
         .archive-employee-icon {
@@ -1244,6 +1249,7 @@
     color: #ffffff;
     border: none;
     padding: 12px 20px;
+    margin-bottom: 16px;
     border-radius: 6px;
     font-size: 14px;
     font-weight: 600;
@@ -1327,12 +1333,24 @@
     width: 820px;
     max-width: 96%;
     padding: 24px;
+    max-height: calc(100dvh - 40px);
+    display: flex;
+    flex-direction: column;
 }
 
 #viewEmployeeModal .modal-body {
-    height: min(75vh, 720px);
-    max-height: 75vh;
+    height: auto;
+    max-height: none;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+}
+
+#viewEmployeeModal .view-employee-modal-footer {
+    flex: 0 0 auto;
+    padding-top: 12px;
+    border-top: 1px solid #eef0f4;
+    background: #ffffff;
 }
 
 .view-employee-header {
@@ -2068,7 +2086,7 @@
 .view-employee-footer-btns {
     display: flex;
     gap: 12px;
-    margin-top: 8px;
+    margin-top: 0;
 }
 
 .view-employee-footer-btns .view-close-btn,
@@ -2776,6 +2794,7 @@
         min-width: 0;
         padding: 14px 12px;
         border-radius: 10px;
+        max-height: calc(100dvh - 16px);
     }
 
     #viewEmployeeModal .modal-header {
@@ -2789,10 +2808,21 @@
     #viewEmployeeModal .modal-body {
         width: 100%;
         min-width: 0;
-        height: calc(100dvh - 86px);
-        max-height: calc(100dvh - 86px);
+        height: auto;
+        max-height: none;
+        flex: 1 1 auto;
         overflow-x: hidden;
         overflow-y: auto;
+    }
+
+    #viewEmployeeModal .view-employee-footer-btns {
+        gap: 8px;
+    }
+
+    #viewEmployeeModal .view-employee-footer-btns button {
+        min-width: 0;
+        padding: 10px 8px;
+        font-size: 13px;
     }
 
     #viewEmployeeModal .profile-tabs {

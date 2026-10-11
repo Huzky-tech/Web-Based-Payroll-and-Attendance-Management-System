@@ -92,21 +92,20 @@ function updateDateTime() {
         return;
     }
 
-    const now = new Date();
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const day = days[now.getDay()];
-    const month = months[now.getMonth()];
-    const date = now.getDate();
-    const year = now.getFullYear();
-    let hours = now.getHours();
-    const minutes = now.getMinutes();
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const minutesStr = minutes < 10 ? '0' + minutes : minutes;
-    dateEl.textContent = `${day}, ${month} ${date}, ${year}`;
-    timeEl.textContent = `${hours}:${minutesStr} ${ampm}`;
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Manila',
+        weekday: 'long',
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+
+    dateEl.textContent = `${parts.weekday}, ${parts.month} ${parts.day}, ${parts.year}`;
+    timeEl.textContent = `${parts.hour}:${parts.minute}:${parts.second} ${parts.dayPeriod}`;
 }
 
 function renderLogs(list) {
@@ -138,17 +137,21 @@ function renderLogs(list) {
 
 function formatDate(ts) {
     if (!ts) return '';
-    const d = new Date(ts);
-    if (isNaN(d.getTime())) return ts;
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const month = months[d.getMonth()];
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear();
-    const hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const h12 = hours % 12 || 12;
-    return `${month} ${day}, ${year} ${h12}:${minutes} ${ampm}`;
+    // Audit timestamps are stored in UTC so hosting-server timezone settings
+    // cannot change them. Convert the value to Philippine time only for display.
+    const value = String(ts);
+    const normalized = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(value)
+        ? value.replace(' ', 'T') + 'Z'
+        : value;
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return value;
+
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Manila',
+        month: 'short', day: '2-digit', year: 'numeric',
+        hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+    }).formatToParts(date).map((part) => [part.type, part.value]));
+    return `${parts.month} ${parts.day}, ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} ${parts.dayPeriod}`;
 }
 
 function pill(status) {
@@ -401,7 +404,7 @@ function createAlert() {
 
 document.addEventListener('DOMContentLoaded', () => {
     updateDateTime();
-    setInterval(updateDateTime, 60000);
+    setInterval(updateDateTime, 1000);
     fetchLogs();
     renderRules();
 });

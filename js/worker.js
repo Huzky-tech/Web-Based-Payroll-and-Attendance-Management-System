@@ -281,7 +281,7 @@ function renderEmployeePagination(totalItems) {
     const start = totalItems ? ((employeeListState.page - 1) * employeeListState.pageSize) + 1 : 0;
     const end = Math.min(employeeListState.page * employeeListState.pageSize, totalItems);
     container.innerHTML = `
-        <span class="employee-pagination-info">Showing ${start}-${end} of ${totalItems} employees</span>
+        <span class="employee-pagination-info">Showing ${start}-${end} of ${totalItems} workers</span>
         <div class="employee-pagination-controls">
             <button type="button" class="employee-page-btn" data-employee-page="prev" ${employeeListState.page === 1 ? 'disabled' : ''}>Previous</button>
             <span>Page ${employeeListState.page} of ${totalPages}</span>
@@ -299,7 +299,7 @@ function renderEmployeeTable(employees = getFilteredEmployees()) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" style="text-align:center; padding:20px;">
-                    No employees found. Click "Add New Employee" to create one.
+                    No workers found. Click "Add New Worker" to create one.
                 </td>
             </tr>
         `;
@@ -347,14 +347,14 @@ function renderEmployeeTable(employees = getFilteredEmployees()) {
                             <i class="fas fa-eye"></i>
                         </button>
                         ${canManageEmployeeRecords ? `
-                        <button class="btn-action edit" title="Edit Employee" aria-label="Edit ${escapeHtml(fullName)}">
+                        <button class="btn-action edit" title="Edit Worker" aria-label="Edit ${escapeHtml(fullName)}">
                             <i class="fas fa-pen"></i>
                         </button>` : ''}
                         <button class="btn-action id-card" title="Worker ID Card">
                             <i class="fas fa-id-card"></i>
                         </button>
                         ${canApproveEmployeeRecords && approval.label.toLowerCase() !== 'approved' ? `
-                        <button class="btn-action approve" title="Approve Employee" aria-label="Approve ${escapeHtml(fullName)}">
+                        <button class="btn-action approve" title="Approve Worker" aria-label="Approve ${escapeHtml(fullName)}">
                             <i class="fas fa-user-check"></i>
                         </button>` : ''}
                         ${canArchiveEmployeeRecords ? `
@@ -403,11 +403,11 @@ async function approveEmployee(employeeId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ employee_id: employeeId, action_type: 'Employee Approval' })
         });
-        if (!result.success) throw new Error(result.message || 'Failed to approve employee.');
-        window.showCrudResultModal?.(true, result.message || 'Employee approved successfully.', 'Employee Approval');
+        if (!result.success) throw new Error(result.message || 'Failed to approve worker.');
+        window.showCrudResultModal?.(true, result.message || 'Worker approved successfully.', 'Worker Approval');
         await loadEmployees();
     } catch (error) {
-        window.showCrudResultModal?.(false, error.message || 'Unable to approve employee.', 'Employee Approval');
+        window.showCrudResultModal?.(false, error.message || 'Unable to approve worker.', 'Worker Approval');
     }
 }
 
@@ -539,8 +539,32 @@ function buildPositionOptions(selectedPosition) {
     return placeholder + positions.map((position) => {
         const name = String(position.position_name || '').trim();
         const selected = name === currentPosition ? ' selected' : '';
-        return `<option value="${escapeHtml(name)}"${selected}>${escapeHtml(name)}</option>`;
+        const hourlyRate = Number(position.hourly_rate);
+        const salaryRate = Number(position.salary_rate);
+        const rateData = Number.isFinite(hourlyRate) && hourlyRate > 0 && Number.isFinite(salaryRate) && salaryRate > 0
+            ? ` data-hourly-rate="${hourlyRate}" data-salary-rate="${salaryRate}"`
+            : '';
+        return `<option value="${escapeHtml(name)}"${rateData}${selected}>${escapeHtml(name)}</option>`;
     }).join('');
+}
+
+function bindProfilePositionRate(form) {
+    const positionSelect = form?.querySelector('select[name="position"]');
+    const rateTypeSelect = form?.querySelector('select[name="rate_type"]');
+    const salaryInput = form?.querySelector('input[name="salary"]');
+    if (!positionSelect || !rateTypeSelect || !salaryInput) return;
+
+    const applyCatalogRate = () => {
+        const option = positionSelect.selectedOptions?.[0];
+        const key = rateTypeSelect.value === 'Salary' ? 'salaryRate' : 'hourlyRate';
+        const rate = String(option?.dataset?.[key] || '');
+        if (rate !== '') salaryInput.value = rate;
+    };
+
+    salaryInput.readOnly = true;
+    positionSelect.addEventListener('change', applyCatalogRate);
+    rateTypeSelect.addEventListener('change', applyCatalogRate);
+    applyCatalogRate();
 }
 
 function getGovernmentDeductionStatus(emp) {
@@ -736,7 +760,7 @@ function renderProfileFields(emp, profile, editMode) {
                     <option value="Hourly"${emp.RateType === 'Hourly' ? ' selected' : ''}>Hourly</option>
                     <option value="Salary"${emp.RateType === 'Salary' ? ' selected' : ''}>Salary</option>
                 </select>`)}
-                ${field('Salary', formatCurrency(Math.max(0, Number(emp.salary) || 0)), `<input type="number" name="salary" class="profile-field-input" step="0.01" min="0" value="${escapeHtml(Math.max(0, Number(emp.salary) || 0))}">`)}
+                ${field('Salary', formatCurrency(Math.max(0, Number(emp.salary) || 0)), `<input type="number" name="salary" class="profile-field-input" step="0.01" min="0" value="${escapeHtml(Math.max(0, Number(emp.salary) || 0))}" readonly>`)}
                 ${renderGovernmentDeductionField(emp, editMode)}
             </div>
         </div>`;
@@ -968,15 +992,16 @@ function validateWorkerNameInput(input, stripInvalid = false) {
 }
 
 function showEmployeeNameAvailability(form, message = '', valid = false) {
+    const invalid = Boolean(message) && !valid;
     const firstNameInput = form?.querySelector('input[name="first_name"]');
     const lastNameInput = form?.querySelector('input[name="last_name"]');
     [firstNameInput, lastNameInput].forEach((input) => {
         if (!input) return;
         input.dataset.noLiveValidation = 'true';
-        input.classList.toggle('employee-field-invalid', Boolean(message));
-        input.classList.toggle('field-live-valid', valid && !message);
+        input.classList.toggle('employee-field-invalid', invalid);
+        input.classList.toggle('field-live-valid', valid);
         input.classList.remove('field-live-invalid');
-        input.setAttribute('aria-invalid', message ? 'true' : 'false');
+        input.setAttribute('aria-invalid', invalid ? 'true' : 'false');
     });
 
     let error = lastNameInput?.parentElement?.querySelector('.employee-name-error');
@@ -988,7 +1013,7 @@ function showEmployeeNameAvailability(form, message = '', valid = false) {
     }
     if (error) {
         error.textContent = message;
-        error.classList.toggle('valid', valid && !message);
+        error.classList.toggle('valid', valid);
     }
 }
 
@@ -1090,7 +1115,7 @@ function applySuggestedEmployeeSalary() {
 
     const rateType = rateTypeSelect?.value === 'Salary' ? 'salaryRate' : 'hourlyRate';
     const suggestedAmount = selectedOption.dataset[rateType] || '';
-    if (suggestedAmount) salaryInput.value = suggestedAmount;
+    salaryInput.value = suggestedAmount;
 }
 
 async function loadEmployeePositionCatalog() {
@@ -1099,11 +1124,7 @@ async function loadEmployeePositionCatalog() {
     try {
         const data = await fetchJson(`${API_BASE}get_position_catalog.php`);
         if (!data.success || !Array.isArray(data.positions) || !data.positions.length) return;
-        const positions = [...data.positions];
-        if (!positions.some((position) => String(position.position_name || '').toLowerCase() === 'manager')) {
-            positions.push({ position_name: 'Manager', hourly_rate: 250, salary_rate: 45000 });
-        }
-        positionSelect.innerHTML = '<option value="" selected disabled>Select position</option>' + positions.map((position) => `
+        positionSelect.innerHTML = '<option value="" selected disabled>Select position</option>' + data.positions.map((position) => `
             <option value="${escapeHtml(position.position_name)}"
                 data-hourly-rate="${Number(position.hourly_rate)}"
                 data-salary-rate="${Number(position.salary_rate)}">${escapeHtml(position.position_name)}</option>
@@ -1115,7 +1136,8 @@ async function loadEmployeePositionCatalog() {
 
 function renderViewEmployeeModal(emp, workerStatuses = []) {
     const body = document.getElementById('viewEmployeeBody');
-    if (!body) {
+    const footer = document.getElementById('viewEmployeeModalFooter');
+    if (!body || !footer) {
         return;
     }
 
@@ -1171,6 +1193,9 @@ function renderViewEmployeeModal(emp, workerStatuses = []) {
         <div class="profile-tab-panel" id="profileTabHistory">
             <p class="profile-tab-loading">Loading employment history...</p>
         </div>
+    `;
+
+    footer.innerHTML = `
         <div class="view-employee-footer-btns">
             <button type="button" class="btn-profile-save" id="viewEmployeeSaveBtn" hidden><i class="fas fa-save"></i> Save</button>
             <button type="button" class="btn-profile-cancel" id="viewEmployeeCancelBtn" hidden>Cancel</button>
@@ -1212,6 +1237,7 @@ function setProfileEditMode(enabled) {
             bindEmployeeDateOfBirthValidation(form);
             bindEmployeeEmailValidation(form, Number(emp.WorkerID || 0));
             bindEmployeeProfileTextValidation(form);
+            bindProfilePositionRate(form);
         }
         if (enabled) bindProfileDeductionToggles(form);
     }
@@ -1437,8 +1463,8 @@ async function loadEmployeeAttendanceTab(workerId) {
                             <tr>
                                 <th>Date</th>
                                 <th>Status</th>
-                                <th>Time In</th>
-                                <th>Time Out</th>
+                                <th>AM IN</th>
+                                <th>PM OUT</th>
                                 <th>Hours</th>
                             </tr>
                         </thead>
@@ -1764,8 +1790,8 @@ async function deleteEmployee(id) {
         await loadEmployees();
         window.showCrudResultModal?.(
             true,
-            data.message || 'Employee archived successfully.',
-            'Employee Archive'
+            data.message || 'Worker archived successfully.',
+            'Worker Archive'
         );
     } catch (error) {
         console.error('Archive employee failed:', error);
@@ -2339,11 +2365,28 @@ async function showAddEmployeeModal() {
     }
     modal.classList.add('active');
     modal.style.display = 'flex';
-    document.getElementById('addEmployeeForm')?.reset();
+    resetAddEmployeeForm();
     await loadEmployeePositionCatalog();
 }
 
-function closeModal() {
+function resetAddEmployeeForm() {
+    const form = document.getElementById('addEmployeeForm');
+    if (!form) return;
+    clearTimeout(employeeNameCheckTimers.get(form));
+    form.reset();
+    form.querySelectorAll('input, select, textarea').forEach((input) => {
+        employeeEmailChecks.delete(input);
+        input.setCustomValidity('');
+        input.removeAttribute('aria-invalid');
+        input.classList.remove('employee-field-invalid', 'field-live-valid', 'field-live-invalid');
+    });
+    form.querySelectorAll('.employee-name-error, .employee-email-error, .employee-date-of-birth-error, .employee-profile-field-error, .field-live-error').forEach((message) => message.remove());
+    const deductionStatus = form.querySelector('input[name="government_deduction_status"]:checked');
+    deductionStatus?.dispatchEvent(new Event('change', { bubbles: true }));
+    updateEmployeePhotoPreview(null);
+}
+
+function closeAddEmployeeModal() {
     const modal = document.getElementById('addEmployeeModal');
     if (!modal) {
         return;
@@ -2353,6 +2396,10 @@ function closeModal() {
     if (modal.style) {
         modal.style.display = 'none';
     }
+}
+
+function closeModal() {
+    closeAddEmployeeModal();
 }
 
 function mountEmployeeModal() {
@@ -2446,12 +2493,13 @@ async function handleAddEmployeeSubmit(event) {
             return;
         }
 
+        closeAddEmployeeModal();
+        resetAddEmployeeForm();
         window.showCrudResultModal?.(
             true,
             result.message || 'Employee added successfully.',
             'Employee Creation'
         );
-        closeModal();
         employeeListState.page = 1;
         await loadEmployees();
     } catch (error) {

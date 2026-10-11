@@ -12,7 +12,7 @@ $currentRole = require_auth($conn, ['Admin']);
 
 // Helper function for audit logging
 function logAudit($conn, $userId, $action, $details) {
-    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, NOW())");
+    $stmt = $conn->prepare("INSERT INTO audit_logs (UserID, Action, Details, Date) VALUES (?, ?, ?, UTC_TIMESTAMP())");
     $stmt->bind_param("iss", $userId, $action, $details);
     $stmt->execute();
     $stmt->close();
@@ -89,7 +89,7 @@ if ($method === 'POST' || $method === 'DELETE') {
 
         logAudit($conn, $userId, 'Employee Archived', "Archived employee: $employeeName (ID: $employeeId)");
         $conn->commit();
-        echo json_encode(['success' => true, 'message' => 'Employee archived successfully']);
+        echo json_encode(['success' => true, 'message' => 'Worker archived successfully']);
     } catch (Throwable $error) {
         $conn->rollback();
         echo json_encode(['success' => false, 'message' => $error->getMessage()]);

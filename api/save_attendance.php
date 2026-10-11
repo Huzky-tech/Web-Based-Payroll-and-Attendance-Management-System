@@ -239,7 +239,9 @@ foreach ($records as $index => $record) {
         $digitsOnly = preg_replace('/\D+/', '', (string) $workerIdRaw);
         $workerId = $digitsOnly !== '' ? (int) $digitsOnly : 0;
     }
-    $siteId = (int) ($record['site_id'] ?? 0);
+    // The authenticated timekeeper assignment is authoritative. Offline
+    // records can contain a stale cached site ID after reconnecting.
+    $siteId = $assignedSiteId;
 
     if ($workerId <= 0) {
         mobile_json_error('Invalid worker ID in attendance record');
@@ -250,7 +252,7 @@ foreach ($records as $index => $record) {
     }
 
     if (!worker_assigned_to_site($conn, $workerId, $assignedSiteId)) {
-        mobile_json_error('Worker is not assigned to your site.', 403);
+        mobile_json_error("Worker {$workerId} is not assigned to site {$assignedSiteId}.", 403);
     }
 
     $dateRaw = (string) ($record['date'] ?? '');
@@ -263,9 +265,9 @@ foreach ($records as $index => $record) {
     if (!in_array($attendanceType, ['Time In', 'Lunch Out', 'Lunch In', 'Time Out'], true)) {
         mobile_json_error('Unsupported attendance sync type.', 400);
     }
-    if ($attendanceType === 'Lunch Out') {
-        mobile_json_error('Lunch out is recorded automatically at the scheduled lunch time.', 400);
-    }
+    // Lunch Out may be recorded manually before the scheduled lunch time.
+    // Automatic Lunch Out records are still created by the mobile scheduler,
+    // but early manual punches must also be accepted for offline sync.
 
     $eventTime = attendance_photo_parse_event_time($record);
     $isAutomatic = filter_var($record['is_automatic'] ?? false, FILTER_VALIDATE_BOOLEAN);
@@ -277,6 +279,11 @@ foreach ($records as $index => $record) {
     $timeInRaw = (string) ($record['time_in'] ?? '');
     $timeOutRaw = $record['time_out'] ?? null;
     $timeIn = mobile_parse_attendance_time($timeInRaw !== '' ? $timeInRaw : $eventTime);
+    // PM IN is its own punch. When no AM IN row exists yet, do not copy the
+    // PM IN timestamp into the AM IN column.
+    if ($attendanceType === 'Lunch In') {
+        $timeIn = '00:00:00';
+    }
     $timeOut = null;
     if ($timeOutRaw !== null && $timeOutRaw !== '') {
         $timeOut = mobile_parse_attendance_time((string) $timeOutRaw);
@@ -363,9 +370,9 @@ foreach ($records as $index => $record) {
     $recordAccepted = true;
 
     if ($existing) {
-        if ((int) $existing['SiteID'] !== $assignedSiteId) {
-            mobile_json_error('Attendance already exists at another site for this date.', 409);
-        }
+        // Offline records may have been created with a stale site assignment.
+        // The worker/site assignment was already validated above, so replay
+        // the record against the worker's current authorized site.
         $attendanceId = (int) $existing['AttendanceID'];
         $wasUpdated = true;
         if ($attendanceType !== 'Time In') {
@@ -427,12 +434,10 @@ foreach ($records as $index => $record) {
             $updateStmt->close();
         } elseif ($attendanceType === 'Lunch In' && $hasLunchColumns) {
             $existingTimeIn = trim((string) ($existing['Time_In'] ?? ''));
-            if ($existingTimeIn === '' || $existingTimeIn === '00:00:00' ||
-                ($isAutomatic && $existingTimeIn > '12:00:00')) {
+            if ($isAutomatic && ($existingTimeIn === '' || $existingTimeIn === '00:00:00' ||
+                $existingTimeIn > '12:00:00')) {
                 mobile_json_error('A valid Time In before noon is required for automatic Lunch In.', 400);
             }
-            save_attendance_apply_auto_lunch_out($conn, $attendanceId, $assignedSiteId);
-
             $lunchInTime = $eventTime;
             $existingLunchIn = trim((string) ($existing['Lunch_In'] ?? ''));
             // Preserve an earlier manual punch even when an offline noon punch
@@ -445,13 +450,13 @@ foreach ($records as $index => $record) {
             $eventTime = $lunchInTime;
             $updateStmt = $conn->prepare('
                 UPDATE attendance
-                SET Lunch_In = ?
+                SET SiteID = ?, Lunch_In = ?
                 WHERE AttendanceID = ?
             ');
             if (!$updateStmt) {
                 mobile_json_error('Database error', 500);
             }
-            $updateStmt->bind_param('si', $lunchInTime, $attendanceId);
+            $updateStmt->bind_param('isi', $assignedSiteId, $lunchInTime, $attendanceId);
             save_attendance_require_execute($updateStmt, 'Attendance lunch-in update');
             $updateStmt->close();
         } else {
@@ -467,9 +472,9 @@ foreach ($records as $index => $record) {
             save_attendance_require_execute($updateStmt, 'Attendance update');
             $updateStmt->close();
         }
-    } elseif ($attendanceType === 'Lunch Out' || $attendanceType === 'Lunch In') {
+    } elseif ($attendanceType === 'Lunch Out') {
         mobile_json_error('Worker must be clocked in before recording lunch punches.', 400);
-    } elseif ($attendanceType !== 'Time In' && $attendanceType !== 'Time Out') {
+    } elseif ($attendanceType !== 'Time In' && $attendanceType !== 'Time Out' && $attendanceType !== 'Lunch In') {
         $savedRecords[] = [
             'worker_id' => $workerId,
             'date' => $date,
@@ -490,14 +495,16 @@ foreach ($records as $index => $record) {
             }
         }
 
+        $duplicateTimeFields = $attendanceType === 'Lunch In'
+            ? 'Time_Out = Time_Out, Hours_Worked = Hours_Worked'
+            : 'Time_Out = VALUES(Time_Out), Hours_Worked = VALUES(Hours_Worked)';
         $insertStmt = $conn->prepare("
             INSERT INTO attendance (WorkerID, SiteID, Date, Time_In, Time_Out, Hours_Worked, AttendanceStatus)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 SiteID = VALUES(SiteID),
                 Time_In = VALUES(Time_In),
-                Time_Out = VALUES(Time_Out),
-                Hours_Worked = VALUES(Hours_Worked),
+                {$duplicateTimeFields},
                 AttendanceStatus = VALUES(AttendanceStatus)
         ");
         if (!$insertStmt) {
@@ -534,9 +541,16 @@ foreach ($records as $index => $record) {
         if ($attendanceId <= 0) {
             mobile_json_error('Attendance row could not be saved.', 500);
         }
+        if ($attendanceType === 'Lunch In' && $hasLunchColumns) {
+            $lunchInStmt = $conn->prepare('UPDATE attendance SET Lunch_In = ? WHERE AttendanceID = ?');
+            if (!$lunchInStmt) mobile_json_error('Database error', 500);
+            $lunchInStmt->bind_param('si', $eventTime, $attendanceId);
+            save_attendance_require_execute($lunchInStmt, 'Attendance afternoon-in insert');
+            $lunchInStmt->close();
+        }
     }
 
-    if ($attendanceId > 0 && $hasLunchColumns) {
+    if ($attendanceId > 0 && $hasLunchColumns && $attendanceType !== 'Lunch In') {
         save_attendance_apply_auto_lunch_out($conn, $attendanceId, $assignedSiteId);
     }
 

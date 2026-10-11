@@ -145,7 +145,7 @@ function renderArchiveItemCard(item) {
                 ${restoreButton}
 
                 ${item.can_delete === false ? '' : `<button class="archive-action-btn" type="button" data-archive-action="delete" data-archive-id="${escapeArchiveHtml(item.id)}" title="Delete">
-                    <i class="fa-regular fa-trash-can"></i>
+                    <i class="fas fa-trash"></i>
                 </button>`}
             </div>
         </div>
@@ -183,6 +183,7 @@ function updateArchiveCountTags() {
     const mapping = {
         all: 'archiveTagAll',
         employee: 'archiveTagEmployee',
+        user: 'archiveTagUser',
         site: 'archiveTagSite'
     };
 
@@ -192,7 +193,9 @@ function updateArchiveCountTags() {
             return;
         }
 
-        const label = type.charAt(0).toUpperCase() + type.slice(1);
+        const label = type === 'employee'
+            ? 'Workers'
+            : type.charAt(0).toUpperCase() + type.slice(1);
         button.textContent = `${label} (${Number(archiveState.counts[type] || 0)})`;
     });
 }

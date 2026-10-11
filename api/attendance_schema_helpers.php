@@ -87,7 +87,7 @@ if (!function_exists('attendance_schema_normalize_status')) {
     {
         $normalized = ucfirst(strtolower(trim($status)));
         if ($normalized === 'Late') return 'Present';
-        if (in_array($normalized, ['Present', 'Absent'], true)) {
+        if (in_array($normalized, ['Present', 'Absent', 'Incomplete'], true)) {
             return $normalized;
         }
 

@@ -11,6 +11,9 @@
         const separator = url.includes('?') ? '&' : '?';
         const response = await fetch(`${url}${separator}_t=${Date.now()}`, {
             credentials: 'same-origin',
+            // Save and remove explicitly use the shared lifecycle below so the
+            // resulting message remains specific to the position action.
+            showProcessing: false,
             ...options
         });
         const data = await response.json().catch(() => ({ success: false, message: 'Invalid server response.' }));
@@ -47,6 +50,7 @@
     function validateForm() {
         const nameInput = document.getElementById('catalog_position_name');
         const hourlyInput = document.getElementById('catalog_hourly_rate');
+        const weeklyInput = document.getElementById('catalog_weekly_rate');
         const salaryInput = document.getElementById('catalog_salary_rate');
         const name = nameInput.value.trim().replace(/\s+/g, ' ');
         const validName = validateField(
@@ -64,13 +68,22 @@
             document.getElementById('catalog_salary_rate_error'),
             Number(salaryInput.value) <= 0 ? 'Enter a monthly salary greater than zero.' : ''
         );
+        const validWeekly = validateField(
+            weeklyInput,
+            document.getElementById('catalog_weekly_rate_error'),
+            Number(weeklyInput.value) <= 0 ? 'Enter a weekly salary greater than zero.' : ''
+        );
         nameInput.value = name;
-        return validName && validHourly && validSalary;
+        return validName && validHourly && validWeekly && validSalary;
     }
 
     async function loadPositions() {
         const body = document.getElementById('positionCatalogTableBody');
         if (!body) return;
+        const headerRow = body.closest('table')?.querySelector('thead tr');
+        if (headerRow) {
+            headerRow.innerHTML = '<th>Position</th><th>Hourly Rate</th><th>Weekly Salary</th><th>Monthly Salary</th><th>Action</th>';
+        }
         try {
             const data = await fetchJson('../api/get_position_catalog.php');
             if (!data.success) throw new Error(data.message || 'Unable to load positions.');
@@ -79,18 +92,20 @@
                 <tr>
                     <td>${escapeHtml(position.position_name)}</td>
                     <td>PHP ${Number(position.hourly_rate).toFixed(2)}</td>
+                    <td>PHP ${Number(position.weekly_rate).toFixed(2)}</td>
                     <td>PHP ${Number(position.salary_rate).toFixed(2)}</td>
                     <td>
                         <button type="button" class="btn-secondary position-catalog-edit"
                             data-position-id="${Number(position.id)}"
                             data-position-name="${escapeHtml(position.position_name)}"
                             data-hourly-rate="${Number(position.hourly_rate)}"
+                            data-weekly-rate="${Number(position.weekly_rate)}"
                             data-salary-rate="${Number(position.salary_rate)}"><i class="fas fa-pen"></i>Edit</button>
                         <button type="button" class="btn-danger position-catalog-delete" data-position-id="${Number(position.id)}"><i class="fas fa-trash"></i>Remove</button>
                     </td>
-                </tr>`).join('') : '<tr><td colspan="4">No positions added yet.</td></tr>';
+                </tr>`).join('') : '<tr><td colspan="5">No positions added yet.</td></tr>';
         } catch (error) {
-            body.innerHTML = `<tr><td colspan="4">${escapeHtml(error.message || 'Unable to load positions. Please reload the page.')}</td></tr>`;
+            body.innerHTML = `<tr><td colspan="5">${escapeHtml(error.message || 'Unable to load positions. Please reload the page.')}</td></tr>`;
         }
     }
 
@@ -101,6 +116,7 @@
         const modalTitle = document.getElementById('positionCatalogModalTitle');
         const nameInput = document.getElementById('catalog_position_name');
         const hourlyInput = document.getElementById('catalog_hourly_rate');
+        const weeklyInput = document.getElementById('catalog_weekly_rate');
         const salaryInput = document.getElementById('catalog_salary_rate');
         if (!form || !tableBody) return;
 
@@ -135,7 +151,7 @@
             nameInput.value = filtered;
             validateField(nameInput, document.getElementById('catalog_position_name_error'), removedCharacters ? 'Special characters and numbers are not allowed.' : '');
         });
-        [hourlyInput, salaryInput].forEach((input) => input.addEventListener('input', () => {
+        [hourlyInput, weeklyInput, salaryInput].forEach((input) => input.addEventListener('input', () => {
             if (Number(input.value) < 0) input.value = '';
             const error = document.getElementById(`${input.id}_error`);
             validateField(input, error, input.value !== '' && Number(input.value) <= 0 ? 'Enter an amount greater than zero.' : '');
@@ -148,23 +164,29 @@
             const submitButton = document.getElementById('positionCatalogSubmit');
             submitButton.disabled = true;
             try {
-                const result = await fetchJson('../api/save_position_catalog.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: Number(document.getElementById('catalog_position_id').value || 0),
-                        position_name: document.getElementById('catalog_position_name').value.trim(),
-                        hourly_rate: document.getElementById('catalog_hourly_rate').value,
-                        salary_rate: document.getElementById('catalog_salary_rate').value
-                    })
-                });
-                showResult(Boolean(result.success), result.message);
+                const result = await window.runWithProcessingModal(
+                    () => fetchJson('../api/save_position_catalog.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            id: Number(document.getElementById('catalog_position_id').value || 0),
+                            position_name: document.getElementById('catalog_position_name').value.trim(),
+                            hourly_rate: document.getElementById('catalog_hourly_rate').value,
+                            weekly_rate: document.getElementById('catalog_weekly_rate').value,
+                            salary_rate: document.getElementById('catalog_salary_rate').value
+                        })
+                    }),
+                    {
+                        button: submitButton,
+                        loadingMessage: 'Please wait while we save the position.'
+                    }
+                );
                 if (result.success) {
                     closeModal();
                     await loadPositions();
                 }
             } catch (error) {
-                showResult(false, error.message || 'Unable to save the position.');
+                // The shared processing modal already shows the actual error.
             } finally {
                 submitButton.disabled = false;
             }
@@ -176,6 +198,7 @@
                 document.getElementById('catalog_position_id').value = editButton.dataset.positionId;
                 document.getElementById('catalog_position_name').value = editButton.dataset.positionName;
                 document.getElementById('catalog_hourly_rate').value = editButton.dataset.hourlyRate;
+                document.getElementById('catalog_weekly_rate').value = editButton.dataset.weeklyRate;
                 document.getElementById('catalog_salary_rate').value = editButton.dataset.salaryRate;
                 document.getElementById('positionCatalogSubmit').innerHTML = '<i class="fas fa-save"></i>Update Position';
                 openModal(true);
@@ -183,14 +206,31 @@
             }
 
             const deleteButton = event.target.closest('.position-catalog-delete');
-            if (!deleteButton || !window.confirm('Remove this position from the employee position list?')) return;
-            const result = await fetchJson('../api/delete_position_catalog.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: Number(deleteButton.dataset.positionId) })
+            if (!deleteButton) return;
+            const confirmed = await window.showConfirmModal?.('Remove this position from the employee position list?', {
+                title: 'Remove Position',
+                confirmText: 'Remove',
+                cancelText: 'Cancel',
+                type: 'error'
             });
-            showResult(Boolean(result.success), result.message);
-            if (result.success) await loadPositions();
+            if (!confirmed) return;
+
+            try {
+                const result = await window.runWithProcessingModal(
+                    () => fetchJson('../api/delete_position_catalog.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: Number(deleteButton.dataset.positionId) })
+                    }),
+                    {
+                        button: deleteButton,
+                        loadingMessage: 'Please wait while we remove the position.'
+                    }
+                );
+                if (result.success) await loadPositions();
+            } catch (error) {
+                // The shared processing modal already shows the actual error.
+            }
         });
     });
 })();

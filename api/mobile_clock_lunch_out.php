@@ -40,7 +40,7 @@ try {
 
     $lunchOutTime = $currentTime;
 
-    $updateSql = 'UPDATE attendance SET Lunch_Out = ? WHERE AttendanceID = ?';
+    $updateSql = "UPDATE attendance SET Lunch_Out = ?, AttendanceStatus = 'Incomplete' WHERE AttendanceID = ?";
     $stmt = $pdo->prepare($updateSql);
     $stmt->execute([$lunchOutTime, $attendanceId]);
 

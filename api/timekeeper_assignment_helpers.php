@@ -62,97 +62,10 @@ if (!function_exists('validate_timekeeper_is_role')) {
 if (!function_exists('projectsite_timekeeper_column')) {
     function projectsite_timekeeper_column(mysqli $conn): ?string
     {
-        foreach (['Timekeeper_UserID', 'TimekeeperUserID', 'TimekeeperID', 'AssignedTimekeeperID'] as $column) {
+        foreach (['TimekeeperUserID', 'TimekeeperID', 'AssignedTimekeeperID'] as $column) {
             $result = $conn->query("SHOW COLUMNS FROM projectsite LIKE '{$column}'");
             if ($result !== false && $result->num_rows > 0) {
                 return $column;
-            }
-        }
-
-        return null;
-    }
-}
-
-if (!function_exists('get_timekeeper_site_ids')) {
-    /**
-     * Active site IDs linked to a Timekeeper user account.
-     *
-     * @return int[]
-     */
-    function get_timekeeper_site_ids(mysqli $conn, int $userId): array
-    {
-        if ($userId <= 0) {
-            return [];
-        }
-
-        $siteIds = [];
-        $column = projectsite_timekeeper_column($conn);
-
-        if ($column !== null) {
-            $stmt = $conn->prepare("
-                SELECT SiteID
-                FROM projectsite
-                WHERE {$column} = ?
-                  AND LOWER(COALESCE(Status, '')) = 'active'
-                ORDER BY SiteID ASC
-            ");
-            if ($stmt) {
-                $stmt->bind_param('i', $userId);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                while ($row = $result->fetch_assoc()) {
-                    $siteIds[] = (int) ($row['SiteID'] ?? 0);
-                }
-                $stmt->close();
-            }
-        }
-
-        if ($siteIds === [] && timekeeper_assignment_table_exists($conn)) {
-            $stmt = $conn->prepare("
-                SELECT DISTINCT ta.SiteID
-                FROM timekeeper_assignment ta
-                INNER JOIN projectsite ps ON ps.SiteID = ta.SiteID
-                WHERE ta.UserID = ?
-                  AND ta.Status = 'Active'
-                  AND LOWER(COALESCE(ps.Status, '')) = 'active'
-                ORDER BY ta.SiteID ASC
-            ");
-            if ($stmt) {
-                $stmt->bind_param('i', $userId);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                while ($row = $result->fetch_assoc()) {
-                    $siteIds[] = (int) ($row['SiteID'] ?? 0);
-                }
-                $stmt->close();
-            }
-        }
-
-        $siteIds = array_values(array_filter(array_unique($siteIds), static fn (int $id): bool => $id > 0));
-
-        return $siteIds;
-    }
-}
-
-if (!function_exists('timekeeper_assigned_to_other_active_site')) {
-    function timekeeper_assigned_to_other_active_site(mysqli $conn, int $userId, int $siteId): ?array
-    {
-        foreach (get_timekeeper_site_ids($conn, $userId) as $assignedSiteId) {
-            if ($assignedSiteId !== $siteId) {
-                $stmt = $conn->prepare('SELECT Site_Name FROM projectsite WHERE SiteID = ? LIMIT 1');
-                if (!$stmt) {
-                    return ['site_id' => $assignedSiteId, 'site_name' => "Site {$assignedSiteId}"];
-                }
-
-                $stmt->bind_param('i', $assignedSiteId);
-                $stmt->execute();
-                $row = $stmt->get_result()->fetch_assoc();
-                $stmt->close();
-
-                return [
-                    'site_id' => $assignedSiteId,
-                    'site_name' => trim((string) ($row['Site_Name'] ?? '')) ?: "Site {$assignedSiteId}",
-                ];
             }
         }
 
@@ -228,8 +141,8 @@ if (!function_exists('get_active_timekeeper_assignment')) {
             return null;
         }
 
-        if (function_exists('get_timekeeper_site_ids')) {
-            $siteIds = get_timekeeper_site_ids($conn, $timekeeperId);
+        if (function_exists('auth_get_timekeeper_site_ids')) {
+            $siteIds = auth_get_timekeeper_site_ids($conn, $timekeeperId);
             if (count($siteIds) !== 1) {
                 return null;
             }

@@ -280,7 +280,29 @@ function renderSites() {
     }
 
     const assignedSiteIds = new Set(assignedSites.map((site) => Number(site.SiteID)));
-    const sortedSites = [...allSites].filter(matchesSiteSearch).sort((firstSite, secondSite) => {
+    const assignedSite = assignedSites[0] || null;
+    const assignedSiteName = String(assignedSite?.Site_Name || 'the assigned site');
+    const assignmentLimitReached = assignedSites.length > 0;
+
+    // The active-site request supplies sites that can be assigned. The
+    // selected staff member can also have an older assignment whose site has
+    // since become inactive. Include those assigned records too, so the
+    // assignment count and visible cards always agree and the assignment can
+    // still be reviewed or removed.
+    const visibleSitesById = new Map();
+    allSites.forEach((site) => visibleSitesById.set(Number(site.SiteID), site));
+    assignedSites.forEach((site) => {
+        const siteId = Number(site.SiteID);
+        if (!visibleSitesById.has(siteId)) {
+            visibleSitesById.set(siteId, {
+                ...site,
+                Status: site.Status || site.site_status || 'Inactive',
+                Current_Workers: site.Current_Workers ?? site.current_workers ?? 0
+            });
+        }
+    });
+
+    const sortedSites = Array.from(visibleSitesById.values()).filter(matchesSiteSearch).sort((firstSite, secondSite) => {
         const firstAssigned = assignedSiteIds.has(Number(firstSite.SiteID)) ? 1 : 0;
         const secondAssigned = assignedSiteIds.has(Number(secondSite.SiteID)) ? 1 : 0;
 
@@ -300,7 +322,10 @@ function renderSites() {
         const isAssigned = assignedSiteIds.has(Number(site.SiteID));
         const assignedPayrollStaffId = Number(site.PayrollStaff_ID || 0);
         const assignedToOtherStaff = assignedPayrollStaffId > 0 && assignedPayrollStaffId !== Number(currentStaffId);
-        const statusClass = String(site.Status || '').toLowerCase();
+        const blockedByStaffAssignment = assignmentLimitReached && !isAssigned;
+        const assignmentUnavailable = assignedToOtherStaff || blockedByStaffAssignment;
+        const siteStatus = site.Status || site.site_status || 'Inactive';
+        const statusClass = String(siteStatus).toLowerCase();
 
         return `
             <div class="site-item ${statusClass === 'inactive' ? 'inactive' : ''}" data-site="${Number(site.SiteID) || 0}">
@@ -309,17 +334,17 @@ function renderSites() {
                         <div class="site-name">${escapeHtml(site.Site_Name)}</div>
                         <div class="site-address">${escapeHtml(site.Location || '')}</div>
                     </div>
-                    <button class="site-action ${isAssigned ? 'remove' : 'add'}${assignedToOtherStaff ? ' unavailable' : ''}"
+                    <button class="site-action ${isAssigned ? 'remove' : 'add'}${assignmentUnavailable ? ' unavailable' : ''}"
                             type="button"
                             data-site-id="${Number(site.SiteID) || 0}"
-                            ${assignedToOtherStaff ? 'disabled' : ''}
-                            title="${escapeHtml(isAssigned ? 'Remove assignment' : (assignedToOtherStaff ? `Assigned to ${site.PayrollStaff_Name || 'another Payroll Staff member'}` : 'Assign this site'))}">
-                        <i class="fas ${isAssigned ? 'fa-user-minus' : (assignedToOtherStaff ? 'fa-user-lock' : 'fa-user-check')}"></i>
+                            ${assignmentUnavailable ? 'disabled' : ''}
+                            title="${escapeHtml(isAssigned ? 'Remove assignment' : (assignedToOtherStaff ? `Assigned to ${site.PayrollStaff_Name || 'another Payroll Staff member'}` : (blockedByStaffAssignment ? `Payroll Staff is already assigned to ${assignedSiteName}` : 'Assign this site')))}">
+                        <i class="fas ${isAssigned ? 'fa-user-minus' : (assignmentUnavailable ? 'fa-user-lock' : 'fa-user-check')}"></i>
                     </button>
                 </div>
-                <span class="site-status ${statusClass}">${escapeHtml(site.Status || 'Unknown')}</span>
+                <span class="site-status ${statusClass}">${escapeHtml(siteStatus)}</span>
                 <div class="site-details">
-                    <div>${escapeHtml(site.current_workers || 0)} Current Workers</div>
+                    <div>${escapeHtml(site.Current_Workers ?? site.current_workers ?? 0)} Current Workers</div>
                     <div>Required: ${escapeHtml(site.Required_Workers || 'N/A')}</div>
                     ${assignedToOtherStaff ? `<div><strong>Payroll Staff:</strong> ${escapeHtml(site.PayrollStaff_Name || 'Already assigned')}</div>` : ''}
                 </div>

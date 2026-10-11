@@ -61,12 +61,12 @@ if ($result && $result->num_rows > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Employees - Philippians CDO</title>
+    <title>Worker Management - Philippians CDO</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../css/worker.css?v=20260915-profile-validation-1">
+    <link rel="stylesheet" href="../css/worker.css?v=20260930-add-button-space-1">
     <script>window.employeePageRole = <?php echo json_encode($_SESSION['role'] ?? 'Admin', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;</script>
-    <script src="../js/action_result_modal.js?v=20260920-access-1" defer></script>
-    <script src="../js/worker.js?v=20260915-profile-validation-1" defer></script>
+    <script src="../js/action_result_modal.js?v=20260930-processing-1" defer></script>
+    <script src="../js/worker.js?v=20261004-worker-archive-result-1" defer></script>
 </head>
 <body data-employee-page="admin">
 <?php endif; ?>
@@ -79,14 +79,14 @@ if ($result && $result->num_rows > 0) {
         <!-- Employee Content -->
         <div class="employee-content">
             <div class="section-header">
-                <h2 class="section-title">Employee Management</h2>
+                <h2 class="section-title">Worker Management</h2>
                  </div>
 
             <div class="section-actions">
                 <div class="tabs">
                     <button class="tab active" data-tab="employees">
                         <i class="fas fa-user"></i>
-                        <span>All Employees</span>
+                        <span>All Workers</span>
                     </button>
                 </div>
                 <button class="btn-add" id="btnAddEmployee">
@@ -105,8 +105,8 @@ if ($result && $result->num_rows > 0) {
                     <ul class="admin-workflow-list">
                         <li>Access is based on your <?php echo htmlspecialchars($currentRole ?? ($_SESSION['role'] ?? 'user')); ?> permissions</li>
                         <li>System stores data in the database</li>
-                        <li>Payroll calculations use this employee data</li>
-                        <li>Employee actions are recorded under your account</li>
+                        <li>Payroll calculations use this worker data</li>
+                        <li>Worker actions are recorded under your account</li>
                     </ul>
                 </div>
 
@@ -114,7 +114,7 @@ if ($result && $result->num_rows > 0) {
                 <div class="search-filters">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Search employees..." onkeyup="searchEmployees(this.value)">
+                        <input type="text" id="searchInput" placeholder="Search workers..." onkeyup="searchEmployees(this.value)">
                     </div>
                     <div class="filter-dropdown status-filter-dropdown">
                         <i class="fas fa-filter"></i>
@@ -142,7 +142,7 @@ if ($result && $result->num_rows > 0) {
                 <table class="employee-table">
                     <thead>
                         <tr>
-                            <th>Employee</th>
+                            <th>Worker</th>
                             <th>Position</th>
                             <th>Status</th>
                             <th>Salary</th>
@@ -191,7 +191,7 @@ if ($result && $result->num_rows > 0) {
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         <?php if ($canManageEmployees): ?>
-                                        <button class="btn-action edit" title="Edit Employee" aria-label="Edit <?php echo htmlspecialchars($employee['full_name']); ?>">
+                                        <button class="btn-action edit" title="Edit Worker" aria-label="Edit <?php echo htmlspecialchars($employee['full_name']); ?>">
                                             <i class="fas fa-pen"></i>
                                         </button>
                                         <?php endif; ?>
@@ -199,7 +199,7 @@ if ($result && $result->num_rows > 0) {
                                             <i class="fas fa-id-card"></i>
                                         </button>
                                         <?php if ($approvalStatus !== 'Approved'): ?>
-                                        <button class="btn-action approve" title="Approve Employee">
+                                        <button class="btn-action approve" title="Approve Worker">
                                             <i class="fas fa-check"></i>
                                         </button>
                                         <?php endif; ?>
@@ -212,7 +212,7 @@ if ($result && $result->num_rows > 0) {
                             <?php endforeach; ?>
                         <?php else: ?>
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 20px;">No employees found. Click "Add New Employee" to create one.</td>
+                            <td colspan="7" style="text-align: center; padding: 20px;">No workers found. Click "Add New Worker" to create one.</td>
                         </tr>
                         <?php endif; ?>
                     </tbody>
@@ -231,10 +231,11 @@ if ($result && $result->num_rows > 0) {
 <div id="viewEmployeeModal" class="modal">
     <div class="modal-content view-employee-modal">
         <div class="modal-header">
-            <h2>Employee Details</h2>
+            <h2>Worker Details</h2>
             <button type="button" class="close-modal" id="closeViewEmployeeModal" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body" id="viewEmployeeBody"></div>
+        <div class="view-employee-modal-footer" id="viewEmployeeModalFooter"></div>
     </div>
 </div>
 

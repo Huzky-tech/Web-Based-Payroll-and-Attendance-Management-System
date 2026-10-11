@@ -9,9 +9,13 @@ require_once '../includes/auth.php';
 require_once __DIR__ . '/site_schedule_helpers.php';
 require_once __DIR__ . '/timekeeper_assignment_helpers.php';
 require_once __DIR__ . '/attendance_photo_helpers.php';
+require_once __DIR__ . '/overtime_helpers.php';
+require_once __DIR__ . '/attendance_auto_lunch.php';
 
 $currentRole = require_auth($conn, ['Admin', 'Assistant Admin', 'Payroll Staff', 'HR', 'Timekeeper']);
 $currentUserId = (int) ($_SESSION['user_id'] ?? 0);
+// Fallback for the scheduled task: materialize AM OUT at Lunch Start when this API is used.
+attendance_apply_due_lunch_out($conn);
 
 function getCurrentPayrollStaffId(mysqli $conn, int $userId): int
 {
@@ -47,7 +51,6 @@ try {
     require_once __DIR__ . '/attendance_schema_helpers.php';
     attendance_schema_ensure_table($conn);
     ensure_attendance_punch_photo_columns($conn);
-    auto_close_open_attendance_at_shift_end($conn);
     $date = isset($_GET['date']) && $_GET['date'] !== '' ? $_GET['date'] : date('Y-m-d');
     $siteId = isset($_GET['site_id']) ? (int) $_GET['site_id'] : 0;
     $search = trim((string) ($_GET['search'] ?? ''));
@@ -246,6 +249,20 @@ try {
     }
     $filterStmt->close();
 
+    $hasApprovedOvertime = overtime_table_exists($conn);
+    $approvedOvertimeSelect = $hasApprovedOvertime
+        ? "(SELECT COALESCE(SUM(ot.TotalHours), 0) FROM overtime_requests ot
+            WHERE ot.WorkerID = w.WorkerID AND ot.SiteID = wa.SiteID
+              AND ot.RequestDate = ? AND ot.Status = 'Approved')"
+        : '0';
+    $timekeeperColumn = projectsite_timekeeper_column($conn);
+    $assignedTimekeeperSelect = "'Not assigned' AS assigned_timekeeper_name";
+    if ($timekeeperColumn !== null) {
+        $assignedTimekeeperSelect = "COALESCE((SELECT u.full_name FROM users u WHERE u.id = ps.{$timekeeperColumn} LIMIT 1), 'Not assigned') AS assigned_timekeeper_name";
+    } elseif (timekeeper_assignment_table_exists($conn)) {
+        $assignedTimekeeperSelect = "COALESCE((SELECT u.full_name FROM timekeeper_assignment ta INNER JOIN users u ON u.id = ta.UserID WHERE ta.SiteID = wa.SiteID AND ta.Status = 'Active' LIMIT 1), 'Not assigned') AS assigned_timekeeper_name";
+    }
+
     $dataSql = "
         SELECT
             w.WorkerID,
@@ -264,9 +281,11 @@ try {
             a.Time_Out,
             COALESCE(a.Hours_Worked, 0) AS Hours_Worked,
             COALESCE(a.Overtime_Hours, 0) AS Overtime_Hours,
+            {$approvedOvertimeSelect} AS Approved_Overtime_Hours,
             a.AttendanceStatus AS AttendanceStatus,
             a.IsLate AS IsLate,
             a.Date,
+        {$assignedTimekeeperSelect},
             " . attendance_photo_select_columns($conn) . "
         {$fromSql}
         ORDER BY {$orderBy} {$sortDir}, w.WorkerID ASC
@@ -274,6 +293,10 @@ try {
 
     $dataTypes = $types;
     $dataParams = $params;
+    if ($hasApprovedOvertime) {
+        $dataTypes = 's' . $dataTypes;
+        array_unshift($dataParams, $date);
+    }
 
     $dataStmt = $conn->prepare($dataSql);
     if (!$dataStmt) {
@@ -301,7 +324,8 @@ try {
             $recordRow['AttendanceStatus'] ?? null,
             $recordRow['Time_In'] ?? null,
             (string) ($recordRow['Date'] ?? $date),
-            $schedule['ShiftEnd'] ?? null
+            $schedule['ShiftEnd'] ?? null,
+            $recordRow['Time_Out'] ?? null
         );
     }
     unset($recordRow);
@@ -347,6 +371,7 @@ try {
         if ($recordRow['photo_logs'] !== [] && empty($recordRow['PhotoPath'])) {
             $recordRow['PhotoPath'] = $recordRow['photo_logs'][0]['photo_path'] ?? null;
         }
+        $recordRow['scanned_by'] = trim((string) ($recordRow['assigned_timekeeper_name'] ?? '')) ?: 'Not assigned';
     }
     unset($recordRow);
 

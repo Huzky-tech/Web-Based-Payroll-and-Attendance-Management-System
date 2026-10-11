@@ -2,16 +2,34 @@
 
 function position_catalog_ensure_table(mysqli $conn): bool
 {
+    // Default positions belong only to a newly created catalog. Re-seeding on
+    // every read makes a successfully deleted default position reappear.
+    $existingTable = $conn->query("SHOW TABLES LIKE 'employee_position_catalog'");
+    $tableAlreadyExists = $existingTable && $existingTable->num_rows > 0;
+
     $sql = "CREATE TABLE IF NOT EXISTS employee_position_catalog (
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
         position_name VARCHAR(100) NOT NULL,
         hourly_rate DECIMAL(10,2) NOT NULL DEFAULT 0,
+        weekly_rate DECIMAL(10,2) NOT NULL DEFAULT 0,
         salary_rate DECIMAL(10,2) NOT NULL DEFAULT 0,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
         UNIQUE KEY uq_employee_position_name (position_name)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci";
     if (!$conn->query($sql)) return false;
+    if ($tableAlreadyExists) {
+        $weeklyColumn = $conn->query("SHOW COLUMNS FROM employee_position_catalog LIKE 'weekly_rate'");
+        if (!$weeklyColumn || $weeklyColumn->num_rows === 0) {
+            if (!$conn->query('ALTER TABLE employee_position_catalog ADD COLUMN weekly_rate DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER hourly_rate')) {
+                return false;
+            }
+        }
+        // Preserve saved monthly salaries while giving existing positions a
+        // sensible weekly value until an administrator edits it.
+        return (bool) $conn->query('UPDATE employee_position_catalog SET weekly_rate = ROUND(salary_rate / 5, 2) WHERE weekly_rate <= 0 AND salary_rate > 0');
+    }
+
     $defaults = [
         ['Construction Worker', 125, 22000], ['Laborer', 110, 19000],
         ['Carpenter', 150, 26000], ['Mason', 150, 26000],
@@ -20,11 +38,15 @@ function position_catalog_ensure_table(mysqli $conn): bool
         ['Heavy Equipment Operator', 190, 33000], ['Site Foreman', 220, 38000],
         ['Manager', 250, 45000],
     ];
-    $stmt = $conn->prepare('INSERT IGNORE INTO employee_position_catalog (position_name, hourly_rate, salary_rate) VALUES (?, ?, ?)');
+    $stmt = $conn->prepare('INSERT IGNORE INTO employee_position_catalog (position_name, hourly_rate, weekly_rate, salary_rate) VALUES (?, ?, ?, ?)');
     if (!$stmt) return false;
     foreach ($defaults as [$name, $hourly, $salary]) {
-        $stmt->bind_param('sdd', $name, $hourly, $salary);
-        $stmt->execute();
+        $weekly = round($salary / 5, 2);
+        $stmt->bind_param('sddd', $name, $hourly, $weekly, $salary);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            return false;
+        }
     }
     $stmt->close();
     return true;
