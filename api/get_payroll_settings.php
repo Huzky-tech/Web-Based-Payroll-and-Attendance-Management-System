@@ -25,6 +25,11 @@ try {
     $settings = $result->fetch_assoc();
 
     if ($settings) {
+        // Keep the Settings screen aligned with the fixed values enforced by
+        // payroll calculations, even if an old database contains other values.
+        $settings['sss_rate'] = 950.00;
+        $settings['philhealth_rate'] = 262.50;
+        $settings['pagibig_rate'] = 200.00;
         echo json_encode(['success' => true, 'data' => $settings]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Settings not found']);

@@ -287,25 +287,23 @@ if (!$isAccountOnlySettings) {
             <!-- Payroll -->
             <div id="payroll" class="panel" style="display:none;">
                 <div class="section-title" style="font-size:18px;">Payroll Settings</div>
-                <div class="section-sub">Configure payroll periods, fixed government deduction amounts, and overtime settings.</div>
+                <div class="section-sub">Configure payroll periods, government deductions, and overtime settings.</div>
                 <div class="form-grid">
                     <div>
                         <label>Pay Periods</label>
-                        <select id="pay_periods">
-                            <option value="Weekly">Weekly</option>
-                        </select>
+                        <input type="text" id="pay_periods" value="Weekly" readonly aria-readonly="true">
                     </div>
                     <div>
                         <label>SSS Deduction (PHP)</label>
-                        <input type="number" id="sss_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
+                        <input type="number" id="sss_rate" min="0" step="0.01" value="950.00" readonly aria-readonly="true">
                     </div>
                     <div>
                         <label>PhilHealth Deduction (PHP)</label>
-                        <input type="number" id="philhealth_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
+                        <input type="number" id="philhealth_rate" min="0" step="0.01" value="262.50" readonly aria-readonly="true">
                     </div>
                     <div>
                         <label>Pag-IBIG Deduction (PHP)</label>
-                        <input type="number" id="pagibig_rate" min="0" step="0.01" value="0.00" placeholder="0.00">
+                        <input type="number" id="pagibig_rate" min="0" step="0.01" value="200.00" readonly aria-readonly="true">
                     </div>
                 </div>
                 <div style="margin-top:16px;">

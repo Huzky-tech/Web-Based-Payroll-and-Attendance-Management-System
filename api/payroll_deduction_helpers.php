@@ -11,6 +11,20 @@ if (!defined('GOVERNMENT_DEDUCTION_NONE')) {
     define('GOVERNMENT_DEDUCTION_NONE', 'No Deductions');
 }
 
+// These are fixed payroll deductions. They are deliberately defined in code
+// so a payroll-settings form or a direct database edit cannot change them.
+if (!defined('FIXED_SSS_DEDUCTION')) {
+    define('FIXED_SSS_DEDUCTION', 950.00);
+}
+
+if (!defined('FIXED_PHILHEALTH_DEDUCTION')) {
+    define('FIXED_PHILHEALTH_DEDUCTION', 262.50);
+}
+
+if (!defined('FIXED_PAGIBIG_DEDUCTION')) {
+    define('FIXED_PAGIBIG_DEDUCTION', 200.00);
+}
+
 if (!function_exists('worker_government_deduction_column_exists')) {
     function worker_government_deduction_column_exists(mysqli $conn): bool
     {
@@ -105,12 +119,12 @@ if (!function_exists('compute_worker_payroll_deductions')) {
             ];
         }
 
-        // These settings are fixed peso deductions per payroll, not rates.
-        // Column names are retained so existing installations need no migration.
+        // Fixed peso deductions per payroll. The settings argument remains in
+        // this signature for compatibility with existing payroll callers.
         $selectedTypes = normalize_government_deduction_types($governmentTypes);
-        $sss = in_array('sss', $selectedTypes, true) ? round(max(0, (float) ($settings['sss_rate'] ?? 0)), 2) : 0.0;
-        $philhealth = in_array('philhealth', $selectedTypes, true) ? round(max(0, (float) ($settings['philhealth_rate'] ?? 0)), 2) : 0.0;
-        $pagibig = in_array('pagibig', $selectedTypes, true) ? round(max(0, (float) ($settings['pagibig_rate'] ?? 0)), 2) : 0.0;
+        $sss = in_array('sss', $selectedTypes, true) ? FIXED_SSS_DEDUCTION : 0.0;
+        $philhealth = in_array('philhealth', $selectedTypes, true) ? FIXED_PHILHEALTH_DEDUCTION : 0.0;
+        $pagibig = in_array('pagibig', $selectedTypes, true) ? FIXED_PAGIBIG_DEDUCTION : 0.0;
         $total = round($sss + $philhealth + $pagibig, 2);
 
         return [

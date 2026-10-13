@@ -28,25 +28,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 $pay_periods = normalize_pay_period((string) ($_POST['pay_periods'] ?? ''));
-$sssRaw = trim((string) ($_POST['sss_rate'] ?? ''));
-$philhealthRaw = trim((string) ($_POST['philhealth_rate'] ?? ''));
-$pagibigRaw = trim((string) ($_POST['pagibig_rate'] ?? ''));
 $overtimeRaw = trim((string) ($_POST['overtime_rate'] ?? ''));
 $lateDeductionRaw = trim((string) ($_POST['late_worker_deduction'] ?? ''));
-foreach (['SSS Deduction' => $sssRaw, 'PhilHealth Deduction' => $philhealthRaw, 'Pag-IBIG Deduction' => $pagibigRaw, 'Overtime Rate' => $overtimeRaw, 'Late Worker Deduction' => $lateDeductionRaw] as $label => $value) {
+foreach (['Overtime Rate' => $overtimeRaw, 'Late Worker Deduction' => $lateDeductionRaw] as $label => $value) {
     if (!preg_match('/^\d+(?:\.\d+)?$/', $value)) {
         echo json_encode(['success' => false, 'message' => "{$label} must contain numbers only. Special characters and letters are not allowed."]);
         exit;
     }
 }
-$sss_rate = (float) $sssRaw;
-$philhealth_rate = (float) $philhealthRaw;
-$pagibig_rate = (float) $pagibigRaw;
+// Government deductions are fixed by business policy and cannot be changed
+// through this endpoint, including by a manually crafted request.
+$sss_rate = 950.00;
+$philhealth_rate = 262.50;
+$pagibig_rate = 200.00;
 $allow_overtime = (int) ($_POST['allow_overtime'] ?? 0) === 1 ? 1 : 0;
 $overtime_rate = (float) $overtimeRaw;
 $late_worker_deduction = (float) $lateDeductionRaw;
-if ($sss_rate < 0 || $philhealth_rate < 0 || $pagibig_rate < 0 || $overtime_rate < 0 || $late_worker_deduction < 0) {
-    echo json_encode(['success' => false, 'message' => 'Deduction amounts and rates must be non-negative']);
+if ($overtime_rate < 0 || $late_worker_deduction < 0) {
+    echo json_encode(['success' => false, 'message' => 'Rates must be non-negative']);
     exit;
 }
 

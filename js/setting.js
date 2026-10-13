@@ -309,9 +309,10 @@ async function loadPayrollSettings() {
     }
 
     document.getElementById('pay_periods').value = normalizePayPeriod(data.data.pay_periods);
-    document.getElementById('sss_rate').value = Number(data.data.sss_rate || 0).toFixed(2);
-    document.getElementById('philhealth_rate').value = Number(data.data.philhealth_rate || 0).toFixed(2);
-    document.getElementById('pagibig_rate').value = Number(data.data.pagibig_rate || 0).toFixed(2);
+    // Government deductions are fixed payroll values, not editable settings.
+    document.getElementById('sss_rate').value = '950.00';
+    document.getElementById('philhealth_rate').value = '262.50';
+    document.getElementById('pagibig_rate').value = '200.00';
     document.getElementById('allow_overtime').checked = Number(data.data.allow_overtime) === 1;
     document.getElementById('overtime_rate').value = data.data.overtime_rate || '1.25';
     document.getElementById('late_worker_deduction').value = Number(data.data.late_worker_deduction || 0).toFixed(2);
