@@ -306,6 +306,11 @@ while ($site = $sitesQuery->fetch_assoc()) {
             'sss_deduction' => $deductionBreakdown['sss'],
             'philhealth_deduction' => $deductionBreakdown['philhealth'],
             'pagibig_deduction' => $deductionBreakdown['pagibig'],
+            'government_deduction_types' => array_values(array_filter([
+                $deductionBreakdown['sss'] > 0 ? 'SSS' : null,
+                $deductionBreakdown['philhealth'] > 0 ? 'PhilHealth' : null,
+                $deductionBreakdown['pagibig'] > 0 ? 'Pag-IBIG' : null,
+            ])),
             'attendance_trail' => $attendanceTrail,
         ];
 

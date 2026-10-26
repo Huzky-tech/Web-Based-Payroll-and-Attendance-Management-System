@@ -131,7 +131,10 @@ foreach ($governmentDeductionTypesRaw as $t) {
 $governmentDeductionTypes = array_keys($governmentDeductionTypes);
 $governmentDeductionTypesJson = null;
 if ($governmentDeductionStatus === GOVERNMENT_DEDUCTION_WITH) {
-    // store as JSON array
+    // New employees start with all deductions unless the admin changes them.
+    if (!$governmentDeductionTypes) {
+        $governmentDeductionTypes = $allowedDeductionTypes;
+    }
     $governmentDeductionTypesJson = json_encode(array_values($governmentDeductionTypes), JSON_UNESCAPED_UNICODE);
 }
 

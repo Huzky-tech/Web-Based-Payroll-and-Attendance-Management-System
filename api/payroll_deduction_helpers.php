@@ -59,9 +59,9 @@ if (!function_exists('normalize_government_deduction_types')) {
             array_map(static fn($type) => strtolower(trim((string) $type)), $value)
         )));
 
-        // Existing employees did not store individual selections. Retain their
-        // original behavior by treating an empty stored value as all three.
-        return $types ?: ['sss', 'philhealth', 'pagibig'];
+        // Missing or empty selections mean no deductions. Employees subject
+        // to legacy defaults are initialized with all types when created.
+        return $types;
     }
 }
 

@@ -115,6 +115,11 @@ $governmentDeductionSelect = $hasGovernmentDeductionColumn
     ? "COALESCE(w.GovernmentDeductionStatus, 'With Deductions') AS GovernmentDeductionStatus"
     : "'With Deductions' AS GovernmentDeductionStatus";
 $governmentDeductionGroupBy = $hasGovernmentDeductionColumn ? ', w.GovernmentDeductionStatus' : '';
+$hasGovernmentDeductionTypesColumn = worker_government_deduction_types_column_exists($conn);
+$governmentDeductionTypesSelect = $hasGovernmentDeductionTypesColumn
+    ? 'w.GovernmentDeductionTypes'
+    : 'NULL AS GovernmentDeductionTypes';
+$governmentDeductionTypesGroupBy = $hasGovernmentDeductionTypesColumn ? ', w.GovernmentDeductionTypes' : '';
 
 $workerStmt = $conn->prepare("
     SELECT
@@ -125,6 +130,7 @@ $workerStmt = $conn->prepare("
         w.RateType,
         w.RateAmount,
         {$governmentDeductionSelect},
+        {$governmentDeductionTypesSelect},
         p.Gross_Pay,
         p.Total_Deductions,
         p.Net_Pay,
@@ -167,7 +173,8 @@ $workerStmt = $conn->prepare("
     WHERE pr.Payroll_RecordsID = ?
     GROUP BY
         w.WorkerID, w.First_Name, w.Last_Name, wa.Role_On_Site,
-        w.RateType, w.RateAmount{$governmentDeductionGroupBy}, p.Gross_Pay, p.Total_Deductions, p.Net_Pay
+        w.RateType, w.RateAmount{$governmentDeductionGroupBy}{$governmentDeductionTypesGroupBy},
+        p.Gross_Pay, p.Total_Deductions, p.Net_Pay
     ORDER BY w.Last_Name, w.First_Name
 ");
 

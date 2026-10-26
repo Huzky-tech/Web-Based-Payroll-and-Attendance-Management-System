@@ -369,7 +369,7 @@ function renderPayrollDetails() {
                 <td data-label="Attendance">${getAttendanceBadgeMarkup(worker)}</td>
                 <td data-label="OT hours">${formatHours(worker.overtime_hours)}</td>
                 <td data-label="Gross pay" class="amount">${formatCurrency(worker.gross_pay)}</td>
-                <td data-label="Deduction status">${escapeHtml(worker.government_deduction_label || 'With Government Deductions')}</td>
+                <td data-label="Deduction status">${escapeHtml((worker.government_deduction_types || []).join(', ') || 'No Government Deductions')}</td>
                 <td data-label="Deductions" class="amount negative">${formatNegativeCurrency(worker.deductions)}</td>
                 <td data-label="Net pay" class="amount">${formatCurrency(worker.net_pay)}</td>
                 <td data-label="Actions">
@@ -627,12 +627,11 @@ function showWorkerSummary(workerId) {
                 <div><b>Base Rate:</b> ${escapeHtml(formatCurrency(worker.rate_amount))} <span style="color:#6b7280">(${escapeHtml(worker.rate_type)})</span></div>
                 <div><b>Attendance:</b> ${escapeHtml(worker.attendance_days)} day(s), ${escapeHtml(worker.late_days)} late</div>
                 <div><b>Overtime:</b> ${escapeHtml(formatHours(worker.overtime_hours))}</div>
-                <div><b>Deduction Status:</b> ${escapeHtml(worker.government_deduction_label || 'With Government Deductions')}</div>
+                <div><b>Deduction Status:</b> ${escapeHtml((worker.government_deduction_types || []).join(', ') || 'No Government Deductions')}</div>
                 <div><b>Gross Pay:</b> ${escapeHtml(formatCurrency(worker.gross_pay))}</div>
-
-                <div><b>SSS:</b> ${escapeHtml(formatCurrency(worker.sss_deduction || 0))}</div>
-                <div><b>PhilHealth:</b> ${escapeHtml(formatCurrency(worker.philhealth_deduction || 0))}</div>
-                <div><b>Pag-IBIG:</b> ${escapeHtml(formatCurrency(worker.pagibig_deduction || 0))}</div>
+                ${Number(worker.sss_deduction || 0) > 0 ? `<div><b>SSS:</b> ${escapeHtml(formatCurrency(worker.sss_deduction))}</div>` : ''}
+                ${Number(worker.philhealth_deduction || 0) > 0 ? `<div><b>PhilHealth:</b> ${escapeHtml(formatCurrency(worker.philhealth_deduction))}</div>` : ''}
+                ${Number(worker.pagibig_deduction || 0) > 0 ? `<div><b>Pag-IBIG:</b> ${escapeHtml(formatCurrency(worker.pagibig_deduction))}</div>` : ''}
                 <div><b>Late Deduction:</b> ${escapeHtml(formatCurrency(worker.late_deduction || 0))}</div>
                 <div><b>Position Deduction:</b> ${escapeHtml(formatCurrency(worker.position_deduction || 0))}</div>
                 <div><b>Total Deductions:</b> ${escapeHtml(formatCurrency(worker.deductions))}</div>
