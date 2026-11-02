@@ -11,20 +11,6 @@ if (!defined('GOVERNMENT_DEDUCTION_NONE')) {
     define('GOVERNMENT_DEDUCTION_NONE', 'No Deductions');
 }
 
-// These are fixed payroll deductions. They are deliberately defined in code
-// so a payroll-settings form or a direct database edit cannot change them.
-if (!defined('FIXED_SSS_DEDUCTION')) {
-    define('FIXED_SSS_DEDUCTION', 950.00);
-}
-
-if (!defined('FIXED_PHILHEALTH_DEDUCTION')) {
-    define('FIXED_PHILHEALTH_DEDUCTION', 262.50);
-}
-
-if (!defined('FIXED_PAGIBIG_DEDUCTION')) {
-    define('FIXED_PAGIBIG_DEDUCTION', 200.00);
-}
-
 if (!function_exists('worker_government_deduction_column_exists')) {
     function worker_government_deduction_column_exists(mysqli $conn): bool
     {
@@ -92,11 +78,37 @@ if (!function_exists('government_deduction_status_label')) {
     }
 }
 
+if (!function_exists('calculate_sss_employee_employer_shares')) {
+    /**
+     * Calculate the weekly SSS employee and employer shares from the official
+     * 2025 business-employer schedule, prorated for a 7-day payroll week.
+     *
+     * @return array{employee: float, employer: float, msc: float, ec: float}
+     */
+    function calculate_sss_employee_employer_shares(float $monthlyCompensation): array
+    {
+        $compensation = max(0, $monthlyCompensation);
+        $msc = min(35000, max(5000, ceil($compensation / 500) * 500));
+        $employee = $msc * 0.05;
+        $employer = $msc * 0.10;
+        $ec = $msc <= 14500 ? 10.0 : 30.0;
+
+        return [
+            'employee' => round($employee, 2),
+            'employer' => round($employer + $ec, 2),
+            'msc' => round($msc, 2),
+            'ec' => $ec,
+        ];
+    }
+}
+
 if (!function_exists('compute_worker_payroll_deductions')) {
     /**
      * @param array<string, mixed> $settings payroll_settings row
      * @return array{
      *   sss: float,
+     *   sss_employer: float,
+     *   sss_msc: float,
      *   philhealth: float,
      *   pagibig: float,
      *   total: float,
@@ -104,13 +116,15 @@ if (!function_exists('compute_worker_payroll_deductions')) {
      *   government_deduction_label: string
      * }
      */
-    function compute_worker_payroll_deductions(float $grossPay, ?string $governmentStatus, array $settings, $governmentTypes = null): array
+    function compute_worker_payroll_deductions(float $grossPay, ?string $governmentStatus, array $settings, $governmentTypes = null, ?float $monthlyCompensation = null): array
     {
         $status = normalize_government_deduction_status($governmentStatus);
 
         if (!worker_government_deductions_enabled($status)) {
             return [
                 'sss' => 0.0,
+                'sss_employer' => 0.0,
+                'sss_msc' => 0.0,
                 'philhealth' => 0.0,
                 'pagibig' => 0.0,
                 'total' => 0.0,
@@ -119,16 +133,26 @@ if (!function_exists('compute_worker_payroll_deductions')) {
             ];
         }
 
-        // Fixed peso deductions per payroll. The settings argument remains in
-        // this signature for compatibility with existing payroll callers.
+        // SSS uses the official contribution schedule; PhilHealth and Pag-IBIG
+        // settings are percentage rates applied to this weekly gross pay.
         $selectedTypes = normalize_government_deduction_types($governmentTypes);
-        $sss = in_array('sss', $selectedTypes, true) ? FIXED_SSS_DEDUCTION : 0.0;
-        $philhealth = in_array('philhealth', $selectedTypes, true) ? FIXED_PHILHEALTH_DEDUCTION : 0.0;
-        $pagibig = in_array('pagibig', $selectedTypes, true) ? FIXED_PAGIBIG_DEDUCTION : 0.0;
+        $weeklyCompensation = $monthlyCompensation !== null ? $monthlyCompensation / 4.3333333333 : $grossPay;
+        $sssShares = calculate_sss_employee_employer_shares($weeklyCompensation * 4.3333333333);
+        $weeklyShareFactor = 12 / 52;
+        $sss = in_array('sss', $selectedTypes, true) ? round($sssShares['employee'] * $weeklyShareFactor, 2) : 0.0;
+        $sssEmployer = in_array('sss', $selectedTypes, true) ? round($sssShares['employer'] * $weeklyShareFactor, 2) : 0.0;
+        $philhealth = in_array('philhealth', $selectedTypes, true)
+            ? round($grossPay * max(0, (float) ($settings['philhealth_rate'] ?? 0)) / 100, 2)
+            : 0.0;
+        $pagibig = in_array('pagibig', $selectedTypes, true)
+            ? round($grossPay * max(0, (float) ($settings['pagibig_rate'] ?? 0)) / 100, 2)
+            : 0.0;
         $total = round($sss + $philhealth + $pagibig, 2);
 
         return [
             'sss' => $sss,
+            'sss_employer' => $sssEmployer,
+            'sss_msc' => $sssShares['msc'],
             'philhealth' => $philhealth,
             'pagibig' => $pagibig,
             'total' => $total,

@@ -163,16 +163,16 @@ $users_data = $users_result->fetch_all(MYSQLI_ASSOC);
                         <input type="text" id="pay_periods" value="Weekly" readonly aria-readonly="true">
                     </div>
                     <div>
-                        <label>SSS Deduction (PHP)</label>
-                        <input type="number" id="sss_rate" min="0" step="0.01" value="950.00" readonly aria-readonly="true">
+                        <label>SSS Deduction (PHP per payroll)</label>
+                        <input type="number" id="sss_rate" min="0" step="0.01" value="950.00">
                     </div>
                     <div>
-                        <label>PhilHealth Deduction (PHP)</label>
-                        <input type="number" id="philhealth_rate" min="0" step="0.01" value="262.50" readonly aria-readonly="true">
+                        <label>PhilHealth Deduction (% of weekly gross pay)</label>
+                        <input type="number" id="philhealth_rate" min="0" max="100" step="0.01" value="3.00">
                     </div>
                     <div>
-                        <label>Pag-IBIG Deduction (PHP)</label>
-                        <input type="number" id="pagibig_rate" min="0" step="0.01" value="200.00" readonly aria-readonly="true">
+                        <label>Pag-IBIG Deduction (% of weekly gross pay)</label>
+                        <input type="number" id="pagibig_rate" min="0" max="100" step="0.01" value="2.00">
                     </div>
                 </div>
                 <div style="margin-top:16px;">

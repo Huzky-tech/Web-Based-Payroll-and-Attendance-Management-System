@@ -79,8 +79,8 @@ function handleOvertimeToggle() {
 
 const payrollNumericRules = {
     sss_rate: { label: 'SSS Deduction', min: 0 },
-    philhealth_rate: { label: 'PhilHealth Deduction', min: 0 },
-    pagibig_rate: { label: 'Pag-IBIG Deduction', min: 0 },
+    philhealth_rate: { label: 'PhilHealth Deduction percentage', min: 0, max: 100 },
+    pagibig_rate: { label: 'Pag-IBIG Deduction percentage', min: 0, max: 100 },
     overtime_rate: { label: 'Overtime Rate', min: 0.01 },
     late_worker_deduction: { label: 'Late Worker Deduction', min: 0 }
 };
@@ -309,10 +309,9 @@ async function loadPayrollSettings() {
     }
 
     document.getElementById('pay_periods').value = normalizePayPeriod(data.data.pay_periods);
-    // Government deductions are fixed payroll values, not editable settings.
-    document.getElementById('sss_rate').value = '950.00';
-    document.getElementById('philhealth_rate').value = '262.50';
-    document.getElementById('pagibig_rate').value = '200.00';
+    document.getElementById('sss_rate').value = Number(data.data.sss_rate ?? 950).toFixed(2);
+    document.getElementById('philhealth_rate').value = Number(data.data.philhealth_rate ?? 3).toFixed(2);
+    document.getElementById('pagibig_rate').value = Number(data.data.pagibig_rate ?? 2).toFixed(2);
     document.getElementById('allow_overtime').checked = Number(data.data.allow_overtime) === 1;
     document.getElementById('overtime_rate').value = data.data.overtime_rate || '1.25';
     document.getElementById('late_worker_deduction').value = Number(data.data.late_worker_deduction || 0).toFixed(2);

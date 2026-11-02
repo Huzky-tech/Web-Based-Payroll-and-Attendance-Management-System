@@ -630,6 +630,7 @@ function showWorkerSummary(workerId) {
                 <div><b>Deduction Status:</b> ${escapeHtml((worker.government_deduction_types || []).join(', ') || 'No Government Deductions')}</div>
                 <div><b>Gross Pay:</b> ${escapeHtml(formatCurrency(worker.gross_pay))}</div>
                 ${Number(worker.sss_deduction || 0) > 0 ? `<div><b>SSS:</b> ${escapeHtml(formatCurrency(worker.sss_deduction))}</div>` : ''}
+                ${Number(worker.sss_employer_contribution || 0) > 0 ? `<div><b>SSS Employer Share (not deducted):</b> ${escapeHtml(formatCurrency(worker.sss_employer_contribution))}</div>` : ''}
                 ${Number(worker.philhealth_deduction || 0) > 0 ? `<div><b>PhilHealth:</b> ${escapeHtml(formatCurrency(worker.philhealth_deduction))}</div>` : ''}
                 ${Number(worker.pagibig_deduction || 0) > 0 ? `<div><b>Pag-IBIG:</b> ${escapeHtml(formatCurrency(worker.pagibig_deduction))}</div>` : ''}
                 <div><b>Late Deduction:</b> ${escapeHtml(formatCurrency(worker.late_deduction || 0))}</div>

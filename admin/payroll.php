@@ -274,7 +274,8 @@ while ($site = $sitesQuery->fetch_assoc()) {
             round($grossPay, 2),
             (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
             $payrollSettings,
-            $worker['GovernmentDeductionTypes'] ?? null
+            $worker['GovernmentDeductionTypes'] ?? null,
+            $rateType === 'salary' ? $rateAmount : ($rateAmount * 8 * 22)
         );
         $fixedDeductionBreakdown = compute_fixed_payroll_deductions($roleOnSite, $lateDays, $payrollSettings);
         $deductions = round($deductionBreakdown['total'] + $fixedDeductionBreakdown['total'], 2);
@@ -309,6 +310,8 @@ while ($site = $sitesQuery->fetch_assoc()) {
             'government_deduction_status' => $deductionBreakdown['government_deduction_status'],
             'government_deduction_label' => $deductionBreakdown['government_deduction_label'],
             'sss_deduction' => $deductionBreakdown['sss'],
+            'sss_employer_contribution' => $deductionBreakdown['sss_employer'],
+            'sss_monthly_salary_credit' => $deductionBreakdown['sss_msc'],
             'philhealth_deduction' => $deductionBreakdown['philhealth'],
             'pagibig_deduction' => $deductionBreakdown['pagibig'],
             'government_deduction_types' => array_values(array_filter([

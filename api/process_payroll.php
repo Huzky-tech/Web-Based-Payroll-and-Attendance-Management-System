@@ -301,11 +301,15 @@ try {
         }
 
         $grossPay = round($grossPay, 2);
+        $monthlyCompensation = $rateType === 'salary'
+            ? $rateAmount
+            : ($rateAmount * 8 * 22);
         $deductionBreakdown = compute_worker_payroll_deductions(
             $grossPay,
             (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
             $settings,
-            $worker['GovernmentDeductionTypes'] ?? null
+            $worker['GovernmentDeductionTypes'] ?? null,
+            $monthlyCompensation
         );
         $fixedDeductionBreakdown = compute_fixed_payroll_deductions($roleOnSite, $lateDays, $settings);
         $deductions = round($deductionBreakdown['total'] + $fixedDeductionBreakdown['total'], 2);

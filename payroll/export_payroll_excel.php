@@ -107,7 +107,6 @@ if ($currentRole === 'Payroll Staff' && payroll_approval_columns_ready($conn)) {
 
 $settingsResult = $conn->query('SELECT sss_rate, philhealth_rate, pagibig_rate FROM payroll_settings WHERE id = 1 LIMIT 1');
 $settings = $settingsResult ? $settingsResult->fetch_assoc() : [];
-$sssDeductionAmount = (float) ($settings['sss_rate'] ?? 0);
 $philhealthDeductionAmount = (float) ($settings['philhealth_rate'] ?? 0);
 $pagibigDeductionAmount = (float) ($settings['pagibig_rate'] ?? 0);
 $hasGovernmentDeductionColumn = worker_government_deduction_column_exists($conn);
@@ -236,7 +235,7 @@ if ($attendanceStmt) {
 }
 
 $fixedColumnCount = 2;
-$summaryColumnCount = 10;
+$summaryColumnCount = 11;
 $dayColumnCount = count($periodDates);
 $totalColumnCount = $fixedColumnCount + $dayColumnCount + $summaryColumnCount;
 $lastCol = Coordinate::stringFromColumnIndex($totalColumnCount);
@@ -249,7 +248,8 @@ $summaryHeaders = [
     'OT Hours',
     'Gross Pay',
     'Deduction Status',
-    'SSS',
+    'SSS Employee',
+    'SSS Employer',
     'PhilHealth',
     'Pag-IBIG',
     'Total Deductions',
@@ -270,6 +270,7 @@ $breakdown = [
     'absence' => 0.0,
     'late' => 0.0,
     'sss' => 0.0,
+    'sss_employer' => 0.0,
     'philhealth' => 0.0,
     'pagibig' => 0.0,
     'other' => 0.0,
@@ -350,7 +351,8 @@ foreach ($workers as $worker) {
         $grossPay,
         (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
         $settings,
-        $worker['GovernmentDeductionTypes'] ?? null
+        $worker['GovernmentDeductionTypes'] ?? null,
+        $rateType === 'salary' ? $rateAmount : ($rateAmount * 8 * 22)
     );
     $deductions = round((float) ($worker['Total_Deductions'] ?? $deductionBreakdown['total']), 2);
     $netPay = round((float) ($worker['Net_Pay'] ?? 0), 2);
@@ -358,12 +360,14 @@ foreach ($workers as $worker) {
     $absenceDeduction = round($dailyRate * $absentDays, 2);
     $lateDeduction = round($hourlyRate * $lateHours, 2);
     $sssDeduction = $deductionBreakdown['sss'];
+    $sssEmployerContribution = $deductionBreakdown['sss_employer'];
     $philhealthDeduction = $deductionBreakdown['philhealth'];
     $pagibigDeduction = $deductionBreakdown['pagibig'];
 
     $breakdown['absence'] += $absenceDeduction;
     $breakdown['late'] += $lateDeduction;
     $breakdown['sss'] += $sssDeduction;
+    $breakdown['sss_employer'] = ($breakdown['sss_employer'] ?? 0) + $sssEmployerContribution;
     $breakdown['philhealth'] += $philhealthDeduction;
     $breakdown['pagibig'] += $pagibigDeduction;
 
@@ -402,13 +406,14 @@ foreach ($workers as $worker) {
         $deductionBreakdown['government_deduction_label']
     );
     $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 5) . $row, $sssDeduction);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 6) . $row, $philhealthDeduction);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 7) . $row, $pagibigDeduction);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 8) . $row, $deductions);
-    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $row, $netPay);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 6) . $row, $sssEmployerContribution);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 7) . $row, $philhealthDeduction);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 8) . $row, $pagibigDeduction);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $row, $deductions);
+    $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 10) . $row, $netPay);
 
     $grossCol = Coordinate::stringFromColumnIndex($summaryStartCol + 3);
-    $netCol = Coordinate::stringFromColumnIndex($summaryStartCol + 9);
+    $netCol = Coordinate::stringFromColumnIndex($summaryStartCol + 10);
     $sheet->getStyle("{$grossCol}{$row}:{$netCol}{$row}")->getNumberFormat()->setFormatCode($currencyFormat);
     $row++;
 }
@@ -427,12 +432,12 @@ $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol) . $tota
 $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 1) . $totalRow, round($totals['late_hours'], 2));
 $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 2) . $totalRow, round($totals['overtime'], 2));
 $sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 3) . $totalRow, round($totals['gross'], 2));
-$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 8) . $totalRow, round($totals['deductions'], 2));
-$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $totalRow, round($totals['net'], 2));
+$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 9) . $totalRow, round($totals['deductions'], 2));
+$sheet->setCellValue(Coordinate::stringFromColumnIndex($summaryStartCol + 10) . $totalRow, round($totals['net'], 2));
 $sheet->getStyle("A{$totalRow}:{$lastCol}{$totalRow}")->getFont()->setBold(true);
 
 $grossTotalCol = Coordinate::stringFromColumnIndex($summaryStartCol + 3);
-$netTotalCol = Coordinate::stringFromColumnIndex($summaryStartCol + 9);
+$netTotalCol = Coordinate::stringFromColumnIndex($summaryStartCol + 10);
 $moneyTotalStartCol = Coordinate::stringFromColumnIndex($summaryStartCol + 5);
 $moneyTotalEndCol = Coordinate::stringFromColumnIndex($summaryStartCol + 9);
 $sheet->getStyle("{$moneyTotalStartCol}{$totalRow}:{$moneyTotalEndCol}{$totalRow}")->getNumberFormat()->setFormatCode($currencyFormat);
@@ -453,14 +458,15 @@ $breakdownLines = [
     'Late (Hourly Rate × Late Hours)' => round($breakdown['late'], 2),
 ];
 
-if ($sssDeductionAmount > 0) {
-    $breakdownLines['SSS (PHP ' . number_format($sssDeductionAmount, 2) . ' per eligible worker)'] = round($breakdown['sss'], 2);
+if ($breakdown['sss'] > 0) {
+    $breakdownLines['SSS employee share'] = round($breakdown['sss'], 2);
+    $breakdownLines['SSS employer share (not deducted from employee pay)'] = round($breakdown['sss_employer'], 2);
 }
 if ($philhealthDeductionAmount > 0) {
-    $breakdownLines['PhilHealth (PHP ' . number_format($philhealthDeductionAmount, 2) . ' per eligible worker)'] = round($breakdown['philhealth'], 2);
+    $breakdownLines['PhilHealth (' . number_format($philhealthDeductionAmount, 2) . '% of weekly gross pay)'] = round($breakdown['philhealth'], 2);
 }
 if ($pagibigDeductionAmount > 0) {
-    $breakdownLines['Pag-IBIG (PHP ' . number_format($pagibigDeductionAmount, 2) . ' per eligible worker)'] = round($breakdown['pagibig'], 2);
+    $breakdownLines['Pag-IBIG (' . number_format($pagibigDeductionAmount, 2) . '% of weekly gross pay)'] = round($breakdown['pagibig'], 2);
 }
 if ($breakdown['other'] > 0) {
     $breakdownLines['Other Deductions'] = $breakdown['other'];

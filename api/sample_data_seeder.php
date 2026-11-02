@@ -907,7 +907,8 @@ if (!function_exists('sample_data_process_site_payroll')) {
                 $grossPay,
                 (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
                 $settings,
-                $worker['GovernmentDeductionTypes'] ?? null
+                $worker['GovernmentDeductionTypes'] ?? null,
+                $rateType === 'salary' ? $rateAmount : ($rateAmount * 8 * 22)
             );
             $fixedDeductionBreakdown = compute_fixed_payroll_deductions($roleOnSite, $lateDays, $settings);
             $deductions = round($deductionBreakdown['total'] + $fixedDeductionBreakdown['total'], 2);

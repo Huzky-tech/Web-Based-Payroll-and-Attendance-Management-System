@@ -94,7 +94,10 @@ if ($preview) {
         ? $rateAmount
         : (($totalHours - $attendanceOvertime) * $rateAmount) + ($attendanceOvertime * $rateAmount * $overtimeRate);
     $grossPay = round(max(0, $grossPay), 2);
-    $deductionBreakdown = compute_worker_payroll_deductions($grossPay, $worker['GovernmentDeductionStatus'] ?? null, $settings, $worker['GovernmentDeductionTypes'] ?? null);
+    $monthlyCompensation = strtolower((string) $worker['RateType']) === 'salary'
+        ? $rateAmount
+        : ($rateAmount * 8 * 22);
+    $deductionBreakdown = compute_worker_payroll_deductions($grossPay, $worker['GovernmentDeductionStatus'] ?? null, $settings, $worker['GovernmentDeductionTypes'] ?? null, $monthlyCompensation);
     $fixedDeductions = compute_fixed_payroll_deductions($worker['PositionName'], $lateDays, $settings);
     $totalDeductions = round($deductionBreakdown['total'] + $fixedDeductions['total'], 2);
     $payslip = [
@@ -201,7 +204,7 @@ foreach ($attendance as $day) {
 $breakdown = $workerSnapshot['deduction_breakdown'] ?? [];
 $fixed = $workerSnapshot['fixed_deductions'] ?? [];
 $deductionRows = [
-    'SSS' => $breakdown['sss'] ?? 0,
+    'SSS employee share' => $breakdown['sss'] ?? 0,
     'PhilHealth' => $breakdown['philhealth'] ?? 0,
     'Pag-IBIG' => $breakdown['pagibig'] ?? 0,
     'Late deduction' => $fixed['late'] ?? 0,
@@ -217,6 +220,11 @@ foreach ($deductionRows as $label => $amount) {
 }
 if ($deductionMarkup === '') {
     $deductionMarkup = '<tr><td>No itemized deductions recorded</td><td class="amount">PHP 0.00</td></tr>';
+}
+$sssEmployerShare = (float) ($breakdown['sss_employer'] ?? 0);
+if ($sssEmployerShare > 0) {
+    $deductionMarkup .= '<tr><td>SSS employer share (not deducted from employee pay)</td><td class="amount">'
+        . payslip_escape(payslip_money($sssEmployerShare)) . '</td></tr>';
 }
 
 $html = '<!doctype html><html><head><meta charset="utf-8"><style>

@@ -318,7 +318,8 @@ function get_payroll_totals(mysqli $conn, array $sites, array $payPeriod, array 
                     $grossPay,
                     (string) ($worker['GovernmentDeductionStatus'] ?? GOVERNMENT_DEDUCTION_WITH),
                     $payrollSettings,
-                    $worker['GovernmentDeductionTypes'] ?? null
+                    $worker['GovernmentDeductionTypes'] ?? null,
+                    $rateType === 'salary' ? $rateAmount : ($rateAmount * 8 * 22)
                 );
                 $workerDeductions = $deductionBreakdown['total'];
                 $workerNet = round($grossPay - $workerDeductions, 2);
